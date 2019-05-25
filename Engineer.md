@@ -379,5 +379,155 @@ readfile ("00000031.csv") %>%
     ## 80 511 Cabin crew, guides and related workers                        -7.61 
     ## 81 221 Medical doctors                                               -8.99
 
+Theoretical study of salaries in groups with different age / salary structures. Suppose there is two groups A and B that both have flat age distributions. Group A have a flat salary distribution in general and in group B the oldest employees earns twice as much as the youngest in general.
+
+``` r
+A <- seq(30000, 60000, by=750)
+B <- seq(30000, 30000, length=41)
+year <- 2019
+by <- (year - 25):(year - 65)  
+tibble(by, A, B) %>% 
+  gather(A, B, key = "group", value = "salary") %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = by, y = salary, fill = group), stat = "identity", position = "dodge") +
+  labs(
+    title = "Salary structure of Group A and Group B"
+  )
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-11-1.png)
+
+During the year both group A and B increase the sum of all salaries for respective Group by 2.0 percent.
+
+``` r
+tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>% 
+  gather(A_raise, B_raise, key="group", value="raise") %>%
+  ggplot() +
+    geom_bar(mapping = aes(x=group, y=raise, fill = group), stat = "identity") +
+    labs(
+      title = "Salary raise by 2.0%"
+    )  
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-12-1.png)
+
+Suppose that the groups increase is divided equally to respective group members.
+
+``` r
+raise <- (A + sum(A) * 0.02 / length (A)) - A   
+g <- tibble(by, A, raise) %>% 
+  gather(A, raise, key = "group", value = "salary")
+g$group <-  factor(g$group, levels = c("raise", "A"))
+g %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = by, y = salary, fill = group), stat = "identity") +
+  labs(
+    title = "Salary increase distribution over age Group A"
+  )     
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-13-1.png)
+
+Suppose that the groups increase is divided equally to respective group members.
+
+``` r
+raise <- (B + sum(B) * 0.02 / length (B)) - B   
+g <- as_tibble(cbind(by, B, raise)) %>% 
+  gather(B, raise, key = "group", value = "salary")
+g$group <-  factor(g$group, levels = c("raise", "B"))
+g %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = by, y = salary, fill = group), stat = "identity") +
+  labs(
+    title = "Salary increase distribution over age Group B"
+  )
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-14-1.png)
+
+The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for respective group is determined by the age / salary structure.
+
+``` r
+by_year2 <- by + 1
+B_year2 <- lag(B)
+B_year2[1] <- B[1] * 1.02
+raise_year2 <- lag(B + sum(B) * 0.02 / length (B) - B)
+raise_year2[1] <- 0
+t <- tibble(by_year2, B_year2, raise_year2) %>%
+  gather(B_year2, raise_year2, key = "group", value = "salary")
+t$group <- factor(t$group, levels=c("raise_year2", "B_year2"))
+t %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = by_year2, y = salary, fill = group), stat = "identity") +
+  labs(
+    title = "Salary distribution Group B after one year succession"
+  )   
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-15-1.png)
+
+The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for respective group is determined by the age / salary structure.
+
+``` r
+by_year2 <- by + 1
+raise_year2 <- lag(A + sum(A) * 0.02 / length (A) - A)
+raise_year2[1] <- 0
+A_year2 <- lag(A)
+A_year2[1] <- A[1] + raise_year2[2] - (A[2] - A[1])
+t <- tibble(by_year2, A_year2, raise_year2) %>%
+  gather(A_year2, raise_year2, key = "group", value = "salary")
+t$group <- factor(t$group, levels = c("raise_year2", "A_year2"))
+t %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = by_year2, y = salary, fill = group), stat = "identity") +
+  labs(
+    title = "Salary distribution Group A after one year succession"
+  )  
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-16-1.png)
+
+Before next year's salary revision the sum of the salaries have increased by 2.04 percent for Group A and only 0.3 percent for group A.
+
+``` r
+tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = sum(B) * 0.02) %>% 
+  gather(A_raise_sum, B_raise_sum, key = "group", value = "raise") %>%
+  ggplot() +
+    geom_bar(mapping = aes(x=group, y=raise, fill = group), stat = "identity") +
+    labs(
+      title = "Salary raise since last revision"
+    )   
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-17-1.png)
+
+This animation shows how the salary development progresses for a longer period of time according to the prerequicites stated above
+
+``` r
+##A <- seq(30000, 60000, by = 750)
+##B <- seq(30000, 30000, length = 41)
+##for (year in 2019:2059){
+##  by <- (year - 25):(year - 65)  
+##  tibble(by, A, B) %>% 
+##    gather(A, B, key = "group", value = "salary") %>%
+##    ggplot() +
+##      geom_point(mapping = aes(x = by, y = salary, colour = group)) +
+##      labs(
+##        title = "Salary development different groups.",
+##      subtitle = paste ("Year of revision", year)
+##      ) +
+##    scale_x_continuous(name = "Year of birth", limits = c(1954, 2034)) +
+##      scale_y_continuous(name = "Salary", limits = c(30000, 80000))         
+##  ggsave(paste (year, sep="", ".png"))
+##  A <- A + sum (A) * 0.020 / length (A)
+##  A <- c(A[1] - 750, A[1:40])
+##  B <- B * 1.02
+##} 
+    
+##"c:\Program Files\ImageMagick-7.0.8-Q16\magick.exe" -delay 50 -loop 0 *.png animation.gif 
+```
+
+![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/animation.gif)
 TBC
 References <http://www.statistikdatabasen.scb.se/pxweb/en/>
+<https://imagemagick.org/>

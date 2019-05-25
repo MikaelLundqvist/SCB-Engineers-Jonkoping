@@ -253,30 +253,34 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
 #'This animation shows how the salary development progresses for a longer 
 #'period of time according to the prerequicites stated above	
 
-A <- seq(30000, 60000, by = 750)
-B <- seq(30000, 30000, length = 41)
-for (year in 2019:2059){
-  by <- (year - 25):(year - 65)  
-  tibble(by, A, B) %>% 
-    gather(A, B, key = "group", value = "salary") %>%
-    ggplot() +
-      geom_point(mapping = aes(x = by, y = salary, colour = group)) +
-      labs(
-        title = "Salary development different groups.",
-		subtitle = paste ("Year of revision", year)
-      ) +
-	  scale_x_continuous(name = "Year of birth", limits = c(1954, 2034)) +
-      scale_y_continuous(name = "Salary", limits = c(30000, 80000))		  
-  ggsave(paste (year, sep="", ".png"))
-  A <- A + sum (A) * 0.020 / length (A)
-  A <- c(A[1] - 750, A[1:40])
-  B <- B * 1.02
-}	
+##A <- seq(30000, 60000, by = 750)
+##B <- seq(30000, 30000, length = 41)
+##for (year in 2019:2059){
+##  by <- (year - 25):(year - 65)  
+##  tibble(by, A, B) %>% 
+##    gather(A, B, key = "group", value = "salary") %>%
+##    ggplot() +
+##      geom_point(mapping = aes(x = by, y = salary, colour = group)) +
+##      labs(
+##        title = "Salary development different groups.",
+##		subtitle = paste ("Year of revision", year)
+##      ) +
+##	  scale_x_continuous(name = "Year of birth", limits = c(1954, 2034)) +
+##      scale_y_continuous(name = "Salary", limits = c(30000, 80000))		  
+##  ggsave(paste (year, sep="", ".png"))
+##  A <- A + sum (A) * 0.020 / length (A)
+##  A <- c(A[1] - 750, A[1:40])
+##  B <- B * 1.02
+##}	
 	
+##"c:\Program Files\ImageMagick-7.0.8-Q16\magick.exe" -delay 50 -loop 0 *.png animation.gif	
+#'![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/animation.gif)	
+
 	
 #'TBC  
   
 #'References
 #'http://www.statistikdatabasen.scb.se/pxweb/en/  
+#'https://imagemagick.org/
   
 #+ 
