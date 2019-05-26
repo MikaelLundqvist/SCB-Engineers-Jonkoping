@@ -144,9 +144,8 @@ readfile ("00000031.csv") %>%
   
   
 #'Theoretical study of salaries in groups with different age / salary structures.
-  
 #'Suppose there is two groups A and B that both have flat age distributions. 
-#'Group A have a flat salary distribution in general and in group B the oldest 
+#'Group B have a flat salary distribution in general, in group A the oldest 
 #'employees earns twice as much as the youngest in general.  
   
 A <- seq(30000, 60000, by=750)
@@ -162,7 +161,7 @@ tibble(by, A, B) %>%
   )
 
 #'During the year both group A and B increase the sum of all salaries for 
-#'respective Group by 2.0 percent.
+#'respective group by two percent.
   
 tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>% 
   gather(A_raise, B_raise, key="group", value="raise") %>%
@@ -172,8 +171,9 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
       title = "Salary raise by 2.0%"
     )  
 
-#'Suppose that the groups increase is divided equally to respective group 
-#'members.  
+
+#'Suppose that each groups increase is divided equally to the employees within 
+#'respective group.
 	
 raise <- (A + sum(A) * 0.02 / length (A)) - A	
 g <- tibble(by, A, raise) %>% 
@@ -186,8 +186,8 @@ g %>%
     title = "Salary increase distribution over age Group A"
   )		
 	
-#'Suppose that the groups increase is divided equally to respective group 
-#'members.
+#'Suppose that each groups increase is divided equally to the employees within 
+#'respective group.
 	
 raise <- (B + sum(B) * 0.02 / length (B)) - B	
 g <- as_tibble(cbind(by, B, raise)) %>% 
@@ -204,7 +204,6 @@ g %>%
 #'that the starting salary for respective group is determined by the 
 #'age / salary structure.  
   
-
 by_year2 <- by + 1
 B_year2 <- lag(B)
 B_year2[1] <- B[1] * 1.02
@@ -239,8 +238,8 @@ t %>%
     title = "Salary distribution Group A after one year succession"
   )	 
 
-#'Before next year's salary revision the sum of the salaries have increased by 
-#'2.04 percent for Group A and only 0.3 percent for group A.
+#'Before next years’ salary revision the sum of the salaries have increased by 
+#'2.0 % for group B and only 0.31% for group A
   
 tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = sum(B) * 0.02) %>% 
   gather(A_raise_sum, B_raise_sum, key = "group", value = "raise") %>%
@@ -251,7 +250,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
     )   
 	
 #'This animation shows how the salary development progresses for a longer 
-#'period of time according to the prerequicites stated above	
+#'period of time according to the prerequicites stated above.
 
 ##A <- seq(30000, 60000, by = 750)
 ##B <- seq(30000, 30000, length = 41)
@@ -273,6 +272,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
 ##  B <- B * 1.02
 ##}	
 	
+#' The animation was made with ImageMagick
 ##"c:\Program Files\ImageMagick-7.0.8-Q16\magick.exe" -delay 50 -loop 0 *.png animation.gif	
 #'![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/animation.gif)	
 
