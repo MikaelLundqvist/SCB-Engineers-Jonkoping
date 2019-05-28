@@ -146,32 +146,32 @@ readfile ("00000031.csv") %>%
 #'SEK by occuptional (SSYK), age, sex and year 2000-2013 
 #'214 Engineering professionals 
 #'sex=total  
-readfile("AM0103A9.csv") %>% rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
-rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
-  ggplot(mapping = aes(x = year2 - (age2 + age3) / 2, y = salary)) +
-    geom_point() + 
-    geom_smooth(method = lm, formula = y ~ splines::bs(x, 8), se = FALSE) +
-    transition_time(year2) +
-    labs(title = "Year: {frame_time}") +
-	scale_x_continuous(name = "Year of birth") +
-    scale_y_continuous(name = "Salary")
-anim_save("2000-1013.gif", width = 1000, height = 1000)	
+##readfile("AM0103A9.csv") %>% rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+##rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+##  ggplot(mapping = aes(x = year2 - (age2 + age3) / 2, y = salary)) +
+##    geom_point() + 
+##    geom_smooth(method = lm, formula = y ~ splines::bs(x, 8), se = FALSE) +
+##    transition_time(year2) +
+##    labs(title = "Year: {frame_time}") +
+##	scale_x_continuous(name = "Year of birth") +
+##    scale_y_continuous(name = "Salary")
+##anim_save("2000-1013.gif", width = 1000, height = 1000)	
 #'![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/2000-1013.gif)	
   
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), 
 #'SEK by occuptional (SSYK 2012), age, sex and year 2014-2018
 #'214 Engineering professionals 
 #'sex=total
-readfile("00000031_2.csv") %>% rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
-rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
-  ggplot(mapping = aes(x = year2 - (age2 + age3) / 2, y = salary)) +
-    geom_point() + 
-    geom_smooth(method = lm, formula = y ~ splines::bs(x, 8), se = FALSE) +
-    transition_time(year2) +
-    labs(title = "Year: {frame_time}") +
-	scale_x_continuous(name = "Year of birth") +
-    scale_y_continuous(name = "Salary")	
-anim_save("2014-2018.gif", width = 1000, height = 1000)  
+##readfile("00000031_2.csv") %>% rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+##rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+##  ggplot(mapping = aes(x = year2 - (age2 + age3) / 2, y = salary)) +
+##    geom_point() + 
+##    geom_smooth(method = lm, formula = y ~ splines::bs(x, 8), se = FALSE) +
+##    transition_time(year2) +
+##    labs(title = "Year: {frame_time}") +
+##	scale_x_continuous(name = "Year of birth") +
+##    scale_y_continuous(name = "Salary")	
+##anim_save("2014-2018.gif", width = 1000, height = 1000)  
 #'![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/2014-2018.gif)	
   
 #'Theoretical study of salaries in groups with different age / salary structures.

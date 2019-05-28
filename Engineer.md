@@ -379,7 +379,39 @@ readfile ("00000031.csv") %>%
     ## 80 511 Cabin crew, guides and related workers                        -7.61 
     ## 81 221 Medical doctors                                               -8.99
 
-Theoretical study of salaries in groups with different age / salary structures. Suppose there is two groups A and B that both have flat age distributions. Group A have a flat salary distribution in general and in group B the oldest employees earns twice as much as the youngest in general.
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK), age, sex and year 2000-2013 214 Engineering professionals sex=total
+
+``` r
+##readfile("AM0103A9.csv") %>% rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+##rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+##  ggplot(mapping = aes(x = year2 - (age2 + age3) / 2, y = salary)) +
+##    geom_point() + 
+##    geom_smooth(method = lm, formula = y ~ splines::bs(x, 8), se = FALSE) +
+##    transition_time(year2) +
+##    labs(title = "Year: {frame_time}") +
+##  scale_x_continuous(name = "Year of birth") +
+##    scale_y_continuous(name = "Salary")
+##anim_save("2000-1013.gif", width = 1000, height = 1000)   
+```
+
+![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/2000-1013.gif)
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year 2014-2018 214 Engineering professionals sex=total
+
+``` r
+##readfile("00000031_2.csv") %>% rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+##rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+##  ggplot(mapping = aes(x = year2 - (age2 + age3) / 2, y = salary)) +
+##    geom_point() + 
+##    geom_smooth(method = lm, formula = y ~ splines::bs(x, 8), se = FALSE) +
+##    transition_time(year2) +
+##    labs(title = "Year: {frame_time}") +
+##  scale_x_continuous(name = "Year of birth") +
+##    scale_y_continuous(name = "Salary")   
+##anim_save("2014-2018.gif", width = 1000, height = 1000)  
+```
+
+![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/2014-2018.gif)
+Theoretical study of salaries in groups with different age / salary structures. Suppose there is two groups A and B that both have flat age distributions. Group B have a flat salary distribution in general, in group A the oldest employees earns twice as much as the youngest in general.
 
 ``` r
 A <- seq(30000, 60000, by=750)
@@ -395,9 +427,9 @@ tibble(by, A, B) %>%
   )
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-11-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-13-1.png)
 
-During the year both group A and B increase the sum of all salaries for respective Group by 2.0 percent.
+During the year both group A and B increase the sum of all salaries for respective group by two percent.
 
 ``` r
 tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>% 
@@ -409,9 +441,9 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
     )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-12-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-14-1.png)
 
-Suppose that the groups increase is divided equally to respective group members.
+Suppose that each groups increase is divided equally to the employees within respective group.
 
 ``` r
 raise <- (A + sum(A) * 0.02 / length (A)) - A   
@@ -426,9 +458,9 @@ g %>%
   )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-13-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-15-1.png)
 
-Suppose that the groups increase is divided equally to respective group members.
+Suppose that each groups increase is divided equally to the employees within respective group.
 
 ``` r
 raise <- (B + sum(B) * 0.02 / length (B)) - B   
@@ -443,7 +475,7 @@ g %>%
   )
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-14-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-16-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for respective group is determined by the age / salary structure.
 
@@ -464,7 +496,7 @@ t %>%
   )   
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-15-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-17-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for respective group is determined by the age / salary structure.
 
@@ -485,9 +517,9 @@ t %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-16-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-18-1.png)
 
-Before next year's salary revision the sum of the salaries have increased by 2.04 percent for Group A and only 0.3 percent for group A.
+Before next years’ salary revision the sum of the salaries have increased by 2.0 % for group B and only 0.31% for group A
 
 ``` r
 tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = sum(B) * 0.02) %>% 
@@ -499,9 +531,9 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
     )   
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-17-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
-This animation shows how the salary development progresses for a longer period of time according to the prerequicites stated above
+This animation shows how the salary development progresses for a longer period of time according to the prerequicites stated above.
 
 ``` r
 ##A <- seq(30000, 60000, by = 750)
@@ -523,7 +555,11 @@ This animation shows how the salary development progresses for a longer period o
 ##  A <- c(A[1] - 750, A[1:40])
 ##  B <- B * 1.02
 ##} 
-    
+```
+
+The animation was made with ImageMagick
+
+``` r
 ##"c:\Program Files\ImageMagick-7.0.8-Q16\magick.exe" -delay 50 -loop 0 *.png animation.gif 
 ```
 
