@@ -394,7 +394,7 @@ Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by
 ##anim_save("2000-1013.gif", width = 1000, height = 1000)   
 ```
 
-![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/2000-1013.gif)
+![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/2000-2013.gif)
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year 2014-2018 214 Engineering professionals sex=total
 
 ``` r
