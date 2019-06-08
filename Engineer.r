@@ -79,7 +79,7 @@ readfile ("AM0208B6.csv") %>%
 readfile ("000000NL.csv") %>% 
   group_by (year2) %>% 
   summarise (total = sum (salary)) %>%
-  ggplot ()+
+  ggplot () +
     geom_line (mapping = aes (x = year2, y = total)) +
     theme (legend.position = "bottom")  
 	
@@ -110,7 +110,7 @@ readfile ("000000RM.csv") %>%
 #'men and women	
   
 readfile ("AM0103H2.csv") %>% 
-  ggplot ()+
+  ggplot () +
     geom_line (mapping = aes (x = year2, y = salary, colour = region)) +
     theme (legend.position = "bottom")
 
@@ -121,9 +121,21 @@ readfile ("AM0103H2.csv") %>%
 #'men and women
 	
 readfile ("0000002T.csv") %>% 
-  ggplot ()+
+  ggplot () +
     geom_line (mapping = aes (x = year2, y = salary, colour = region)) +
     theme (legend.position = "bottom")
+	
+#'Genomsnittlig grund- och månadslön samt kvinnors lön i procent av mäns lön
+#'efter utbildningsgrupp SUN 2000 och kön. År 2004 - 2017	
+#'Månadslön
+#'Kön=Totalt
+#'Only available at the Swedish SCB site
+
+readfile ("AM0110D2.csv") %>% 
+  ggplot () +
+    geom_line (mapping = aes (x = year2, y = salary, colour = `utbildningsgrupp SUN 2000`)) +
+    theme (legend.position = "bottom") + 	
+	guides(col = guide_legend(title.position = "top", nrow = 5))
 	
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2000 - 2013	
 #'age=total
@@ -408,7 +420,8 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
 #'TBC  
   
 #'References
-#'http://www.statistikdatabasen.scb.se/pxweb/en/  
+#'http://www.statistikdatabasen.scb.se/pxweb/en
+#'http://www.statistikdatabasen.scb.se/pxweb/sv
 #'https://imagemagick.org/
   
 #+ 

@@ -96,7 +96,7 @@ readfile ("AM0208B6.csv") %>%
 readfile ("000000NL.csv") %>% 
   group_by (year2) %>% 
   summarise (total = sum (salary)) %>%
-  ggplot ()+
+  ggplot () +
     geom_line (mapping = aes (x = year2, y = total)) +
     theme (legend.position = "bottom")  
 ```
@@ -181,7 +181,7 @@ men and women
 
 ``` r
 readfile ("AM0103H2.csv") %>% 
-  ggplot ()+
+  ggplot () +
     geom_line (mapping = aes (x = year2, y = salary, colour = region)) +
     theme (legend.position = "bottom")
 ```
@@ -193,12 +193,24 @@ men and women
 
 ``` r
 readfile ("0000002T.csv") %>% 
-  ggplot ()+
+  ggplot () +
     geom_line (mapping = aes (x = year2, y = salary, colour = region)) +
     theme (legend.position = "bottom")
 ```
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-8-1.png)
+
+Genomsnittlig grund- och månadslön samt kvinnors lön i procent av mäns lön efter utbildningsgrupp SUN 2000 och kön. År 2004 - 2017 Månadslön Kön=Totalt Only available at the Swedish SCB site
+
+``` r
+readfile ("AM0110D2.csv") %>% 
+  ggplot () +
+    geom_line (mapping = aes (x = year2, y = salary, colour = `utbildningsgrupp SUN 2000`)) +
+    theme (legend.position = "bottom") +    
+    guides(col = guide_legend(title.position = "top", nrow = 5))
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2000 - 2013
 age=total sex=total
@@ -515,7 +527,7 @@ tibble(by, A, B) %>%
   )
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-16-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-17-1.png)
 
 During the year both group A and B increase the sum of all salaries for respective group by two percent.
 
@@ -529,7 +541,7 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
     )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-17-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-18-1.png)
 
 Suppose that each groups increase is divided equally to the employees within respective group.
 
@@ -546,7 +558,7 @@ g %>%
   )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-18-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
 Suppose that each groups increase is divided equally to the employees within respective group.
 
@@ -563,7 +575,7 @@ g %>%
   )
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-19-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-20-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for respective group is determined by the age / salary structure.
 
@@ -584,7 +596,7 @@ t %>%
   )   
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-20-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-21-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for respective group is determined by the age / salary structure.
 
@@ -605,7 +617,7 @@ t %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-21-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-22-1.png)
 
 Before next years’ salary revision the sum of the salaries have increased by 2.0 % for group B and only 0.31% for group A
 
@@ -619,7 +631,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
     )   
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-22-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
 This animation shows how the salary development progresses for a longer period of time according to the prerequicites stated above.
 
@@ -653,5 +665,4 @@ The animation was made with ImageMagick
 
 ![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/animation.gif)
 TBC
-References <http://www.statistikdatabasen.scb.se/pxweb/en/>
-<https://imagemagick.org/>
+References <http://www.statistikdatabasen.scb.se/pxweb/en> <http://www.statistikdatabasen.scb.se/pxweb/sv> <https://imagemagick.org/>
