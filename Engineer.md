@@ -232,6 +232,22 @@ readfile ("AM0110D2.csv") %>%
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
+Befolkningen 2006-2018 fördelad efter utbildningsgrupp (SUN 2000) och kön. 25-64 år Only available at the Swedish SCB site
+
+``` r
+readfile("tab8_tidsserie_2018.csv") %>%
+  filter(`Utbildningsgrupp (SUN 2000)` == "Teknik och tillverkning") %>%
+  filter(grepl("Civilingenjörsutbildning", `SUN 2000`)) %>%
+  filter(grepl("Samtliga", year)) %>%
+  ggplot () +  
+    geom_line (mapping = aes (x = year2, y = salary, colour = `SUN 2000`)) +  
+    theme (legend.position = "bottom") +      
+    guides(col = guide_legend(title.position = "top", nrow = 5)) +
+    scale_y_continuous(name = "Antal")    
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-10-1.png)
+
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2000 - 2013
 age=total
 sex=total
@@ -577,7 +593,7 @@ tibble(by, A, B) %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-17-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-18-1.png)
 
 During the year both group A and B increase the sum of all salaries for
 respective group by two percent.
@@ -592,7 +608,7 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
     )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-18-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
 Suppose that each groups increase is divided equally to the employees within
 respective group.
@@ -610,7 +626,7 @@ g %>%
   )       
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-19-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-20-1.png)
 
 Suppose that each groups increase is divided equally to the employees within
 respective group.
@@ -628,7 +644,7 @@ g %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-20-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-21-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose
 that the starting salary for respective group is determined by the
@@ -651,7 +667,7 @@ t %>%
   )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-21-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-22-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose
 that the starting salary for respective group is determined by the
@@ -674,7 +690,7 @@ t %>%
   )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-22-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
 Before next years’ salary revision the sum of the salaries have increased by
 2.0 % for group B and only 0.31% for group A
@@ -689,7 +705,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
     )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-24-1.png)
 
 This animation shows how the salary development progresses for a longer
 period of time according to the prerequicites stated above.

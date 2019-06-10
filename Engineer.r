@@ -136,6 +136,19 @@ readfile ("AM0110D2.csv") %>%
     geom_line (mapping = aes (x = year2, y = salary, colour = `utbildningsgrupp SUN 2000`)) +  
     theme (legend.position = "bottom") + 	  
 	guides(col = guide_legend(title.position = "top", nrow = 5))  
+	
+#'Befolkningen 2006-2018 fördelad efter utbildningsgrupp (SUN 2000) och kön. 25-64 år	
+#'Only available at the Swedish SCB site  
+
+readfile("tab8_tidsserie_2018.csv") %>%
+  filter(`Utbildningsgrupp (SUN 2000)` == "Teknik och tillverkning") %>%
+  filter(grepl("Civilingenjörsutbildning", `SUN 2000`)) %>%
+  filter(grepl("Samtliga", year)) %>%
+  ggplot () +  
+    geom_line (mapping = aes (x = year2, y = salary, colour = `SUN 2000`)) +  
+    theme (legend.position = "bottom") + 	  
+	guides(col = guide_legend(title.position = "top", nrow = 5)) +
+    scale_y_continuous(name = "Antal")    
 	  
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2000 - 2013	  
 #'age=total  
