@@ -202,6 +202,19 @@ readfile ("AM0103H2.csv") %>%
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
+``` r
+readfile ("AM0103H2.csv") %>%   
+  group_by (region) %>%
+  mutate (growth = c (NA, diff(salary)) / salary) %>%  
+  ggplot () +    
+    geom_line (mapping = aes(x = year2, y = growth, colour = region)) +  
+    theme (legend.position = "bottom")      
+```
+
+    ## Warning: Removed 2 rows containing missing values (geom_path).
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-7-2.png)
+
 Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK 2012) and sex. Year 2014 - 2018
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK
 214 Engineering professionals
@@ -215,6 +228,19 @@ readfile ("0000002T.csv") %>%
 ```
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-8-1.png)
+
+``` r
+readfile ("0000002T.csv") %>%   
+  group_by (region) %>%
+  mutate (growth = c (NA, diff(salary)) / salary) %>%  
+  ggplot () +    
+    geom_line (mapping = aes(x = year2, y = growth, colour = region)) +  
+    theme (legend.position = "bottom")      
+```
+
+    ## Warning: Removed 2 rows containing missing values (geom_path).
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-8-2.png)
 
 Genomsnittlig grund- och månadslön samt kvinnors lön i procent av mäns lön
 efter utbildningsgrupp SUN 2000 och kön. År 2004 - 2017

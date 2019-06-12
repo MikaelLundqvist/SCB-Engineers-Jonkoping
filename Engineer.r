@@ -113,7 +113,13 @@ readfile ("AM0103H2.csv") %>%
   ggplot () +  
     geom_line (mapping = aes (x = year2, y = salary, colour = region)) +  
     theme (legend.position = "bottom")  
-  
+
+readfile ("AM0103H2.csv") %>%   
+  group_by (region) %>%
+  mutate (growth = c (NA, diff(salary)) / salary) %>%  
+  ggplot () +    
+    geom_line (mapping = aes(x = year2, y = growth, colour = region)) +  
+    theme (legend.position = "bottom")	  	
 	  
 #'Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK 2012) and sex. Year 2014 - 2018  
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK  
@@ -124,6 +130,13 @@ readfile ("0000002T.csv") %>%
   ggplot () +  
     geom_line (mapping = aes (x = year2, y = salary, colour = region)) +  
     theme (legend.position = "bottom")  
+	
+readfile ("0000002T.csv") %>%   
+  group_by (region) %>%
+  mutate (growth = c (NA, diff(salary)) / salary) %>%  
+  ggplot () +    
+    geom_line (mapping = aes(x = year2, y = growth, colour = region)) +  
+    theme (legend.position = "bottom")		
 	  
 #'Genomsnittlig grund- och månadslön samt kvinnors lön i procent av mäns lön  
 #'efter utbildningsgrupp SUN 2000 och kön. År 2004 - 2017	  
