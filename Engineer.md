@@ -25,12 +25,11 @@ tot_dev <- function (x){
 }  
 perc_women <- function(x){  
   scales::percent (x[2] / x[1])  
-}  
-## Limited to statistics from 2000 or later  
+}   
 readfile <- function (file1){  
   read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  
     drop_na() %>%  
-    gather (starts_with("20"), key = "year", value = salary) %>%  
     mutate (year2 = parse_number (year)) %>%  
     mutate (heading = file1) %>%  
     mutate (relsalary = relative_dev (salary))  
@@ -285,81 +284,180 @@ readfile ("AM0103E6.csv") %>%
   arrange (desc (tot))    
 ```
 
-    ## # A tibble: 72 x 2
+    ## # A tibble: 98 x 2
     ##    `occupational group (SSYK)`                                        tot  
     ##    <chr>                                                              <chr>
     ##  1 249 Psychologists, social work and related professionals           71.1%
     ##  2 723 Machinery mechanics and fitters                                70.4%
     ##  3 822 Chemical-products machine operators                            66.8%
     ##  4 829 Other machine operators and assemblers                         66.7%
-    ##  5 722 Blacksmiths, tool-makers and related trades workers            62.0%
-    ##  6 121 Directors and chief executives                                 61.5%
-    ##  7 419 Other office clerks                                            61.4%
-    ##  8 828 Assemblers                                                     61.1%
-    ##  9 731 Precision workers in metal and related materials               60.8%
-    ## 10 815 Chemical-processing-plant operators                            60.7%
-    ## 11 522 Shop and stall salespersons and demonstrators                  60.5%
-    ## 12 131 Managers of small enterprises                                  59.7%
-    ## 13 321 Agronomy and forestry technicians                              58.0%
-    ## 14 212 Mathematicians and statisticians                               57.6%
-    ## 15 221 Life science professionals                                     57.3%
-    ## 16 919 Other sales and services elementary occupations                56.9%
-    ## 17 324 Life science technicians                                       56.7%
-    ## 18 413 Stores and transport clerks                                    56.4%
-    ## 19 331 Pre-primary education teaching associate professionals         55.4%
-    ## 20 323 Nursing associate professionals                                54.9%
-    ## 21 246 Religious professionals                                        54.4%
-    ## 22 341 Finance and sales associate professionals                      54.3%
-    ## 23 311 Physical and engineering science technicians                   54.2%
-    ## 24 512 Housekeeping and restaurant services workers                   54.2%
-    ## 25 347 Artistic, entertainment and sports associate professionals     54.1%
-    ## 26 122 Production and operations managers                             52.9%
-    ## 27 348 Religious associate professionals                              52.4%
-    ## 28 713 Building finishers and related trades workers                  51.3%
-    ## 29 0000 All                                                           51.2%
-    ## 30 123 Other specialist managers                                      51.2%
-    ## 31 914 Doorkeepers, newspaper and package deliverers and related wor~ 50.9%
-    ## 32 315 Safety and quality inspectors                                  50.8%
-    ## 33 412 Numerical clerks                                               50.8%
-    ## 34 724 Electrical and electronic equipment mechanics and fitters      50.7%
-    ## 35 346 Social work associate professionals                            50.3%
-    ## 36 342 Business services agents and trade brokers                     50.2%
-    ## 37 343 Administrative associate professionals                         50.2%
-    ## 38 825 Printing-, binding- and paper-products machine operators       50.0%
-    ## 39 312 Computer associate professionals                               48.5%
-    ## 40 243 Archivists, librarians and related information professionals   48.2%
-    ## 41 912 Helpers and cleaners                                           47.7%
-    ## 42 422 Client information clerks                                      47.6%
-    ## 43 513 Personal care and related workers                              47.3%
-    ## 44 913 Helpers in restaurants                                         47.0%
-    ## 45 831 Locomotive-engine drivers and related worker                   46.9%
-    ## 46 712 Building frame and related trades workers                      46.8%
-    ## 47 816 Power-production and related plant operators                   45.2%
-    ## 48 411 Office secretaries and data entry operators                    44.4%
-    ## 49 241 Business professionals                                         43.0%
-    ## 50 514 Other personal services workers                                42.7%
-    ## 51 211 Physicists, chemists and related professionals                 41.6%
-    ## 52 245 Writers and creative or performing artists                     40.7%
-    ## 53 832 Motor-vehicle drivers                                          40.6%
-    ## 54 214 Architects, engineers and related professionals                40.3%
-    ## 55 322 Health associate professionals (except nursing)                39.3%
-    ## 56 223 Nursing and midwifery professionals                            39.2%
-    ## 57 313 Optical and electronic equipment operators                     38.9%
-    ## 58 515 Protective services workers                                    38.7%
-    ## 59 821 Metal- and mineral-products machine operators                  38.6%
-    ## 60 332 Other teaching associate professionals                         37.1%
-    ## 61 233 Primary education teaching professionals                       36.2%
-    ## 62 242 Legal professionals                                            35.7%
-    ## 63 421 Cashiers, tellers and related clerks                           35.7%
-    ## 64 213 Computing professionals                                        35.4%
-    ## 65 234 Special education teaching professionals                       34.6%
-    ## 66 235 Other teaching professionals                                   34.5%
-    ## 67 511 Travel attendants and related workers                          34.3%
-    ## 68 248 Administrative professionals of special-interest organisations 33.7%
-    ## 69 244 Social science and linguistics professionals (except social w~ 33.0%
-    ## 70 232 Secondary education teaching professionals                     32.1%
-    ## 71 414 Library and filing clerks                                      31.2%
-    ## 72 734 Craft printing and related trades workers                      22.5%
+    ##  5 222 Health professionals (except nursing)                          66.6%
+    ##  6 0002 occupations unidentifiable                                    63.1%
+    ##  7 722 Blacksmiths, tool-makers and related trades workers            62.0%
+    ##  8 121 Directors and chief executives                                 61.5%
+    ##  9 419 Other office clerks                                            61.4%
+    ## 10 828 Assemblers                                                     61.1%
+    ## 11 731 Precision workers in metal and related materials               60.8%
+    ## 12 815 Chemical-processing-plant operators                            60.7%
+    ## 13 522 Shop and stall salespersons and demonstrators                  60.5%
+    ## 14 131 Managers of small enterprises                                  59.7%
+    ## 15 321 Agronomy and forestry technicians                              58.0%
+    ## 16 212 Mathematicians and statisticians                               57.6%
+    ## 17 221 Life science professionals                                     57.3%
+    ## 18 919 Other sales and services elementary occupations                56.9%
+    ## 19 324 Life science technicians                                       56.7%
+    ## 20 413 Stores and transport clerks                                    56.4%
+    ## 21 827 Food and related products machine operators                    55.7%
+    ## 22 331 Pre-primary education teaching associate professionals         55.4%
+    ## 23 323 Nursing associate professionals                                54.9%
+    ## 24 246 Religious professionals                                        54.4%
+    ## 25 341 Finance and sales associate professionals                      54.3%
+    ## 26 311 Physical and engineering science technicians                   54.2%
+    ## 27 512 Housekeeping and restaurant services workers                   54.2%
+    ## 28 347 Artistic, entertainment and sports associate professionals     54.1%
+    ## 29 122 Production and operations managers                             52.9%
+    ## 30 348 Religious associate professionals                              52.4%
+    ## 31 713 Building finishers and related trades workers                  51.3%
+    ## 32 0000 All                                                           51.2%
+    ## 33 123 Other specialist managers                                      51.2%
+    ## 34 914 Doorkeepers, newspaper and package deliverers and related wor~ 50.9%
+    ## 35 315 Safety and quality inspectors                                  50.8%
+    ## 36 412 Numerical clerks                                               50.8%
+    ## 37 724 Electrical and electronic equipment mechanics and fitters      50.7%
+    ## 38 346 Social work associate professionals                            50.3%
+    ## 39 342 Business services agents and trade brokers                     50.2%
+    ## 40 343 Administrative associate professionals                         50.2%
+    ## 41 825 Printing-, binding- and paper-products machine operators       50.0%
+    ## 42 312 Computer associate professionals                               48.5%
+    ## 43 243 Archivists, librarians and related information professionals   48.2%
+    ## 44 912 Helpers and cleaners                                           47.7%
+    ## 45 422 Client information clerks                                      47.6%
+    ## 46 513 Personal care and related workers                              47.3%
+    ## 47 913 Helpers in restaurants                                         47.0%
+    ## 48 831 Locomotive-engine drivers and related worker                   46.9%
+    ## 49 712 Building frame and related trades workers                      46.8%
+    ## 50 816 Power-production and related plant operators                   45.2%
+    ## 51 411 Office secretaries and data entry operators                    44.4%
+    ## 52 112 Senior officials of special-interest organisations             43.9%
+    ## 53 241 Business professionals                                         43.0%
+    ## 54 514 Other personal services workers                                42.7%
+    ## 55 344 Customs, tax and related government associate professionals    42.0%
+    ## 56 231 College, university and higher education teaching professiona~ 41.8%
+    ## 57 211 Physicists, chemists and related professionals                 41.6%
+    ## 58 245 Writers and creative or performing artists                     40.7%
+    ## 59 832 Motor-vehicle drivers                                          40.6%
+    ## 60 214 Architects, engineers and related professionals                40.3%
+    ## 61 721 Metal moulders, welders, sheet-metal workers, structural-meta~ 39.9%
+    ## 62 322 Health associate professionals (except nursing)                39.3%
+    ## 63 223 Nursing and midwifery professionals                            39.2%
+    ## 64 313 Optical and electronic equipment operators                     38.9%
+    ## 65 515 Protective services workers                                    38.7%
+    ## 66 821 Metal- and mineral-products machine operators                  38.6%
+    ## 67 332 Other teaching associate professionals                         37.1%
+    ## 68 233 Primary education teaching professionals                       36.2%
+    ## 69 743 Garment and related trades workers                             35.8%
+    ## 70 242 Legal professionals                                            35.7%
+    ## 71 421 Cashiers, tellers and related clerks                           35.7%
+    ## 72 833 Agricultural and other mobile-plant operators                  35.5%
+    ## 73 213 Computing professionals                                        35.4%
+    ## 74 234 Special education teaching professionals                       34.6%
+    ## 75 235 Other teaching professionals                                   34.5%
+    ## 76 511 Travel attendants and related workers                          34.3%
+    ## 77 933 Transport labourers and freight handlers                       34.0%
+    ## 78 248 Administrative professionals of special-interest organisations 33.7%
+    ## 79 244 Social science and linguistics professionals (except social w~ 33.0%
+    ## 80 232 Secondary education teaching professionals                     32.1%
+    ## 81 414 Library and filing clerks                                      31.2%
+    ## 82 314 Ship and aircraft controllers and technicians                  29.5%
+    ## 83 915 Garbage collectors and related labourers                       27.9%
+    ## 84 611 Market gardeners and crop growers                              27.1%
+    ## 85 814 Wood-processing- and papermaking-plant operators               26.6%
+    ## 86 932 Manufacturing labourers                                        25.4%
+    ## 87 824 Wood-products machine operators                                23.9%
+    ## 88 714 Painters, building structure cleaners and related trades work~ 22.7%
+    ## 89 734 Craft printing and related trades workers                      22.5%
+    ## 90 612 Animal producers and related workers                           21.1%
+    ## 91 823 Rubber- and plastic-products machine operators                 15.7%
+    ## 92 247 Public service administrative professionals                    15.1%
+    ## 93 415 Mail carriers and sorting clerks                               13.6%
+    ## 94 124 Foreman                                                        13.1%
+    ## 95 111 Legislators and senior government officials                    0%   
+    ## 96 834 Ships´ deck crews and related workers                          0%   
+    ## 97 931 Mining and construction labourers                              0%   
+    ## 98 812 Metal-processing-plant operators                               -6.5~
+
+Genomsnittlig månadslön, lön i fasta priser och lönespridning efter utbildningsnivå SUN 2000 och kön. År 1991 - 2015
+Genomsnittlig lön, kr Only available at the Swedish SCB site
+
+``` r
+tb <- readfile("AM0112C1.csv") %>%
+  group_by (`Utbildningsnivå SUN 2000`, kön) %>%   
+  mutate (grouprelsal = relative_dev (salary))
+model <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + year2 + kön, data = tb)
+summary (model)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + 
+    ##     year2 + kön, data = tb)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -0.13724 -0.02139  0.00418  0.02489  0.09000 
+    ## 
+    ## Coefficients:
+    ##                                                                           Estimate
+    ## (Intercept)                                                             -6.414e+01
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre -4.498e-02
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                              1.561e-01
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              8.592e-02
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år        3.988e-02
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           7.348e-02
+    ## year2                                                                    3.220e-02
+    ## könmän                                                                   1.699e-02
+    ##                                                                         Std. Error
+    ## (Intercept)                                                              6.604e-01
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre  8.344e-03
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                              8.030e-03
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              8.030e-03
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år        8.030e-03
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           8.030e-03
+    ## year2                                                                    3.293e-04
+    ## könmän                                                                   4.538e-03
+    ##                                                                         t value
+    ## (Intercept)                                                             -97.129
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre  -5.391
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                              19.438
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              10.699
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år         4.967
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                            9.151
+    ## year2                                                                    97.762
+    ## könmän                                                                    3.743
+    ##                                                                         Pr(>|t|)
+    ## (Intercept)                                                              < 2e-16
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre 1.51e-07
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                              < 2e-16
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              < 2e-16
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år       1.20e-06
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           < 2e-16
+    ## year2                                                                    < 2e-16
+    ## könmän                                                                  0.000221
+    ##                                                                            
+    ## (Intercept)                                                             ***
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre ***
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                             ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år             ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år       ***
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                          ***
+    ## year2                                                                   ***
+    ## könmän                                                                  ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.03824 on 276 degrees of freedom
+    ## Multiple R-squared:  0.973,  Adjusted R-squared:  0.9723 
+    ## F-statistic:  1419 on 7 and 276 DF,  p-value: < 2.2e-16
 
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018
 age=total
@@ -373,90 +471,96 @@ readfile ("00000031.csv") %>%
   arrange (desc (tot))  
 ```
 
-    ## # A tibble: 81 x 2
+    ## # A tibble: 87 x 2
     ##    `occuptional  (SSYK 2012)`                                           tot
     ##    <chr>                                                              <dbl>
     ##  1 222 Nursing professionals                                         27.6  
-    ##  2 343 Photographers, interior decorators and entertainers           24.8  
-    ##  3 334 Administrative and specialized secretaries                    19.2  
-    ##  4 266 Social work and counselling professionals                     18.4  
-    ##  5 171 Hotel and conference managers                                 18.3  
-    ##  6 161 Financial and insurance managers                              18.1  
-    ##  7 173 Retail and wholesale trade managers                           17.8  
-    ##  8 121 Finance managers                                              17.7  
-    ##  9 223 Nursing professionals (cont.)                                 17.7  
-    ## 10 122 Human resource managers                                       17.6  
-    ## 11 132 Supply, logistics and transport managers                      17.2  
-    ## 12 141 Primary and secondary schools and adult education managers    16.7  
-    ## 13 142 Preschool managers                                            16    
-    ## 14 234 Primary- and pre-school teachers                              15.2  
-    ## 15 136 Production managers in construction and mining                15    
-    ## 16 344 Driving instructors and other instructors                     14.8  
-    ## 17 123 Administration and planning managers                          14.4  
-    ## 18 153 Elderly care managers                                         14.1  
-    ## 19 174 Sports, leisure and wellness managers                         14.1  
-    ## 20 267 Religious professionals and deacons                           14.1  
-    ## 21 265 Creative and performing artists                               13.6  
-    ## 22 179 Other services managers not elsewhere classified              13.4  
-    ## 23 228 Specialists in health care not elsewhere classified           13.4  
-    ## 24 312 Construction and manufacturing supervisors                    13.4  
-    ## 25 131 Information and communications technology service managers    13.2  
-    ## 26 321 Medical and pharmaceutical technicians                        12.3  
-    ## 27 335 Tax and related government associate professionals            12.3  
-    ## 28 134 Architectural and engineering managers                        12.2  
-    ## 29 217 Designers                                                     12.2  
-    ## 30 151 Health care managers                                          11.8  
-    ## 31 311 Physical and engineering science technicians                  11.7  
-    ## 32 224 Psychologists and psychotherapists                            10.9  
-    ## 33 262 Museum curators and librarians and related professionals      10.6  
-    ## 34 125 Sales and marketing managers                                  10.4  
-    ## 35 233 Secondary education teachers                                  10.3  
-    ## 36 159 Other social services managers                                10.2  
-    ## 37 332 Insurance advisers, sales and purchasing agents                9.87 
-    ## 38 218 Specialists within environmental and health protection         9.8  
-    ## 39 212 Mathematicians, actuaries and statisticians                    9.74 
-    ## 40 324 Veterinary assistants                                          9.49 
-    ## 41 0000 All                                                           9.44 
-    ## 42 524 Event seller and telemarketers                                 9.44 
-    ## 43 241 Accountants, financial analysts and fund managers              9.43 
-    ## 44 411 Office assistants and other secretaries                        9.19 
-    ## 45 341 Social work and religious associate professionals              9.03 
-    ## 46 226 Dentists                                                       8.98 
-    ## 47 231 University and higher education teachers                       8.92 
-    ## 48 345 Culinary associate professionals                               8.7  
-    ## 49 331 Financial and accounting associate professionals               8.61 
-    ## 50 251 ICT architects, systems analysts and test managers             8.31 
-    ## 51 124 Information, communication and public relations managers       8.28 
-    ## 52 261 Legal professionals                                            8.19 
-    ## 53 325 Dental hygienists                                              8.16 
-    ## 54 213 Biologists, pharmacologists and specialists in agriculture ~   8.14 
-    ## 55 232 Vocational education teachers                                  7.74 
-    ## 56 242 Organisation analysts, policy administrators and human reso~   7.59 
-    ## 57 137 Production managers in manufacturing                           7.54 
-    ## 58 214 Engineering professionals                                      7.24 
-    ## 59 211 Physicists and chemists                                        6.82 
-    ## 60 422 Client information clerks                                      6.43 
-    ## 61 421 Croupiers, debt collectors and related workers                 6.01 
-    ## 62 112 Managing directors and chief executives                        5.84 
-    ## 63 133 Research and development managers                              5.32 
-    ## 64 135 Real estate and head of administration manager                 5.17 
-    ## 65 333 Business services agents                                       5.1  
-    ## 66 352 Broadcasting and audio-visual technicians                      4.79 
-    ## 67 129 Administration and service managers not elsewhere classified   4.1  
-    ## 68 243 Marketing and public relations professionals                   4.07 
-    ## 69 351 ICT operations and user support technicians                    3.63 
-    ## 70 227 Naprapaths, physiotherapists, occupational therapists          3.23 
-    ## 71 315 Ship and aircraft controllers and technicians                  3.19 
-    ## 72 264 Authors, journalists and linguists                             2.25 
-    ## 73 342 Athletes, fitness instructors and recreational workers         2.11 
-    ## 74 216 Architects and surveyors                                       2.08 
-    ## 75 172 Restaurant managers                                            0.917
-    ## 76 441 Library and filing clerks                                     -0.402
-    ## 77 225 Veterinarians                                                 -0.467
-    ## 78 235 Teaching professionals not elsewhere classified               -2.72 
-    ## 79 0002 occupations unidentifiable                                   -4.51 
-    ## 80 511 Cabin crew, guides and related workers                        -7.61 
-    ## 81 221 Medical doctors                                               -8.99
+    ##  2 149 Education managers not elsewhere classified                   26.4  
+    ##  3 343 Photographers, interior decorators and entertainers           24.8  
+    ##  4 443 Elected representatives                                       19.5  
+    ##  5 334 Administrative and specialized secretaries                    19.2  
+    ##  6 266 Social work and counselling professionals                     18.4  
+    ##  7 171 Hotel and conference managers                                 18.3  
+    ##  8 161 Financial and insurance managers                              18.1  
+    ##  9 173 Retail and wholesale trade managers                           17.8  
+    ## 10 121 Finance managers                                              17.7  
+    ## 11 223 Nursing professionals (cont.)                                 17.7  
+    ## 12 122 Human resource managers                                       17.6  
+    ## 13 138 Forestry and agricultural production managers                 17.3  
+    ## 14 132 Supply, logistics and transport managers                      17.2  
+    ## 15 141 Primary and secondary schools and adult education managers    16.7  
+    ## 16 142 Preschool managers                                            16    
+    ## 17 152 Managers in social and curative care                          15.6  
+    ## 18 234 Primary- and pre-school teachers                              15.2  
+    ## 19 136 Production managers in construction and mining                15    
+    ## 20 344 Driving instructors and other instructors                     14.8  
+    ## 21 123 Administration and planning managers                          14.4  
+    ## 22 153 Elderly care managers                                         14.1  
+    ## 23 174 Sports, leisure and wellness managers                         14.1  
+    ## 24 267 Religious professionals and deacons                           14.1  
+    ## 25 265 Creative and performing artists                               13.6  
+    ## 26 179 Other services managers not elsewhere classified              13.4  
+    ## 27 228 Specialists in health care not elsewhere classified           13.4  
+    ## 28 312 Construction and manufacturing supervisors                    13.4  
+    ## 29 131 Information and communications technology service managers    13.2  
+    ## 30 321 Medical and pharmaceutical technicians                        12.3  
+    ## 31 335 Tax and related government associate professionals            12.3  
+    ## 32 134 Architectural and engineering managers                        12.2  
+    ## 33 217 Designers                                                     12.2  
+    ## 34 151 Health care managers                                          11.8  
+    ## 35 311 Physical and engineering science technicians                  11.7  
+    ## 36 224 Psychologists and psychotherapists                            10.9  
+    ## 37 262 Museum curators and librarians and related professionals      10.6  
+    ## 38 125 Sales and marketing managers                                  10.4  
+    ## 39 233 Secondary education teachers                                  10.3  
+    ## 40 159 Other social services managers                                10.2  
+    ## 41 332 Insurance advisers, sales and purchasing agents                9.87 
+    ## 42 218 Specialists within environmental and health protection         9.8  
+    ## 43 212 Mathematicians, actuaries and statisticians                    9.74 
+    ## 44 324 Veterinary assistants                                          9.49 
+    ## 45 0000 All                                                           9.44 
+    ## 46 524 Event seller and telemarketers                                 9.44 
+    ## 47 241 Accountants, financial analysts and fund managers              9.43 
+    ## 48 411 Office assistants and other secretaries                        9.19 
+    ## 49 341 Social work and religious associate professionals              9.03 
+    ## 50 226 Dentists                                                       8.98 
+    ## 51 231 University and higher education teachers                       8.92 
+    ## 52 345 Culinary associate professionals                               8.7  
+    ## 53 331 Financial and accounting associate professionals               8.61 
+    ## 54 251 ICT architects, systems analysts and test managers             8.31 
+    ## 55 124 Information, communication and public relations managers       8.28 
+    ## 56 261 Legal professionals                                            8.19 
+    ## 57 325 Dental hygienists                                              8.16 
+    ## 58 213 Biologists, pharmacologists and specialists in agriculture ~   8.14 
+    ## 59 232 Vocational education teachers                                  7.74 
+    ## 60 242 Organisation analysts, policy administrators and human reso~   7.59 
+    ## 61 137 Production managers in manufacturing                           7.54 
+    ## 62 154 Managers and leaders within religious bodies                   7.39 
+    ## 63 214 Engineering professionals                                      7.24 
+    ## 64 211 Physicists and chemists                                        6.82 
+    ## 65 422 Client information clerks                                      6.43 
+    ## 66 421 Croupiers, debt collectors and related workers                 6.01 
+    ## 67 112 Managing directors and chief executives                        5.84 
+    ## 68 133 Research and development managers                              5.32 
+    ## 69 135 Real estate and head of administration manager                 5.17 
+    ## 70 333 Business services agents                                       5.1  
+    ## 71 352 Broadcasting and audio-visual technicians                      4.79 
+    ## 72 129 Administration and service managers not elsewhere classified   4.1  
+    ## 73 243 Marketing and public relations professionals                   4.07 
+    ## 74 351 ICT operations and user support technicians                    3.63 
+    ## 75 227 Naprapaths, physiotherapists, occupational therapists          3.23 
+    ## 76 315 Ship and aircraft controllers and technicians                  3.19 
+    ## 77 264 Authors, journalists and linguists                             2.25 
+    ## 78 342 Athletes, fitness instructors and recreational workers         2.11 
+    ## 79 216 Architects and surveyors                                       2.08 
+    ## 80 172 Restaurant managers                                            0.917
+    ## 81 441 Library and filing clerks                                     -0.402
+    ## 82 225 Veterinarians                                                 -0.467
+    ## 83 235 Teaching professionals not elsewhere classified               -2.72 
+    ## 84 0002 occupations unidentifiable                                   -4.51 
+    ## 85 111 Legislators and senior officials                              -7.04 
+    ## 86 511 Cabin crew, guides and related workers                        -7.61 
+    ## 87 221 Medical doctors                                               -8.99
 
 Average monthly pay (total pay), non-manual workers private sector (SLP),
 SEK by occuptional (SSYK), age, sex and year 2000-2013
@@ -619,7 +723,7 @@ tibble(by, A, B) %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-18-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
 During the year both group A and B increase the sum of all salaries for
 respective group by two percent.
@@ -634,7 +738,7 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
     )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-19-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-20-1.png)
 
 Suppose that each groups increase is divided equally to the employees within
 respective group.
@@ -652,7 +756,7 @@ g %>%
   )       
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-20-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-21-1.png)
 
 Suppose that each groups increase is divided equally to the employees within
 respective group.
@@ -670,7 +774,7 @@ g %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-21-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-22-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose
 that the starting salary for respective group is determined by the
@@ -693,7 +797,7 @@ t %>%
   )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-22-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose
 that the starting salary for respective group is determined by the
@@ -716,7 +820,7 @@ t %>%
   )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-24-1.png)
 
 Before next years’ salary revision the sum of the salaries have increased by
 2.0 % for group B and only 0.31% for group A
@@ -731,7 +835,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
     )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-24-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-25-1.png)
 
 This animation shows how the salary development progresses for a longer
 period of time according to the prerequicites stated above.

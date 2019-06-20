@@ -30,12 +30,11 @@ tot_dev <- function (x){
 }  
 perc_women <- function(x){  
   scales::percent (x[2] / x[1])  
-}  
-## Limited to statistics from 2000 or later  
+}   
 readfile <- function (file1){  
   read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
-    drop_na() %>%  
-    gather (starts_with("20"), key = "year", value = salary) %>%  
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  
+	drop_na() %>%  
     mutate (year2 = parse_number (year)) %>%  
     mutate (heading = file1) %>%  
     mutate (relsalary = relative_dev (salary))  
@@ -171,6 +170,17 @@ readfile ("AM0103E6.csv") %>%
   group_by (`occupational group (SSYK)`) %>%   
   summarise (tot = tot_dev (salary)) %>%  
   arrange (desc (tot))	  
+  
+#'Genomsnittlig månadslön, lön i fasta priser och lönespridning efter 
+#'utbildningsnivå SUN 2000 och kön. År 1991 - 2015  
+#'Genomsnittlig lön, kr
+#'Only available at the Swedish SCB site
+
+tb <- readfile("AM0112C1.csv") %>%
+  group_by (`Utbildningsnivå SUN 2000`, kön) %>%   
+  mutate (grouprelsal = relative_dev (salary))
+model <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + year2 + kön, data = tb)
+summary (model)
 	  
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018  
 #'age=total  
