@@ -391,6 +391,7 @@ Genomsnittlig lön, kr Only available at the Swedish SCB site
 
 ``` r
 tb <- readfile("AM0112C1.csv") %>%
+  filter(year2 > 1994) %>%
   group_by (`Utbildningsnivå SUN 2000`, kön) %>%   
   mutate (grouprelsal = relative_dev (salary))
 model <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + year2 + kön, data = tb)
@@ -403,46 +404,46 @@ summary (model)
     ##     year2 + kön, data = tb)
     ## 
     ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -0.13724 -0.02139  0.00418  0.02489  0.09000 
+    ##       Min        1Q    Median        3Q       Max 
+    ## -0.121321 -0.016020  0.005374  0.021139  0.089458 
     ## 
     ## Coefficients:
     ##                                                                           Estimate
-    ## (Intercept)                                                             -6.414e+01
+    ## (Intercept)                                                             -6.171e+01
     ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre -4.498e-02
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                              1.561e-01
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              8.592e-02
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år        3.988e-02
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           7.348e-02
-    ## year2                                                                    3.220e-02
-    ## könmän                                                                   1.699e-02
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                             -6.254e-02
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år             -6.657e-02
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år       -9.368e-02
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                          -5.941e-02
+    ## year2                                                                    3.098e-02
+    ## könmän                                                                   1.549e-02
     ##                                                                         Std. Error
-    ## (Intercept)                                                              6.604e-01
-    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre  8.344e-03
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                              8.030e-03
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              8.030e-03
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år        8.030e-03
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           8.030e-03
-    ## year2                                                                    3.293e-04
-    ## könmän                                                                   4.538e-03
+    ## (Intercept)                                                              7.205e-01
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre  7.537e-03
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                              7.537e-03
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              7.537e-03
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år        7.537e-03
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           7.537e-03
+    ## year2                                                                    3.593e-04
+    ## könmän                                                                   4.352e-03
     ##                                                                         t value
-    ## (Intercept)                                                             -97.129
-    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre  -5.391
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                              19.438
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              10.699
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år         4.967
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                            9.151
-    ## year2                                                                    97.762
-    ## könmän                                                                    3.743
+    ## (Intercept)                                                             -85.648
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre  -5.968
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                              -8.298
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              -8.833
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år       -12.430
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           -7.883
+    ## year2                                                                    86.228
+    ## könmän                                                                    3.559
     ##                                                                         Pr(>|t|)
     ## (Intercept)                                                              < 2e-16
-    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre 1.51e-07
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                              < 2e-16
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre 8.40e-09
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                             7.26e-15
     ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              < 2e-16
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år       1.20e-06
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           < 2e-16
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år        < 2e-16
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                          1.07e-13
     ## year2                                                                    < 2e-16
-    ## könmän                                                                  0.000221
+    ## könmän                                                                  0.000447
     ##                                                                            
     ## (Intercept)                                                             ***
     ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre ***
@@ -455,9 +456,9 @@ summary (model)
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.03824 on 276 degrees of freedom
-    ## Multiple R-squared:  0.973,  Adjusted R-squared:  0.9723 
-    ## F-statistic:  1419 on 7 and 276 DF,  p-value: < 2.2e-16
+    ## Residual standard error: 0.03454 on 244 degrees of freedom
+    ## Multiple R-squared:  0.969,  Adjusted R-squared:  0.9681 
+    ## F-statistic:  1088 on 7 and 244 DF,  p-value: < 2.2e-16
 
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018
 age=total

@@ -177,6 +177,7 @@ readfile ("AM0103E6.csv") %>%
 #'Only available at the Swedish SCB site
 
 tb <- readfile("AM0112C1.csv") %>%
+  filter(year2 > 1994) %>%
   group_by (`Utbildningsnivå SUN 2000`, kön) %>%   
   mutate (grouprelsal = relative_dev (salary))
 model <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + year2 + kön, data = tb)
