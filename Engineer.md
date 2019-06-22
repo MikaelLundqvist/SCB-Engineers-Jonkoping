@@ -17,6 +17,7 @@ Help functions
 ``` r
 library (tidyverse)  
 library(gganimate)  
+library(car)
 relative_dev <- function (x){  
   return (x / x[1])  
 }  
@@ -394,71 +395,309 @@ tb <- readfile("AM0112C1.csv") %>%
   filter(year2 > 1994) %>%
   group_by (`Utbildningsnivå SUN 2000`, kön) %>%   
   mutate (grouprelsal = relative_dev (salary))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = grouprelsal, colour = `Utbildningsnivå SUN 2000`, shape=kön))  
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-12-1.png)
+
+``` r
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(grouprelsal), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-12-2.png)
+
+``` r
 model <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + year2 + kön, data = tb)
-summary (model)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence")))) 
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-12-3.png)
+
+``` r
+model1 <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` * year2 * kön, data = tb)  
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model1, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit1), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-12-4.png)
+
+``` r
+model2 <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` * poly(year2, 2) * kön, data = tb)  
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model2, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit2), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-12-5.png)
+
+``` r
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = fit2, colour = `Utbildningsnivå SUN 2000`, shape=kön))  
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-12-6.png)
+
+``` r
+tb <- tb1 %>% mutate(diffpolylin = fit2 - fit1)
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = diffpolylin, colour = `Utbildningsnivå SUN 2000`, shape=kön))
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-12-7.png)
+
+``` r
+summary (model2)
 ```
 
     ## 
     ## Call:
-    ## lm(formula = log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + 
-    ##     year2 + kön, data = tb)
+    ## lm(formula = log(grouprelsal) ~ `Utbildningsnivå SUN 2000` * 
+    ##     poly(year2, 2) * kön, data = tb)
     ## 
     ## Residuals:
     ##       Min        1Q    Median        3Q       Max 
-    ## -0.121321 -0.016020  0.005374  0.021139  0.089458 
+    ## -0.027315 -0.006362 -0.000423  0.006024  0.041086 
     ## 
     ## Coefficients:
-    ##                                                                           Estimate
-    ## (Intercept)                                                             -6.171e+01
-    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre -4.498e-02
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                             -6.254e-02
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år             -6.657e-02
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år       -9.368e-02
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                          -5.941e-02
-    ## year2                                                                    3.098e-02
-    ## könmän                                                                   1.549e-02
-    ##                                                                         Std. Error
-    ## (Intercept)                                                              7.205e-01
-    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre  7.537e-03
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                              7.537e-03
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              7.537e-03
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år        7.537e-03
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           7.537e-03
-    ## year2                                                                    3.593e-04
-    ## könmän                                                                   4.352e-03
-    ##                                                                         t value
-    ## (Intercept)                                                             -85.648
-    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre  -5.968
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                              -8.298
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              -8.833
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år       -12.430
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                           -7.883
-    ## year2                                                                    86.228
-    ## könmän                                                                    3.559
-    ##                                                                         Pr(>|t|)
-    ## (Intercept)                                                              < 2e-16
-    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre 8.40e-09
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                             7.26e-15
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år              < 2e-16
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år        < 2e-16
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                          1.07e-13
-    ## year2                                                                    < 2e-16
-    ## könmän                                                                  0.000447
-    ##                                                                            
-    ## (Intercept)                                                             ***
-    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre ***
-    ## `Utbildningsnivå SUN 2000`forskarutbildning                             ***
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år             ***
-    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år       ***
-    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                          ***
-    ## year2                                                                   ***
-    ## könmän                                                                  ***
+    ##                                                                                                 Estimate
+    ## (Intercept)                                                                                     0.386488
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre                         0.002760
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                                                    -0.027981
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år                                    -0.038948
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år                              -0.059564
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                                                 -0.028406
+    ## poly(year2, 2)1                                                                                 3.094220
+    ## poly(year2, 2)2                                                                                -0.457040
+    ## könmän                                                                                          0.073840
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1         0.161835
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1                                    -0.011156
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1                    -0.091140
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1              -0.409677
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1                                  0.034874
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2         0.121677
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2                                     0.231465
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2                     0.202302
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2               0.151023
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2                                  0.208284
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:könmän                 -0.095486
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:könmän                                             -0.069119
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:könmän                             -0.055252
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:könmän                       -0.068237
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:könmän                                          -0.062012
+    ## poly(year2, 2)1:könmän                                                                          0.257936
+    ## poly(year2, 2)2:könmän                                                                         -0.313951
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1:könmän -0.735994
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1:könmän                             -0.460803
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1:könmän             -0.251851
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1:könmän       -0.442240
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1:könmän                          -0.417802
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2:könmän  0.229157
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2:könmän                              0.163326
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2:könmän              0.228888
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2:könmän        0.131139
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2:könmän                           0.227129
+    ##                                                                                                Std. Error
+    ## (Intercept)                                                                                      0.002177
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre                          0.003079
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                                                      0.003079
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år                                      0.003079
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år                                0.003079
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                                                   0.003079
+    ## poly(year2, 2)1                                                                                  0.034557
+    ## poly(year2, 2)2                                                                                  0.034557
+    ## könmän                                                                                           0.003079
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1          0.048871
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1                                      0.048871
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1                      0.048871
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1                0.048871
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1                                   0.048871
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2          0.048871
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2                                      0.048871
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2                      0.048871
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2                0.048871
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2                                   0.048871
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:könmän                   0.004354
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:könmän                                               0.004354
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:könmän                               0.004354
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:könmän                         0.004354
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:könmän                                            0.004354
+    ## poly(year2, 2)1:könmän                                                                           0.048871
+    ## poly(year2, 2)2:könmän                                                                           0.048871
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1:könmän   0.069114
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1:könmän                               0.069114
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1:könmän               0.069114
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1:könmän         0.069114
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1:könmän                            0.069114
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2:könmän   0.069114
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2:könmän                               0.069114
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2:könmän               0.069114
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2:könmän         0.069114
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2:könmän                            0.069114
+    ##                                                                                                t value
+    ## (Intercept)                                                                                    177.542
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre                          0.896
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                                                     -9.089
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år                                    -12.651
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år                              -19.348
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                                                  -9.227
+    ## poly(year2, 2)1                                                                                 89.540
+    ## poly(year2, 2)2                                                                                -13.226
+    ## könmän                                                                                          23.985
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1          3.311
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1                                     -0.228
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1                     -1.865
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1               -8.383
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1                                   0.714
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2          2.490
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2                                      4.736
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2                      4.140
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2                3.090
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2                                   4.262
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:könmän                 -21.932
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:könmän                                             -15.876
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:könmän                             -12.691
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:könmän                       -15.673
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:könmän                                          -14.243
+    ## poly(year2, 2)1:könmän                                                                           5.278
+    ## poly(year2, 2)2:könmän                                                                          -6.424
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1:könmän -10.649
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1:könmän                              -6.667
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1:könmän              -3.644
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1:könmän        -6.399
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1:könmän                           -6.045
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2:könmän   3.316
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2:könmän                               2.363
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2:könmän               3.312
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2:könmän         1.897
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2:könmän                            3.286
+    ##                                                                                                Pr(>|t|)
+    ## (Intercept)                                                                                     < 2e-16
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre                        0.371028
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                                                     < 2e-16
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år                                     < 2e-16
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år                               < 2e-16
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                                                  < 2e-16
+    ## poly(year2, 2)1                                                                                 < 2e-16
+    ## poly(year2, 2)2                                                                                 < 2e-16
+    ## könmän                                                                                          < 2e-16
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1        0.001088
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1                                    0.819647
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1                    0.063550
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1              6.64e-15
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1                                 0.476251
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2        0.013537
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2                                    3.94e-06
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2                    4.99e-05
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2              0.002263
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2                                 3.03e-05
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:könmän                  < 2e-16
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:könmän                                              < 2e-16
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:könmän                              < 2e-16
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:könmän                        < 2e-16
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:könmän                                           < 2e-16
+    ## poly(year2, 2)1:könmän                                                                         3.17e-07
+    ## poly(year2, 2)2:könmän                                                                         8.33e-10
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1:könmän  < 2e-16
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1:könmän                             2.14e-10
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1:könmän             0.000336
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1:könmän       9.59e-10
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1:könmän                          6.48e-09
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2:könmän 0.001072
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2:könmän                             0.019009
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2:könmän             0.001087
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2:könmän       0.059105
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2:könmän                          0.001185
+    ##                                                                                                   
+    ## (Intercept)                                                                                    ***
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre                           
+    ## `Utbildningsnivå SUN 2000`forskarutbildning                                                    ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år                                    ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år                              ***
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning                                                 ***
+    ## poly(year2, 2)1                                                                                ***
+    ## poly(year2, 2)2                                                                                ***
+    ## könmän                                                                                         ***
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1        ** 
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1                                       
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1                    .  
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1              ***
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1                                    
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2        *  
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2                                    ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2                    ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2              ** 
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2                                 ***
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:könmän                 ***
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:könmän                                             ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:könmän                             ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:könmän                       ***
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:könmän                                          ***
+    ## poly(year2, 2)1:könmän                                                                         ***
+    ## poly(year2, 2)2:könmän                                                                         ***
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)1:könmän ***
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)1:könmän                             ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)1:könmän             ***
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)1:könmän       ***
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)1:könmän                          ***
+    ## `Utbildningsnivå SUN 2000`eftergymnasial utbildning två år eller längre:poly(year2, 2)2:könmän ** 
+    ## `Utbildningsnivå SUN 2000`forskarutbildning:poly(year2, 2)2:könmän                             *  
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning 9 (10) år:poly(year2, 2)2:könmän             ** 
+    ## `Utbildningsnivå SUN 2000`förgymnasial utbildning kortare än 9 år:poly(year2, 2)2:könmän       .  
+    ## `Utbildningsnivå SUN 2000`gymnasial utbildning:poly(year2, 2)2:könmän                          ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.03454 on 244 degrees of freedom
-    ## Multiple R-squared:  0.969,  Adjusted R-squared:  0.9681 
-    ## F-statistic:  1088 on 7 and 244 DF,  p-value: < 2.2e-16
+    ## Residual standard error: 0.009976 on 216 degrees of freedom
+    ## Multiple R-squared:  0.9977, Adjusted R-squared:  0.9973 
+    ## F-statistic:  2687 on 35 and 216 DF,  p-value: < 2.2e-16
+
+``` r
+Anova(model2, type=2)
+```
+
+    ## Anova Table (Type II tests)
+    ## 
+    ## Response: log(grouprelsal)
+    ##                                               Sum Sq  Df   F value
+    ## `Utbildningsnivå SUN 2000`                    0.2029   5   407.751
+    ## poly(year2, 2)                                9.0143   2 45291.129
+    ## kön                                           0.0151   1   151.879
+    ## `Utbildningsnivå SUN 2000`:poly(year2, 2)     0.0487  10    48.919
+    ## `Utbildningsnivå SUN 2000`:kön                0.0527   5   105.945
+    ## poly(year2, 2):kön                            0.0097   2    48.728
+    ## `Utbildningsnivå SUN 2000`:poly(year2, 2):kön 0.0142  10    14.222
+    ## Residuals                                     0.0215 216          
+    ##                                                  Pr(>F)    
+    ## `Utbildningsnivå SUN 2000`                    < 2.2e-16 ***
+    ## poly(year2, 2)                                < 2.2e-16 ***
+    ## kön                                           < 2.2e-16 ***
+    ## `Utbildningsnivå SUN 2000`:poly(year2, 2)     < 2.2e-16 ***
+    ## `Utbildningsnivå SUN 2000`:kön                < 2.2e-16 ***
+    ## poly(year2, 2):kön                            < 2.2e-16 ***
+    ## `Utbildningsnivå SUN 2000`:poly(year2, 2):kön < 2.2e-16 ***
+    ## Residuals                                                  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018
 age=total

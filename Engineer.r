@@ -22,6 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #+ r  
 library (tidyverse)  
 library(gganimate)  
+library(car)
 relative_dev <- function (x){  
   return (x / x[1])  
 }  
@@ -180,8 +181,52 @@ tb <- readfile("AM0112C1.csv") %>%
   filter(year2 > 1994) %>%
   group_by (`Utbildningsnivå SUN 2000`, kön) %>%   
   mutate (grouprelsal = relative_dev (salary))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = grouprelsal, colour = `Utbildningsnivå SUN 2000`, shape=kön))  
+  
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(grouprelsal), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+	
 model <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + year2 + kön, data = tb)
-summary (model)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence")))) 
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+  
+model1 <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` * year2 * kön, data = tb)  
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model1, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit1), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+	
+model2 <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` * poly(year2, 2) * kön, data = tb)  
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model2, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit2), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+	
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = fit2, colour = `Utbildningsnivå SUN 2000`, shape=kön))	
+	
+tb <- tb1 %>% mutate(diffpolylin = fit2 - fit1)
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = diffpolylin, colour = `Utbildningsnivå SUN 2000`, shape=kön))
+	
+summary (model2)
+
+Anova(model2, type=2)
 	  
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018  
 #'age=total  
