@@ -12,10 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 #+   
   
 #'Introduction  
-#'Personal development in R, Statisics, Scientific Report, Markdown, and GitHub  
+#'Personal development in R, Statistics, Scientific Report, Markdown, and GitHub  
 #'with data from Statistics Sweden. I will extract statistics from Statistics   
 #'Sweden regarding the labour market, salaries and other relevant data from   
-#'engineers, primarily in Jönköping county.   
+#'engineers, primarily in Jönköping county. 
   
 #'Help functions  
   
@@ -365,10 +365,11 @@ readfile ("00000031.csv") %>%
 ##anim_save("salaryStructure2000-2013.gif", width = 1000, height = 1000)  
 #'![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/salaryStructure2000-2013.gif)  
     
-#'Theoretical study of salaries in groups with different age / salary structures.  
-#'Suppose there is two groups A and B that both have flat age distributions.   
-#'Group B have a flat salary distribution in general, in group A the oldest   
-#'employees earns twice as much as the youngest in general.    
+  
+#'Theoretical study of salaries in groups with different age/salary structures.
+#'Suppose there are two groups A and B that both have flat age distributions.
+#'Group B has a flat salary distribution in general, in group A the oldest
+#'employees earn twice as much as the youngest in general. Swedish SCB site 
     
 A <- seq(30000, 60000, by=750)  
 B <- seq(30000, 30000, length=41)  
@@ -382,8 +383,8 @@ tibble(by, A, B) %>%
     title = "Salary structure of Group A and Group B"  
   )  
   
-#'During the year both group A and B increase the sum of all salaries for   
-#'respective group by two percent.  
+#'During the year both group A and B increase the sum of all salaries for
+#'respective group by two per cent.
     
 tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%   
   gather(A_raise, B_raise, key="group", value="raise") %>%  
@@ -393,9 +394,8 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
       title = "Salary raise by 2.0%"  
     )    
   
-  
-#'Suppose that each groups increase is divided equally to the employees within   
-#'respective group.  
+#'Suppose that each group increase is divided equally to the employees within
+#'respective group.
 	  
 raise <- (A + sum(A) * 0.02 / length (A)) - A	  
 g <- tibble(by, A, raise) %>%   
@@ -408,8 +408,8 @@ g %>%
     title = "Salary increase distribution over age Group A"  
   )		  
 	  
-#'Suppose that each groups increase is divided equally to the employees within   
-#'respective group.  
+#'Suppose that each group increase is divided equally to the employees within
+#'respective group.
 	  
 raise <- (B + sum(B) * 0.02 / length (B)) - B	  
 g <- as_tibble(cbind(by, B, raise)) %>%   
@@ -422,9 +422,9 @@ g %>%
     title = "Salary increase distribution over age Group B"  
   )  
     
-#'The oldest employees retire and new adolescents enter the job market. Suppose   
-#'that the starting salary for respective group is determined by the   
-#'age / salary structure.    
+#'The oldest employees retire and new adolescents enter the job market. Suppose
+#'that the starting salary for the respective group is determined by the
+#'age / salary structure.  
     
 by_year2 <- by + 1  
 B_year2 <- lag(B)  
@@ -441,9 +441,9 @@ t %>%
     title = "Salary distribution Group B after one year succession"  
   )	    
   
-#'The oldest employees retire and new adolescents enter the job market. Suppose   
-#'that the starting salary for respective group is determined by the   
-#'age / salary structure.      
+#'The oldest employees retire and new adolescents enter the job market. Suppose
+#'that the starting salary for the respective group is determined by the
+#'age / salary structure.
     
 by_year2 <- by + 1  
 raise_year2 <- lag(A + sum(A) * 0.02 / length (A) - A)  
@@ -471,8 +471,8 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
       title = "Salary raise since last revision"  
     )     
 	  
-#'This animation shows how the salary development progresses for a longer   
-#'period of time according to the prerequicites stated above.  
+#'This animation shows how salary development progresses for a longer
+#'period of time according to the prerequisites stated above.
   
 ##A <- seq(30000, 60000, by = 750)  
 ##B <- seq(30000, 30000, length = 41)  
@@ -494,7 +494,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
 ## B <- B * 1.02  
 ##}	  
 	  
-#' The animation was made with ImageMagick  
+#' The animation was made with ImageMagick.
 ##"c:\Program Files\ImageMagick-7.0.8-Q16\magick.exe" -delay 50 -loop 0 *.png animation.gif	  
 #'![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/animation.gif)	  
   

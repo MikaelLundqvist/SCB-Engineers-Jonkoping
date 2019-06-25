@@ -8,11 +8,10 @@ Mikael Lundqvist
 ```
 
 Introduction
-Personal development in R, Statisics, Scientific Report, Markdown, and GitHub
+Personal development in R, Statistics, Scientific Report, Markdown, and GitHub
 with data from Statistics Sweden. I will extract statistics from Statistics
 Sweden regarding the labour market, salaries and other relevant data from
-engineers, primarily in Jönköping county.
-Help functions
+engineers, primarily in Jönköping county. Help functions
 
 ``` r
 library (tidyverse)  
@@ -944,10 +943,7 @@ structure remains unchanged.
 ```
 
 ![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/salaryStructure2000-2013.gif)
-Theoretical study of salaries in groups with different age / salary structures.
-Suppose there is two groups A and B that both have flat age distributions.
-Group B have a flat salary distribution in general, in group A the oldest
-employees earns twice as much as the youngest in general.
+Theoretical study of salaries in groups with different age/salary structures. Suppose there are two groups A and B that both have flat age distributions. Group B has a flat salary distribution in general, in group A the oldest employees earn twice as much as the youngest in general. Swedish SCB site
 
 ``` r
 A <- seq(30000, 60000, by=750)  
@@ -965,8 +961,7 @@ tibble(by, A, B) %>%
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
-During the year both group A and B increase the sum of all salaries for
-respective group by two percent.
+During the year both group A and B increase the sum of all salaries for respective group by two per cent.
 
 ``` r
 tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%   
@@ -980,8 +975,7 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-20-1.png)
 
-Suppose that each groups increase is divided equally to the employees within
-respective group.
+Suppose that each group increase is divided equally to the employees within respective group.
 
 ``` r
 raise <- (A + sum(A) * 0.02 / length (A)) - A     
@@ -998,8 +992,7 @@ g %>%
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-21-1.png)
 
-Suppose that each groups increase is divided equally to the employees within
-respective group.
+Suppose that each group increase is divided equally to the employees within respective group.
 
 ``` r
 raise <- (B + sum(B) * 0.02 / length (B)) - B     
@@ -1016,9 +1009,7 @@ g %>%
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-22-1.png)
 
-The oldest employees retire and new adolescents enter the job market. Suppose
-that the starting salary for respective group is determined by the
-age / salary structure.
+The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for the respective group is determined by the age / salary structure.
 
 ``` r
 by_year2 <- by + 1  
@@ -1039,9 +1030,7 @@ t %>%
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
-The oldest employees retire and new adolescents enter the job market. Suppose
-that the starting salary for respective group is determined by the
-age / salary structure.
+The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for the respective group is determined by the age / salary structure.
 
 ``` r
 by_year2 <- by + 1  
@@ -1077,8 +1066,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
 
 ![](Engineer_files/figure-markdown_github/unnamed-chunk-25-1.png)
 
-This animation shows how the salary development progresses for a longer
-period of time according to the prerequicites stated above.
+This animation shows how salary development progresses for a longer period of time according to the prerequisites stated above.
 
 ``` r
 ##A <- seq(30000, 60000, by = 750)  
@@ -1102,7 +1090,7 @@ period of time according to the prerequicites stated above.
 ##}   
 ```
 
-The animation was made with ImageMagick
+The animation was made with ImageMagick.
 
 ``` r
 ##"c:\Program Files\ImageMagick-7.0.8-Q16\magick.exe" -delay 50 -loop 0 *.png animation.gif   
