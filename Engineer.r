@@ -241,6 +241,9 @@ tb <- readfile("AM0103A9_1.csv") %>%
   group_by (`occupational group (SSYK)`, age, sex) %>%   
   mutate (grouprelsal = relative_dev (salary))  
   
+#'Could my R installation need update?  
+tb <- drop_na(tb)  
+  
 tb %>%
   ggplot () +  
     geom_point (mapping = aes(x = year2,y = log(salary), colour = age, shape=sex))  
@@ -257,14 +260,17 @@ summary(model)
 
 Anova(model, type=2)
 
-tb <- readfile("AM0103A9.csv") %>% 
+tb <- readfile("AM0103A9_2.csv") %>% 
   rowwise() %>% 
   mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
   rowwise() %>% 
   mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
   mutate(age4 = (age3 + age2) / 2) %>% 
   group_by (`occupational group (SSYK)`, age, sex) %>%   
-  mutate (grouprelsal = relative_dev (salary))  
+  mutate (grouprelsal = relative_dev (salary))
+
+#'Could my R installation need update?  
+tb <- drop_na(tb)  
    	
 model <- lm (log(salary) ~ `occupational group (SSYK)` + year2 + sex + poly(age4, 3), data = tb)
 	
