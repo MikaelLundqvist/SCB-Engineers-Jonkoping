@@ -8,10 +8,11 @@ Mikael Lundqvist
 ```
 
 Introduction
-Personal development in R, Statistics, Scientific Report, Markdown, and GitHub
+Personal development in R, Statisics, Scientific Report, Markdown, and GitHub
 with data from Statistics Sweden. I will extract statistics from Statistics
 Sweden regarding the labour market, salaries and other relevant data from
-engineers, primarily in Jönköping county. Help functions
+engineers, primarily in Jönköping county.
+Help functions
 
 ``` r
 library (tidyverse)  

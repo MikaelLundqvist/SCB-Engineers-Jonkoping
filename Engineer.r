@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 #+   
   
 #'Introduction  
-#'Personal development in R, Statistics, Scientific Report, Markdown, and GitHub  
 #'with data from Statistics Sweden. I will extract statistics from Statistics   
 #'Sweden regarding the labour market, salaries and other relevant data from   
 #'engineers, primarily in Jönköping county. 
