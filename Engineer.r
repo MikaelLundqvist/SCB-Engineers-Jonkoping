@@ -277,6 +277,19 @@ model <- lm (log(salary) ~ `occupational group (SSYK)` + year2 + sex + poly(age4
 summary(model)	
 
 Anova(model, type=2)
+
+#'Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK) and sex. Year 2000 - 2013
+#'214 Engineering professionals 
+tb <- readfile("AM0103H2_4.csv") %>%
+    filter(year2 > 1994) %>%
+    group_by (`occupational group (SSYK)`, region, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ year2 + region + sex, data = tb)
+	
+summary(model)
+
+Anova(model, type=2)	  
 	  
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018  
 #'age=total  

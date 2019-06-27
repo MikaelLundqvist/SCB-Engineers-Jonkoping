@@ -1219,6 +1219,62 @@ Anova(model, type=2)
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
+Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK) and sex. Year 2000 - 2013 214 Engineering professionals
+
+``` r
+tb <- readfile("AM0103H2_4.csv") %>%
+    filter(year2 > 1994) %>%
+    group_by (`occupational group (SSYK)`, region, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ year2 + region + sex, data = tb)
+    
+summary(model)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = log(salary) ~ year2 + region + sex, data = tb)
+    ## 
+    ## Residuals:
+    ##       Min        1Q    Median        3Q       Max 
+    ## -0.116928 -0.016884  0.000856  0.019384  0.112117 
+    ## 
+    ## Coefficients:
+    ##                                   Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)                     -4.609e+01  1.043e+00 -44.193  < 2e-16 ***
+    ## year2                            2.821e-02  5.198e-04  54.262  < 2e-16 ***
+    ## regionSE11 Stockholm             7.033e-02  8.675e-03   8.108 2.92e-14 ***
+    ## regionSE12 East-Central Sweden  -1.578e-02  8.675e-03  -1.819 0.070172 .  
+    ## regionSE21 Småland and islands  -1.108e-01  8.755e-03 -12.659  < 2e-16 ***
+    ## regionSE22 South Sweden         -2.674e-02  8.675e-03  -3.082 0.002301 ** 
+    ## regionSE23 West Sweden          -3.149e-02  8.675e-03  -3.630 0.000349 ***
+    ## regionSE31 North-Central Sweden -7.091e-02  8.675e-03  -8.174 1.91e-14 ***
+    ## regionSE32 Central Norrland     -5.268e-02  9.043e-03  -5.826 1.88e-08 ***
+    ## regionSE33 Upper Norrland       -9.497e-02  8.942e-03 -10.621  < 2e-16 ***
+    ## sexwomen                        -9.978e-02  4.168e-03 -23.938  < 2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.03246 on 233 degrees of freedom
+    ## Multiple R-squared:  0.9443, Adjusted R-squared:  0.9419 
+    ## F-statistic: 394.7 on 10 and 233 DF,  p-value: < 2.2e-16
+
+``` r
+Anova(model, type=2)      
+```
+
+    ## Anova Table (Type II tests)
+    ## 
+    ## Response: log(salary)
+    ##            Sum Sq  Df F value    Pr(>F)    
+    ## year2     3.10200   1 2944.35 < 2.2e-16 ***
+    ## region    0.64528   8   76.56 < 2.2e-16 ***
+    ## sex       0.60372   1  573.04 < 2.2e-16 ***
+    ## Residuals 0.24548 233                      
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018
 age=total
 sex=total
@@ -1480,7 +1536,7 @@ tibble(by, A, B) %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-22-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
 During the year both group A and B increase the sum of all salaries for respective group by two per cent.
 
@@ -1494,7 +1550,7 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
     )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-24-1.png)
 
 Suppose that each group increase is divided equally to the employees within respective group.
 
@@ -1511,7 +1567,7 @@ g %>%
   )       
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-24-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-25-1.png)
 
 Suppose that each group increase is divided equally to the employees within respective group.
 
@@ -1528,7 +1584,7 @@ g %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-25-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-26-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for the respective group is determined by the age / salary structure.
 
@@ -1549,7 +1605,7 @@ t %>%
   )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-26-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-27-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for the respective group is determined by the age / salary structure.
 
@@ -1570,7 +1626,7 @@ t %>%
   )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-27-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-28-1.png)
 
 Before next years’ salary revision the sum of the salaries have increased by
 2.0 % for group B and only 0.31% for group A
@@ -1585,7 +1641,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
     )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-28-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-29-1.png)
 
 This animation shows how salary development progresses for a longer period of time according to the prerequisites stated above.
 
