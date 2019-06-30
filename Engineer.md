@@ -1219,7 +1219,536 @@ Anova(model, type=2)
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK) and sex. Year 2000 - 2013 214 Engineering professionals
+Average monthly pay, non-manual workers private sector (SLP) by occupational group (SSYK 2012) age and sex. Year 2014 - 2018 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occupational group (SSYK), age, sex and year
+
+``` r
+tb <- readfile("00000031_1.csv") %>% 
+  rowwise() %>% 
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% 
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+  mutate(age4 = (age3 + age2) / 2) %>% 
+  group_by (`occuptional  (SSYK 2012)`, age, sex) %>%   
+  mutate (grouprelsal = relative_dev (salary))  
+```
+
+    ## Warning: Grouping rowwise data frame strips rowwise nature
+
+``` r
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(salary), colour = age, shape=sex))  
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-16-1.png)
+
+``` r
+model <- lm (log(salary) ~ year2 + sex + poly(age4, 3), data = tb)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit), colour = age, shape=sex))
+```
+
+![](Engineer_files/figure-markdown_github/unnamed-chunk-16-2.png)
+
+``` r
+summary(model)  
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = log(salary) ~ year2 + sex + poly(age4, 3), data = tb)
+    ## 
+    ## Residuals:
+    ##       Min        1Q    Median        3Q       Max 
+    ## -0.083528 -0.017062  0.004134  0.013698  0.078086 
+    ## 
+    ## Coefficients:
+    ##                  Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)    -27.998755   4.194742  -6.675 2.13e-09 ***
+    ## year2            0.019178   0.002081   9.217 1.47e-14 ***
+    ## sexwomen        -0.035347   0.005966  -5.925 5.96e-08 ***
+    ## poly(age4, 3)1   1.501878   0.028669  52.386  < 2e-16 ***
+    ## poly(age4, 3)2  -0.732149   0.028703 -25.508  < 2e-16 ***
+    ## poly(age4, 3)3   0.008299   0.028723   0.289    0.773    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.02859 on 88 degrees of freedom
+    ## Multiple R-squared:  0.9759, Adjusted R-squared:  0.9745 
+    ## F-statistic: 711.9 on 5 and 88 DF,  p-value: < 2.2e-16
+
+``` r
+Anova(model, type=2)
+```
+
+    ## Anova Table (Type II tests)
+    ## 
+    ## Response: log(salary)
+    ##                Sum Sq Df  F value    Pr(>F)    
+    ## year2         0.06946  1   84.951 1.468e-14 ***
+    ## sex           0.02870  1   35.102 5.959e-08 ***
+    ## poly(age4, 3) 2.78971  3 1137.265 < 2.2e-16 ***
+    ## Residuals     0.07195 88                       
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+tb <- readfile("00000031_3.csv") %>% 
+  rowwise() %>% 
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% 
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+  mutate(age4 = (age3 + age2) / 2) %>% 
+  group_by (`occuptional  (SSYK 2012)`, age, sex) %>%   
+  mutate (grouprelsal = relative_dev (salary))
+```
+
+    ## Warning: Grouping rowwise data frame strips rowwise nature
+
+``` r
+model <- lm (log(salary) ~ `occuptional  (SSYK 2012)` + year2 + sex + poly(age4, 3), data = tb)
+    
+summary(model)  
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = log(salary) ~ `occuptional  (SSYK 2012)` + year2 + 
+    ##     sex + poly(age4, 3), data = tb)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -0.41565 -0.04967 -0.00225  0.05041  0.35673 
+    ## 
+    ## Coefficients:
+    ##                                                                                                             Estimate
+    ## (Intercept)                                                                                               -3.755e+01
+    ## `occuptional  (SSYK 2012)`112 Managing directors and chief executives                                      6.171e-01
+    ## `occuptional  (SSYK 2012)`121 Finance managers                                                             4.770e-01
+    ## `occuptional  (SSYK 2012)`122 Human resource managers                                                      4.543e-01
+    ## `occuptional  (SSYK 2012)`123 Administration and planning managers                                         4.956e-01
+    ## `occuptional  (SSYK 2012)`124 Information, communication and public relations managers                     5.279e-01
+    ## `occuptional  (SSYK 2012)`125 Sales and marketing managers                                                 3.862e-01
+    ## `occuptional  (SSYK 2012)`129 Administration and service managers not elsewhere classified                 2.823e-01
+    ## `occuptional  (SSYK 2012)`131 Information and communications technology service managers                   4.023e-01
+    ## `occuptional  (SSYK 2012)`132 Supply, logistics and transport managers                                     2.974e-01
+    ## `occuptional  (SSYK 2012)`133 Research and development managers                                            5.277e-01
+    ## `occuptional  (SSYK 2012)`134 Architectural and engineering managers                                       3.935e-01
+    ## `occuptional  (SSYK 2012)`135 Real estate and head of administration manager                               2.313e-01
+    ## `occuptional  (SSYK 2012)`136 Production managers in construction and mining                               2.888e-01
+    ## `occuptional  (SSYK 2012)`137 Production managers in manufacturing                                         1.975e-01
+    ## `occuptional  (SSYK 2012)`141 Primary and secondary schools and adult education managers                   1.834e-01
+    ## `occuptional  (SSYK 2012)`151 Health care managers                                                         1.681e-01
+    ## `occuptional  (SSYK 2012)`154 Managers and leaders within religious bodies                                 2.967e-01
+    ## `occuptional  (SSYK 2012)`159 Other social services managers                                               2.082e-01
+    ## `occuptional  (SSYK 2012)`161 Financial and insurance managers                                             7.252e-01
+    ## `occuptional  (SSYK 2012)`172 Restaurant managers                                                         -5.185e-02
+    ## `occuptional  (SSYK 2012)`173 Retail and wholesale trade managers                                          1.104e-01
+    ## `occuptional  (SSYK 2012)`179 Other services managers not elsewhere classified                             8.969e-02
+    ## `occuptional  (SSYK 2012)`211 Physicists and chemists                                                      1.498e-01
+    ## `occuptional  (SSYK 2012)`212 Mathematicians, actuaries and statisticians                                  1.950e-01
+    ## `occuptional  (SSYK 2012)`213 Biologists, pharmacologists and specialists in agriculture and forestry      4.217e-02
+    ## `occuptional  (SSYK 2012)`214 Engineering professionals                                                    1.572e-01
+    ## `occuptional  (SSYK 2012)`216 Architects and surveyors                                                     5.156e-02
+    ## `occuptional  (SSYK 2012)`217 Designers                                                                   -8.167e-03
+    ## `occuptional  (SSYK 2012)`218 Specialists within environmental and health protection                       7.405e-02
+    ## `occuptional  (SSYK 2012)`221 Medical doctors                                                              5.404e-01
+    ## `occuptional  (SSYK 2012)`222 Nursing professionals                                                        6.094e-02
+    ## `occuptional  (SSYK 2012)`223 Nursing professionals (cont.)                                               -3.751e-02
+    ## `occuptional  (SSYK 2012)`224 Psychologists and psychotherapists                                           1.311e-01
+    ## `occuptional  (SSYK 2012)`225 Veterinarians                                                                1.451e-01
+    ## `occuptional  (SSYK 2012)`226 Dentists                                                                     2.062e-01
+    ## `occuptional  (SSYK 2012)`227 Naprapaths, physiotherapists, occupational therapists                       -1.370e-01
+    ## `occuptional  (SSYK 2012)`228 Specialists in health care not elsewhere classified                          7.114e-03
+    ## `occuptional  (SSYK 2012)`231 University and higher education teachers                                     1.367e-01
+    ## `occuptional  (SSYK 2012)`232 Vocational education teachers                                               -2.934e-01
+    ## `occuptional  (SSYK 2012)`233 Secondary education teachers                                                -1.041e-01
+    ## `occuptional  (SSYK 2012)`234 Primary- and pre-school teachers                                            -1.872e-01
+    ## `occuptional  (SSYK 2012)`235 Teaching professionals not elsewhere classified                             -1.426e-01
+    ## `occuptional  (SSYK 2012)`241 Accountants, financial analysts and fund managers                            2.279e-01
+    ## `occuptional  (SSYK 2012)`242 Organisation analysts, policy administrators and human resource specialists  1.696e-01
+    ## `occuptional  (SSYK 2012)`243 Marketing and public relations professionals                                 1.408e-01
+    ## `occuptional  (SSYK 2012)`251 ICT architects, systems analysts and test managers                           1.673e-01
+    ## `occuptional  (SSYK 2012)`261 Legal professionals                                                          3.911e-01
+    ## `occuptional  (SSYK 2012)`264 Authors, journalists and linguists                                          -1.820e-03
+    ## `occuptional  (SSYK 2012)`265 Creative and performing artists                                             -8.801e-02
+    ## `occuptional  (SSYK 2012)`266 Social work and counselling professionals                                   -2.953e-02
+    ## `occuptional  (SSYK 2012)`267 Religious professionals and deacons                                         -4.052e-02
+    ## `occuptional  (SSYK 2012)`311 Physical and engineering science technicians                                 1.681e-02
+    ## `occuptional  (SSYK 2012)`312 Construction and manufacturing supervisors                                  -1.063e-02
+    ## `occuptional  (SSYK 2012)`315 Ship and aircraft controllers and technicians                                2.332e-01
+    ## `occuptional  (SSYK 2012)`321 Medical and pharmaceutical technicians                                      -7.302e-02
+    ## `occuptional  (SSYK 2012)`324 Veterinary assistants                                                       -1.810e-01
+    ## `occuptional  (SSYK 2012)`325 Dental hygienists                                                           -1.573e-01
+    ## `occuptional  (SSYK 2012)`331 Financial and accounting associate professionals                             4.499e-02
+    ## `occuptional  (SSYK 2012)`332 Insurance advisers, sales and purchasing agents                              5.093e-02
+    ## `occuptional  (SSYK 2012)`333 Business services agents                                                    -3.205e-02
+    ## `occuptional  (SSYK 2012)`334 Administrative and specialized secretaries                                  -7.863e-04
+    ## `occuptional  (SSYK 2012)`335 Tax and related government associate professionals                          -1.270e-02
+    ## `occuptional  (SSYK 2012)`341 Social work and religious associate professionals                           -2.183e-01
+    ## `occuptional  (SSYK 2012)`342 Athletes, fitness instructors and recreational workers                      -1.492e-01
+    ## `occuptional  (SSYK 2012)`343 Photographers, interior decorators and entertainers                         -1.203e-01
+    ## `occuptional  (SSYK 2012)`344 Driving instructors and other instructors                                   -2.170e-01
+    ## `occuptional  (SSYK 2012)`345 Culinary associate professionals                                            -3.831e-01
+    ## `occuptional  (SSYK 2012)`351 ICT operations and user support technicians                                 -3.359e-02
+    ## `occuptional  (SSYK 2012)`352 Broadcasting and audio-visual technicians                                   -2.179e-01
+    ## `occuptional  (SSYK 2012)`411 Office assistants and other secretaries                                     -1.912e-01
+    ## `occuptional  (SSYK 2012)`422 Client information clerks                                                   -2.841e-01
+    ## `occuptional  (SSYK 2012)`511 Cabin crew, guides and related workers                                      -1.823e-01
+    ## `occuptional  (SSYK 2012)`524 Event seller and telemarketers                                              -2.089e-01
+    ## year2                                                                                                      2.386e-02
+    ## sexwomen                                                                                                  -7.673e-02
+    ## poly(age4, 3)1                                                                                             6.694e+00
+    ## poly(age4, 3)2                                                                                            -4.156e+00
+    ## poly(age4, 3)3                                                                                             2.201e-01
+    ##                                                                                                           Std. Error
+    ## (Intercept)                                                                                                2.047e+00
+    ## `occuptional  (SSYK 2012)`112 Managing directors and chief executives                                      1.924e-02
+    ## `occuptional  (SSYK 2012)`121 Finance managers                                                             1.560e-02
+    ## `occuptional  (SSYK 2012)`122 Human resource managers                                                      1.646e-02
+    ## `occuptional  (SSYK 2012)`123 Administration and planning managers                                         1.675e-02
+    ## `occuptional  (SSYK 2012)`124 Information, communication and public relations managers                     2.467e-02
+    ## `occuptional  (SSYK 2012)`125 Sales and marketing managers                                                 1.486e-02
+    ## `occuptional  (SSYK 2012)`129 Administration and service managers not elsewhere classified                 1.482e-02
+    ## `occuptional  (SSYK 2012)`131 Information and communications technology service managers                   1.580e-02
+    ## `occuptional  (SSYK 2012)`132 Supply, logistics and transport managers                                     1.664e-02
+    ## `occuptional  (SSYK 2012)`133 Research and development managers                                            1.620e-02
+    ## `occuptional  (SSYK 2012)`134 Architectural and engineering managers                                       1.620e-02
+    ## `occuptional  (SSYK 2012)`135 Real estate and head of administration manager                               2.777e-02
+    ## `occuptional  (SSYK 2012)`136 Production managers in construction and mining                               1.619e-02
+    ## `occuptional  (SSYK 2012)`137 Production managers in manufacturing                                         1.611e-02
+    ## `occuptional  (SSYK 2012)`141 Primary and secondary schools and adult education managers                   8.905e-02
+    ## `occuptional  (SSYK 2012)`151 Health care managers                                                         1.888e-02
+    ## `occuptional  (SSYK 2012)`154 Managers and leaders within religious bodies                                 4.561e-02
+    ## `occuptional  (SSYK 2012)`159 Other social services managers                                               1.758e-02
+    ## `occuptional  (SSYK 2012)`161 Financial and insurance managers                                             1.655e-02
+    ## `occuptional  (SSYK 2012)`172 Restaurant managers                                                          2.302e-02
+    ## `occuptional  (SSYK 2012)`173 Retail and wholesale trade managers                                          1.756e-02
+    ## `occuptional  (SSYK 2012)`179 Other services managers not elsewhere classified                             1.512e-02
+    ## `occuptional  (SSYK 2012)`211 Physicists and chemists                                                      1.573e-02
+    ## `occuptional  (SSYK 2012)`212 Mathematicians, actuaries and statisticians                                  8.905e-02
+    ## `occuptional  (SSYK 2012)`213 Biologists, pharmacologists and specialists in agriculture and forestry      1.595e-02
+    ## `occuptional  (SSYK 2012)`214 Engineering professionals                                                    1.413e-02
+    ## `occuptional  (SSYK 2012)`216 Architects and surveyors                                                     1.731e-02
+    ## `occuptional  (SSYK 2012)`217 Designers                                                                    1.547e-02
+    ## `occuptional  (SSYK 2012)`218 Specialists within environmental and health protection                       1.730e-02
+    ## `occuptional  (SSYK 2012)`221 Medical doctors                                                              1.663e-02
+    ## `occuptional  (SSYK 2012)`222 Nursing professionals                                                        1.469e-02
+    ## `occuptional  (SSYK 2012)`223 Nursing professionals (cont.)                                                1.852e-02
+    ## `occuptional  (SSYK 2012)`224 Psychologists and psychotherapists                                           6.346e-02
+    ## `occuptional  (SSYK 2012)`225 Veterinarians                                                                2.469e-02
+    ## `occuptional  (SSYK 2012)`226 Dentists                                                                     2.179e-02
+    ## `occuptional  (SSYK 2012)`227 Naprapaths, physiotherapists, occupational therapists                        1.774e-02
+    ## `occuptional  (SSYK 2012)`228 Specialists in health care not elsewhere classified                          1.686e-02
+    ## `occuptional  (SSYK 2012)`231 University and higher education teachers                                     1.610e-02
+    ## `occuptional  (SSYK 2012)`232 Vocational education teachers                                                6.346e-02
+    ## `occuptional  (SSYK 2012)`233 Secondary education teachers                                                 3.519e-02
+    ## `occuptional  (SSYK 2012)`234 Primary- and pre-school teachers                                             1.432e-02
+    ## `occuptional  (SSYK 2012)`235 Teaching professionals not elsewhere classified                              1.685e-02
+    ## `occuptional  (SSYK 2012)`241 Accountants, financial analysts and fund managers                            1.443e-02
+    ## `occuptional  (SSYK 2012)`242 Organisation analysts, policy administrators and human resource specialists  1.429e-02
+    ## `occuptional  (SSYK 2012)`243 Marketing and public relations professionals                                 1.443e-02
+    ## `occuptional  (SSYK 2012)`251 ICT architects, systems analysts and test managers                           1.410e-02
+    ## `occuptional  (SSYK 2012)`261 Legal professionals                                                          1.559e-02
+    ## `occuptional  (SSYK 2012)`264 Authors, journalists and linguists                                           1.429e-02
+    ## `occuptional  (SSYK 2012)`265 Creative and performing artists                                              1.491e-02
+    ## `occuptional  (SSYK 2012)`266 Social work and counselling professionals                                    2.051e-02
+    ## `occuptional  (SSYK 2012)`267 Religious professionals and deacons                                          1.732e-02
+    ## `occuptional  (SSYK 2012)`311 Physical and engineering science technicians                                 1.416e-02
+    ## `occuptional  (SSYK 2012)`312 Construction and manufacturing supervisors                                   1.490e-02
+    ## `occuptional  (SSYK 2012)`315 Ship and aircraft controllers and technicians                                1.926e-02
+    ## `occuptional  (SSYK 2012)`321 Medical and pharmaceutical technicians                                       1.436e-02
+    ## `occuptional  (SSYK 2012)`324 Veterinary assistants                                                        2.050e-02
+    ## `occuptional  (SSYK 2012)`325 Dental hygienists                                                            1.774e-02
+    ## `occuptional  (SSYK 2012)`331 Financial and accounting associate professionals                             1.422e-02
+    ## `occuptional  (SSYK 2012)`332 Insurance advisers, sales and purchasing agents                              1.413e-02
+    ## `occuptional  (SSYK 2012)`333 Business services agents                                                     1.455e-02
+    ## `occuptional  (SSYK 2012)`334 Administrative and specialized secretaries                                   1.476e-02
+    ## `occuptional  (SSYK 2012)`335 Tax and related government associate professionals                           1.455e-02
+    ## `occuptional  (SSYK 2012)`341 Social work and religious associate professionals                            1.664e-02
+    ## `occuptional  (SSYK 2012)`342 Athletes, fitness instructors and recreational workers                       1.472e-02
+    ## `occuptional  (SSYK 2012)`343 Photographers, interior decorators and entertainers                          1.627e-02
+    ## `occuptional  (SSYK 2012)`344 Driving instructors and other instructors                                    2.774e-02
+    ## `occuptional  (SSYK 2012)`345 Culinary associate professionals                                             2.781e-02
+    ## `occuptional  (SSYK 2012)`351 ICT operations and user support technicians                                  1.429e-02
+    ## `occuptional  (SSYK 2012)`352 Broadcasting and audio-visual technicians                                    1.906e-02
+    ## `occuptional  (SSYK 2012)`411 Office assistants and other secretaries                                      1.413e-02
+    ## `occuptional  (SSYK 2012)`422 Client information clerks                                                    1.416e-02
+    ## `occuptional  (SSYK 2012)`511 Cabin crew, guides and related workers                                       1.833e-02
+    ## `occuptional  (SSYK 2012)`524 Event seller and telemarketers                                               1.952e-02
+    ## year2                                                                                                      1.015e-03
+    ## sexwomen                                                                                                   3.056e-03
+    ## poly(age4, 3)1                                                                                             9.182e-02
+    ## poly(age4, 3)2                                                                                             9.200e-02
+    ## poly(age4, 3)3                                                                                             8.962e-02
+    ##                                                                                                           t value
+    ## (Intercept)                                                                                               -18.342
+    ## `occuptional  (SSYK 2012)`112 Managing directors and chief executives                                      32.068
+    ## `occuptional  (SSYK 2012)`121 Finance managers                                                             30.572
+    ## `occuptional  (SSYK 2012)`122 Human resource managers                                                      27.594
+    ## `occuptional  (SSYK 2012)`123 Administration and planning managers                                         29.587
+    ## `occuptional  (SSYK 2012)`124 Information, communication and public relations managers                     21.400
+    ## `occuptional  (SSYK 2012)`125 Sales and marketing managers                                                 25.995
+    ## `occuptional  (SSYK 2012)`129 Administration and service managers not elsewhere classified                 19.049
+    ## `occuptional  (SSYK 2012)`131 Information and communications technology service managers                   25.457
+    ## `occuptional  (SSYK 2012)`132 Supply, logistics and transport managers                                     17.867
+    ## `occuptional  (SSYK 2012)`133 Research and development managers                                            32.577
+    ## `occuptional  (SSYK 2012)`134 Architectural and engineering managers                                       24.296
+    ## `occuptional  (SSYK 2012)`135 Real estate and head of administration manager                                8.331
+    ## `occuptional  (SSYK 2012)`136 Production managers in construction and mining                               17.842
+    ## `occuptional  (SSYK 2012)`137 Production managers in manufacturing                                         12.260
+    ## `occuptional  (SSYK 2012)`141 Primary and secondary schools and adult education managers                    2.060
+    ## `occuptional  (SSYK 2012)`151 Health care managers                                                          8.904
+    ## `occuptional  (SSYK 2012)`154 Managers and leaders within religious bodies                                  6.504
+    ## `occuptional  (SSYK 2012)`159 Other social services managers                                               11.843
+    ## `occuptional  (SSYK 2012)`161 Financial and insurance managers                                             43.812
+    ## `occuptional  (SSYK 2012)`172 Restaurant managers                                                          -2.252
+    ## `occuptional  (SSYK 2012)`173 Retail and wholesale trade managers                                           6.287
+    ## `occuptional  (SSYK 2012)`179 Other services managers not elsewhere classified                              5.930
+    ## `occuptional  (SSYK 2012)`211 Physicists and chemists                                                       9.522
+    ## `occuptional  (SSYK 2012)`212 Mathematicians, actuaries and statisticians                                   2.189
+    ## `occuptional  (SSYK 2012)`213 Biologists, pharmacologists and specialists in agriculture and forestry       2.645
+    ## `occuptional  (SSYK 2012)`214 Engineering professionals                                                    11.131
+    ## `occuptional  (SSYK 2012)`216 Architects and surveyors                                                      2.978
+    ## `occuptional  (SSYK 2012)`217 Designers                                                                    -0.528
+    ## `occuptional  (SSYK 2012)`218 Specialists within environmental and health protection                        4.280
+    ## `occuptional  (SSYK 2012)`221 Medical doctors                                                              32.493
+    ## `occuptional  (SSYK 2012)`222 Nursing professionals                                                         4.148
+    ## `occuptional  (SSYK 2012)`223 Nursing professionals (cont.)                                                -2.025
+    ## `occuptional  (SSYK 2012)`224 Psychologists and psychotherapists                                            2.065
+    ## `occuptional  (SSYK 2012)`225 Veterinarians                                                                 5.878
+    ## `occuptional  (SSYK 2012)`226 Dentists                                                                      9.461
+    ## `occuptional  (SSYK 2012)`227 Naprapaths, physiotherapists, occupational therapists                        -7.726
+    ## `occuptional  (SSYK 2012)`228 Specialists in health care not elsewhere classified                           0.422
+    ## `occuptional  (SSYK 2012)`231 University and higher education teachers                                      8.492
+    ## `occuptional  (SSYK 2012)`232 Vocational education teachers                                                -4.624
+    ## `occuptional  (SSYK 2012)`233 Secondary education teachers                                                 -2.959
+    ## `occuptional  (SSYK 2012)`234 Primary- and pre-school teachers                                            -13.072
+    ## `occuptional  (SSYK 2012)`235 Teaching professionals not elsewhere classified                              -8.462
+    ## `occuptional  (SSYK 2012)`241 Accountants, financial analysts and fund managers                            15.789
+    ## `occuptional  (SSYK 2012)`242 Organisation analysts, policy administrators and human resource specialists  11.870
+    ## `occuptional  (SSYK 2012)`243 Marketing and public relations professionals                                  9.752
+    ## `occuptional  (SSYK 2012)`251 ICT architects, systems analysts and test managers                           11.866
+    ## `occuptional  (SSYK 2012)`261 Legal professionals                                                          25.081
+    ## `occuptional  (SSYK 2012)`264 Authors, journalists and linguists                                           -0.127
+    ## `occuptional  (SSYK 2012)`265 Creative and performing artists                                              -5.903
+    ## `occuptional  (SSYK 2012)`266 Social work and counselling professionals                                    -1.440
+    ## `occuptional  (SSYK 2012)`267 Religious professionals and deacons                                          -2.340
+    ## `occuptional  (SSYK 2012)`311 Physical and engineering science technicians                                  1.187
+    ## `occuptional  (SSYK 2012)`312 Construction and manufacturing supervisors                                   -0.713
+    ## `occuptional  (SSYK 2012)`315 Ship and aircraft controllers and technicians                                12.104
+    ## `occuptional  (SSYK 2012)`321 Medical and pharmaceutical technicians                                       -5.085
+    ## `occuptional  (SSYK 2012)`324 Veterinary assistants                                                        -8.831
+    ## `occuptional  (SSYK 2012)`325 Dental hygienists                                                            -8.870
+    ## `occuptional  (SSYK 2012)`331 Financial and accounting associate professionals                              3.164
+    ## `occuptional  (SSYK 2012)`332 Insurance advisers, sales and purchasing agents                               3.605
+    ## `occuptional  (SSYK 2012)`333 Business services agents                                                     -2.202
+    ## `occuptional  (SSYK 2012)`334 Administrative and specialized secretaries                                   -0.053
+    ## `occuptional  (SSYK 2012)`335 Tax and related government associate professionals                           -0.872
+    ## `occuptional  (SSYK 2012)`341 Social work and religious associate professionals                           -13.119
+    ## `occuptional  (SSYK 2012)`342 Athletes, fitness instructors and recreational workers                      -10.136
+    ## `occuptional  (SSYK 2012)`343 Photographers, interior decorators and entertainers                          -7.397
+    ## `occuptional  (SSYK 2012)`344 Driving instructors and other instructors                                    -7.824
+    ## `occuptional  (SSYK 2012)`345 Culinary associate professionals                                            -13.776
+    ## `occuptional  (SSYK 2012)`351 ICT operations and user support technicians                                  -2.351
+    ## `occuptional  (SSYK 2012)`352 Broadcasting and audio-visual technicians                                   -11.434
+    ## `occuptional  (SSYK 2012)`411 Office assistants and other secretaries                                     -13.532
+    ## `occuptional  (SSYK 2012)`422 Client information clerks                                                   -20.067
+    ## `occuptional  (SSYK 2012)`511 Cabin crew, guides and related workers                                       -9.947
+    ## `occuptional  (SSYK 2012)`524 Event seller and telemarketers                                              -10.702
+    ## year2                                                                                                      23.496
+    ## sexwomen                                                                                                  -25.110
+    ## poly(age4, 3)1                                                                                             72.907
+    ## poly(age4, 3)2                                                                                            -45.176
+    ## poly(age4, 3)3                                                                                              2.456
+    ##                                                                                                           Pr(>|t|)
+    ## (Intercept)                                                                                                < 2e-16
+    ## `occuptional  (SSYK 2012)`112 Managing directors and chief executives                                      < 2e-16
+    ## `occuptional  (SSYK 2012)`121 Finance managers                                                             < 2e-16
+    ## `occuptional  (SSYK 2012)`122 Human resource managers                                                      < 2e-16
+    ## `occuptional  (SSYK 2012)`123 Administration and planning managers                                         < 2e-16
+    ## `occuptional  (SSYK 2012)`124 Information, communication and public relations managers                     < 2e-16
+    ## `occuptional  (SSYK 2012)`125 Sales and marketing managers                                                 < 2e-16
+    ## `occuptional  (SSYK 2012)`129 Administration and service managers not elsewhere classified                 < 2e-16
+    ## `occuptional  (SSYK 2012)`131 Information and communications technology service managers                   < 2e-16
+    ## `occuptional  (SSYK 2012)`132 Supply, logistics and transport managers                                     < 2e-16
+    ## `occuptional  (SSYK 2012)`133 Research and development managers                                            < 2e-16
+    ## `occuptional  (SSYK 2012)`134 Architectural and engineering managers                                       < 2e-16
+    ## `occuptional  (SSYK 2012)`135 Real estate and head of administration manager                               < 2e-16
+    ## `occuptional  (SSYK 2012)`136 Production managers in construction and mining                               < 2e-16
+    ## `occuptional  (SSYK 2012)`137 Production managers in manufacturing                                         < 2e-16
+    ## `occuptional  (SSYK 2012)`141 Primary and secondary schools and adult education managers                  0.039465
+    ## `occuptional  (SSYK 2012)`151 Health care managers                                                         < 2e-16
+    ## `occuptional  (SSYK 2012)`154 Managers and leaders within religious bodies                                8.82e-11
+    ## `occuptional  (SSYK 2012)`159 Other social services managers                                               < 2e-16
+    ## `occuptional  (SSYK 2012)`161 Financial and insurance managers                                             < 2e-16
+    ## `occuptional  (SSYK 2012)`172 Restaurant managers                                                         0.024349
+    ## `occuptional  (SSYK 2012)`173 Retail and wholesale trade managers                                         3.61e-10
+    ## `occuptional  (SSYK 2012)`179 Other services managers not elsewhere classified                            3.30e-09
+    ## `occuptional  (SSYK 2012)`211 Physicists and chemists                                                      < 2e-16
+    ## `occuptional  (SSYK 2012)`212 Mathematicians, actuaries and statisticians                                 0.028633
+    ## `occuptional  (SSYK 2012)`213 Biologists, pharmacologists and specialists in agriculture and forestry     0.008205
+    ## `occuptional  (SSYK 2012)`214 Engineering professionals                                                    < 2e-16
+    ## `occuptional  (SSYK 2012)`216 Architects and surveyors                                                    0.002919
+    ## `occuptional  (SSYK 2012)`217 Designers                                                                   0.597462
+    ## `occuptional  (SSYK 2012)`218 Specialists within environmental and health protection                      1.92e-05
+    ## `occuptional  (SSYK 2012)`221 Medical doctors                                                              < 2e-16
+    ## `occuptional  (SSYK 2012)`222 Nursing professionals                                                       3.42e-05
+    ## `occuptional  (SSYK 2012)`223 Nursing professionals (cont.)                                               0.042901
+    ## `occuptional  (SSYK 2012)`224 Psychologists and psychotherapists                                          0.038958
+    ## `occuptional  (SSYK 2012)`225 Veterinarians                                                               4.52e-09
+    ## `occuptional  (SSYK 2012)`226 Dentists                                                                     < 2e-16
+    ## `occuptional  (SSYK 2012)`227 Naprapaths, physiotherapists, occupational therapists                       1.41e-14
+    ## `occuptional  (SSYK 2012)`228 Specialists in health care not elsewhere classified                         0.673131
+    ## `occuptional  (SSYK 2012)`231 University and higher education teachers                                     < 2e-16
+    ## `occuptional  (SSYK 2012)`232 Vocational education teachers                                               3.90e-06
+    ## `occuptional  (SSYK 2012)`233 Secondary education teachers                                                0.003109
+    ## `occuptional  (SSYK 2012)`234 Primary- and pre-school teachers                                             < 2e-16
+    ## `occuptional  (SSYK 2012)`235 Teaching professionals not elsewhere classified                              < 2e-16
+    ## `occuptional  (SSYK 2012)`241 Accountants, financial analysts and fund managers                            < 2e-16
+    ## `occuptional  (SSYK 2012)`242 Organisation analysts, policy administrators and human resource specialists  < 2e-16
+    ## `occuptional  (SSYK 2012)`243 Marketing and public relations professionals                                 < 2e-16
+    ## `occuptional  (SSYK 2012)`251 ICT architects, systems analysts and test managers                           < 2e-16
+    ## `occuptional  (SSYK 2012)`261 Legal professionals                                                          < 2e-16
+    ## `occuptional  (SSYK 2012)`264 Authors, journalists and linguists                                          0.898671
+    ## `occuptional  (SSYK 2012)`265 Creative and performing artists                                             3.88e-09
+    ## `occuptional  (SSYK 2012)`266 Social work and counselling professionals                                   0.149876
+    ## `occuptional  (SSYK 2012)`267 Religious professionals and deacons                                         0.019356
+    ## `occuptional  (SSYK 2012)`311 Physical and engineering science technicians                                0.235267
+    ## `occuptional  (SSYK 2012)`312 Construction and manufacturing supervisors                                  0.475788
+    ## `occuptional  (SSYK 2012)`315 Ship and aircraft controllers and technicians                                < 2e-16
+    ## `occuptional  (SSYK 2012)`321 Medical and pharmaceutical technicians                                      3.85e-07
+    ## `occuptional  (SSYK 2012)`324 Veterinary assistants                                                        < 2e-16
+    ## `occuptional  (SSYK 2012)`325 Dental hygienists                                                            < 2e-16
+    ## `occuptional  (SSYK 2012)`331 Financial and accounting associate professionals                            0.001569
+    ## `occuptional  (SSYK 2012)`332 Insurance advisers, sales and purchasing agents                             0.000317
+    ## `occuptional  (SSYK 2012)`333 Business services agents                                                    0.027702
+    ## `occuptional  (SSYK 2012)`334 Administrative and specialized secretaries                                  0.957532
+    ## `occuptional  (SSYK 2012)`335 Tax and related government associate professionals                          0.383048
+    ## `occuptional  (SSYK 2012)`341 Social work and religious associate professionals                            < 2e-16
+    ## `occuptional  (SSYK 2012)`342 Athletes, fitness instructors and recreational workers                       < 2e-16
+    ## `occuptional  (SSYK 2012)`343 Photographers, interior decorators and entertainers                         1.71e-13
+    ## `occuptional  (SSYK 2012)`344 Driving instructors and other instructors                                   6.56e-15
+    ## `occuptional  (SSYK 2012)`345 Culinary associate professionals                                             < 2e-16
+    ## `occuptional  (SSYK 2012)`351 ICT operations and user support technicians                                 0.018776
+    ## `occuptional  (SSYK 2012)`352 Broadcasting and audio-visual technicians                                    < 2e-16
+    ## `occuptional  (SSYK 2012)`411 Office assistants and other secretaries                                      < 2e-16
+    ## `occuptional  (SSYK 2012)`422 Client information clerks                                                    < 2e-16
+    ## `occuptional  (SSYK 2012)`511 Cabin crew, guides and related workers                                       < 2e-16
+    ## `occuptional  (SSYK 2012)`524 Event seller and telemarketers                                               < 2e-16
+    ## year2                                                                                                      < 2e-16
+    ## sexwomen                                                                                                   < 2e-16
+    ## poly(age4, 3)1                                                                                             < 2e-16
+    ## poly(age4, 3)2                                                                                             < 2e-16
+    ## poly(age4, 3)3                                                                                            0.014087
+    ##                                                                                                              
+    ## (Intercept)                                                                                               ***
+    ## `occuptional  (SSYK 2012)`112 Managing directors and chief executives                                     ***
+    ## `occuptional  (SSYK 2012)`121 Finance managers                                                            ***
+    ## `occuptional  (SSYK 2012)`122 Human resource managers                                                     ***
+    ## `occuptional  (SSYK 2012)`123 Administration and planning managers                                        ***
+    ## `occuptional  (SSYK 2012)`124 Information, communication and public relations managers                    ***
+    ## `occuptional  (SSYK 2012)`125 Sales and marketing managers                                                ***
+    ## `occuptional  (SSYK 2012)`129 Administration and service managers not elsewhere classified                ***
+    ## `occuptional  (SSYK 2012)`131 Information and communications technology service managers                  ***
+    ## `occuptional  (SSYK 2012)`132 Supply, logistics and transport managers                                    ***
+    ## `occuptional  (SSYK 2012)`133 Research and development managers                                           ***
+    ## `occuptional  (SSYK 2012)`134 Architectural and engineering managers                                      ***
+    ## `occuptional  (SSYK 2012)`135 Real estate and head of administration manager                              ***
+    ## `occuptional  (SSYK 2012)`136 Production managers in construction and mining                              ***
+    ## `occuptional  (SSYK 2012)`137 Production managers in manufacturing                                        ***
+    ## `occuptional  (SSYK 2012)`141 Primary and secondary schools and adult education managers                  *  
+    ## `occuptional  (SSYK 2012)`151 Health care managers                                                        ***
+    ## `occuptional  (SSYK 2012)`154 Managers and leaders within religious bodies                                ***
+    ## `occuptional  (SSYK 2012)`159 Other social services managers                                              ***
+    ## `occuptional  (SSYK 2012)`161 Financial and insurance managers                                            ***
+    ## `occuptional  (SSYK 2012)`172 Restaurant managers                                                         *  
+    ## `occuptional  (SSYK 2012)`173 Retail and wholesale trade managers                                         ***
+    ## `occuptional  (SSYK 2012)`179 Other services managers not elsewhere classified                            ***
+    ## `occuptional  (SSYK 2012)`211 Physicists and chemists                                                     ***
+    ## `occuptional  (SSYK 2012)`212 Mathematicians, actuaries and statisticians                                 *  
+    ## `occuptional  (SSYK 2012)`213 Biologists, pharmacologists and specialists in agriculture and forestry     ** 
+    ## `occuptional  (SSYK 2012)`214 Engineering professionals                                                   ***
+    ## `occuptional  (SSYK 2012)`216 Architects and surveyors                                                    ** 
+    ## `occuptional  (SSYK 2012)`217 Designers                                                                      
+    ## `occuptional  (SSYK 2012)`218 Specialists within environmental and health protection                      ***
+    ## `occuptional  (SSYK 2012)`221 Medical doctors                                                             ***
+    ## `occuptional  (SSYK 2012)`222 Nursing professionals                                                       ***
+    ## `occuptional  (SSYK 2012)`223 Nursing professionals (cont.)                                               *  
+    ## `occuptional  (SSYK 2012)`224 Psychologists and psychotherapists                                          *  
+    ## `occuptional  (SSYK 2012)`225 Veterinarians                                                               ***
+    ## `occuptional  (SSYK 2012)`226 Dentists                                                                    ***
+    ## `occuptional  (SSYK 2012)`227 Naprapaths, physiotherapists, occupational therapists                       ***
+    ## `occuptional  (SSYK 2012)`228 Specialists in health care not elsewhere classified                            
+    ## `occuptional  (SSYK 2012)`231 University and higher education teachers                                    ***
+    ## `occuptional  (SSYK 2012)`232 Vocational education teachers                                               ***
+    ## `occuptional  (SSYK 2012)`233 Secondary education teachers                                                ** 
+    ## `occuptional  (SSYK 2012)`234 Primary- and pre-school teachers                                            ***
+    ## `occuptional  (SSYK 2012)`235 Teaching professionals not elsewhere classified                             ***
+    ## `occuptional  (SSYK 2012)`241 Accountants, financial analysts and fund managers                           ***
+    ## `occuptional  (SSYK 2012)`242 Organisation analysts, policy administrators and human resource specialists ***
+    ## `occuptional  (SSYK 2012)`243 Marketing and public relations professionals                                ***
+    ## `occuptional  (SSYK 2012)`251 ICT architects, systems analysts and test managers                          ***
+    ## `occuptional  (SSYK 2012)`261 Legal professionals                                                         ***
+    ## `occuptional  (SSYK 2012)`264 Authors, journalists and linguists                                             
+    ## `occuptional  (SSYK 2012)`265 Creative and performing artists                                             ***
+    ## `occuptional  (SSYK 2012)`266 Social work and counselling professionals                                      
+    ## `occuptional  (SSYK 2012)`267 Religious professionals and deacons                                         *  
+    ## `occuptional  (SSYK 2012)`311 Physical and engineering science technicians                                   
+    ## `occuptional  (SSYK 2012)`312 Construction and manufacturing supervisors                                     
+    ## `occuptional  (SSYK 2012)`315 Ship and aircraft controllers and technicians                               ***
+    ## `occuptional  (SSYK 2012)`321 Medical and pharmaceutical technicians                                      ***
+    ## `occuptional  (SSYK 2012)`324 Veterinary assistants                                                       ***
+    ## `occuptional  (SSYK 2012)`325 Dental hygienists                                                           ***
+    ## `occuptional  (SSYK 2012)`331 Financial and accounting associate professionals                            ** 
+    ## `occuptional  (SSYK 2012)`332 Insurance advisers, sales and purchasing agents                             ***
+    ## `occuptional  (SSYK 2012)`333 Business services agents                                                    *  
+    ## `occuptional  (SSYK 2012)`334 Administrative and specialized secretaries                                     
+    ## `occuptional  (SSYK 2012)`335 Tax and related government associate professionals                             
+    ## `occuptional  (SSYK 2012)`341 Social work and religious associate professionals                           ***
+    ## `occuptional  (SSYK 2012)`342 Athletes, fitness instructors and recreational workers                      ***
+    ## `occuptional  (SSYK 2012)`343 Photographers, interior decorators and entertainers                         ***
+    ## `occuptional  (SSYK 2012)`344 Driving instructors and other instructors                                   ***
+    ## `occuptional  (SSYK 2012)`345 Culinary associate professionals                                            ***
+    ## `occuptional  (SSYK 2012)`351 ICT operations and user support technicians                                 *  
+    ## `occuptional  (SSYK 2012)`352 Broadcasting and audio-visual technicians                                   ***
+    ## `occuptional  (SSYK 2012)`411 Office assistants and other secretaries                                     ***
+    ## `occuptional  (SSYK 2012)`422 Client information clerks                                                   ***
+    ## `occuptional  (SSYK 2012)`511 Cabin crew, guides and related workers                                      ***
+    ## `occuptional  (SSYK 2012)`524 Event seller and telemarketers                                              ***
+    ## year2                                                                                                     ***
+    ## sexwomen                                                                                                  ***
+    ## poly(age4, 3)1                                                                                            ***
+    ## poly(age4, 3)2                                                                                            ***
+    ## poly(age4, 3)3                                                                                            *  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.08834 on 3797 degrees of freedom
+    ## Multiple R-squared:  0.9103, Adjusted R-squared:  0.9085 
+    ## F-statistic: 494.2 on 78 and 3797 DF,  p-value: < 2.2e-16
+
+``` r
+Anova(model, type=2)
+```
+
+    ## Anova Table (Type II tests)
+    ## 
+    ## Response: log(salary)
+    ##                             Sum Sq   Df F value    Pr(>F)    
+    ## `occuptional  (SSYK 2012)` 180.652   73  317.13 < 2.2e-16 ***
+    ## year2                        4.308    1  552.04 < 2.2e-16 ***
+    ## sex                          4.920    1  630.49 < 2.2e-16 ***
+    ## poly(age4, 3)               56.140    3 2398.10 < 2.2e-16 ***
+    ## Residuals                   29.629 3797                      
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK) and sex. Year 2000 - 2013 Average monthly pay (total pay), non-manual workers private sector (SLP) 214 Engineering professionals
 
 ``` r
 tb <- readfile("AM0103H2_4.csv") %>%
@@ -1261,7 +1790,7 @@ summary(model)
     ## F-statistic: 394.7 on 10 and 233 DF,  p-value: < 2.2e-16
 
 ``` r
-Anova(model, type=2)      
+Anova(model, type=2)
 ```
 
     ## Anova Table (Type II tests)
@@ -1272,6 +1801,61 @@ Anova(model, type=2)
     ## region    0.64528   8   76.56 < 2.2e-16 ***
     ## sex       0.60372   1  573.04 < 2.2e-16 ***
     ## Residuals 0.24548 233                      
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Average monthly pay (total pay), non-manual workers private sector (SLP) 214 Engineering professionals
+
+``` r
+tb <- readfile("0000002T_1.csv") %>%
+    filter(year2 > 1994) %>%
+    group_by (`occuptional  (SSYK 2012)`, region, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ year2 + region + sex, data = tb)
+    
+summary(model)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = log(salary) ~ year2 + region + sex, data = tb)
+    ## 
+    ## Residuals:
+    ##       Min        1Q    Median        3Q       Max 
+    ## -0.110486 -0.008020 -0.000168  0.011394  0.050841 
+    ## 
+    ## Coefficients:
+    ##                                   Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)                     -28.135769   3.820613  -7.364 2.70e-10 ***
+    ## year2                             0.019289   0.001895  10.178 1.91e-15 ***
+    ## regionSE12 East-Central Sweden   -0.056478   0.010721  -5.268 1.45e-06 ***
+    ## regionSE21 Småland and islands   -0.129648   0.010721 -12.093  < 2e-16 ***
+    ## regionSE22 South Sweden          -0.045303   0.010721  -4.226 7.06e-05 ***
+    ## regionSE23 West Sweden           -0.051116   0.010721  -4.768 9.80e-06 ***
+    ## regionSE31 North-Central Sweden  -0.097948   0.010721  -9.136 1.49e-13 ***
+    ## regionSE32 Central Norrland      -0.113659   0.010721 -10.602 3.32e-16 ***
+    ## regionSE33 Upper Norrland        -0.141165   0.010721 -13.168  < 2e-16 ***
+    ## sexwomen                         -0.059090   0.005360 -11.024  < 2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.02397 on 70 degrees of freedom
+    ## Multiple R-squared:  0.8803, Adjusted R-squared:  0.8649 
+    ## F-statistic: 57.21 on 9 and 70 DF,  p-value: < 2.2e-16
+
+``` r
+Anova(model, type=2)
+```
+
+    ## Anova Table (Type II tests)
+    ## 
+    ## Response: log(salary)
+    ##             Sum Sq Df F value    Pr(>F)    
+    ## year2     0.059530  1 103.594 1.908e-15 ***
+    ## region    0.166498  7  41.391 < 2.2e-16 ***
+    ## sex       0.069833  1 121.524 < 2.2e-16 ***
+    ## Residuals 0.040225 70                      
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -1536,7 +2120,7 @@ tibble(by, A, B) %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-23-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-25-1.png)
 
 During the year both group A and B increase the sum of all salaries for respective group by two per cent.
 
@@ -1550,7 +2134,7 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
     )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-24-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-26-1.png)
 
 Suppose that each group increase is divided equally to the employees within respective group.
 
@@ -1567,7 +2151,7 @@ g %>%
   )       
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-25-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-27-1.png)
 
 Suppose that each group increase is divided equally to the employees within respective group.
 
@@ -1584,7 +2168,7 @@ g %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-26-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-28-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for the respective group is determined by the age / salary structure.
 
@@ -1605,7 +2189,7 @@ t %>%
   )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-27-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-29-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for the respective group is determined by the age / salary structure.
 
@@ -1626,7 +2210,7 @@ t %>%
   )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-28-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-30-1.png)
 
 Before next years’ salary revision the sum of the salaries have increased by
 2.0 % for group B and only 0.31% for group A
@@ -1641,7 +2225,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
     )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-29-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-31-1.png)
 
 This animation shows how salary development progresses for a longer period of time according to the prerequisites stated above.
 

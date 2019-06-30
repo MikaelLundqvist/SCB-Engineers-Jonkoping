@@ -278,7 +278,54 @@ summary(model)
 
 Anova(model, type=2)
 
-#'Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK) and sex. Year 2000 - 2013
+#'Average monthly pay, non-manual workers private sector (SLP) by occupational 
+#'group (SSYK 2012) age and sex. Year 2014 - 2018
+#'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK 
+#'by occupational group (SSYK), age, sex and year
+
+tb <- readfile("00000031_1.csv") %>% 
+  rowwise() %>% 
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% 
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+  mutate(age4 = (age3 + age2) / 2) %>% 
+  group_by (`occuptional  (SSYK 2012)`, age, sex) %>%   
+  mutate (grouprelsal = relative_dev (salary))  
+   
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(salary), colour = age, shape=sex))  
+	
+model <- lm (log(salary) ~ year2 + sex + poly(age4, 3), data = tb)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit), colour = age, shape=sex))
+	
+summary(model)	
+
+Anova(model, type=2)
+
+tb <- readfile("00000031_3.csv") %>% 
+  rowwise() %>% 
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% 
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+  mutate(age4 = (age3 + age2) / 2) %>% 
+  group_by (`occuptional  (SSYK 2012)`, age, sex) %>%   
+  mutate (grouprelsal = relative_dev (salary))
+   	
+model <- lm (log(salary) ~ `occuptional  (SSYK 2012)` + year2 + sex + poly(age4, 3), data = tb)
+	
+summary(model)	
+
+Anova(model, type=2)
+
+#'Average monthly pay, non-manual workers private sector (SLP) by region, 
+#'occupational group (SSYK) and sex. Year 2000 - 2013
+#'Average monthly pay (total pay), non-manual workers private sector (SLP)
 #'214 Engineering professionals 
 tb <- readfile("AM0103H2_4.csv") %>%
     filter(year2 > 1994) %>%
@@ -289,8 +336,24 @@ model <- lm (log(salary) ~ year2 + region + sex, data = tb)
 	
 summary(model)
 
-Anova(model, type=2)	  
+Anova(model, type=2)
+
+#'Average monthly pay, non-manual workers private sector (SLP) by region, 
+#'occupational group (SSYK 2012) and sex. Year 2014 - 2018
+#'Average monthly pay (total pay), non-manual workers private sector (SLP)
+#'214 Engineering professionals 	  
 	  
+tb <- readfile("0000002T_1.csv") %>%
+    filter(year2 > 1994) %>%
+    group_by (`occuptional  (SSYK 2012)`, region, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ year2 + region + sex, data = tb)
+	
+summary(model)
+
+Anova(model, type=2)
+	  	  
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018  
 #'age=total  
 #'sex=total  
