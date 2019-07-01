@@ -353,6 +353,23 @@ model <- lm (log(salary) ~ year2 + region + sex, data = tb)
 summary(model)
 
 Anova(model, type=2)
+
+#'Average basic salary, monthly salary and women´s salary as a percentage of 
+#'men´s salary by sector, occupational group (SSYK 2012), sex and educational 
+#'level (SUN). Year 2014 - 2018
+#'Monthly salary
+#'5 non-manual workers private sector
+#'214 Engineering professionals
+
+tb <- readfile("000000CY.csv") %>%
+    group_by (`level of education`, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ `level of education` + sex + year2, data = tb)
+	
+summary(model)
+
+Anova(model, type=2)
 	  	  
 #'Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018  
 #'age=total  

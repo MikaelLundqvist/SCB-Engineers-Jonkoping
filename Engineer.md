@@ -1859,6 +1859,100 @@ Anova(model, type=2)
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and educational level (SUN). Year 2014 - 2018 Monthly salary 5 non-manual workers private sector 214 Engineering professionals
+
+``` r
+tb <- readfile("000000CY.csv") %>%
+    group_by (`level of education`, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ `level of education` + sex + year2, data = tb)
+    
+summary(model)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = log(salary) ~ `level of education` + sex + year2, 
+    ##     data = tb)
+    ## 
+    ## Residuals:
+    ##       Min        1Q    Median        3Q       Max 
+    ## -0.195679 -0.014052 -0.000359  0.015817  0.081161 
+    ## 
+    ## Coefficients:
+    ##                                                                                  Estimate
+    ## (Intercept)                                                                    -23.876068
+    ## `level of education`post-graduate education (ISCED97 6)                          0.112359
+    ## `level of education`post-secondary education 3 years or more (ISCED97 5A)       -0.004989
+    ## `level of education`post-secondary education, less than 3 years (ISCED97 4+5B)  -0.040883
+    ## `level of education`primary and secondary education 9-10 years (ISCED97 2)      -0.120708
+    ## `level of education`upper secondary education 3 years (ISCED97 3A)              -0.085001
+    ## `level of education`upper secondary education, 2 years or less (ISCED97 3C)     -0.110869
+    ## sexwomen                                                                        -0.085434
+    ## year2                                                                            0.017168
+    ##                                                                                Std. Error
+    ## (Intercept)                                                                      7.087831
+    ## `level of education`post-graduate education (ISCED97 6)                          0.017984
+    ## `level of education`post-secondary education 3 years or more (ISCED97 5A)        0.017984
+    ## `level of education`post-secondary education, less than 3 years (ISCED97 4+5B)   0.017984
+    ## `level of education`primary and secondary education 9-10 years (ISCED97 2)       0.019938
+    ## `level of education`upper secondary education 3 years (ISCED97 3A)               0.017984
+    ## `level of education`upper secondary education, 2 years or less (ISCED97 3C)      0.017984
+    ## sexwomen                                                                         0.009922
+    ## year2                                                                            0.003516
+    ##                                                                                t value
+    ## (Intercept)                                                                     -3.369
+    ## `level of education`post-graduate education (ISCED97 6)                          6.248
+    ## `level of education`post-secondary education 3 years or more (ISCED97 5A)       -0.277
+    ## `level of education`post-secondary education, less than 3 years (ISCED97 4+5B)  -2.273
+    ## `level of education`primary and secondary education 9-10 years (ISCED97 2)      -6.054
+    ## `level of education`upper secondary education 3 years (ISCED97 3A)              -4.727
+    ## `level of education`upper secondary education, 2 years or less (ISCED97 3C)     -6.165
+    ## sexwomen                                                                        -8.610
+    ## year2                                                                            4.883
+    ##                                                                                Pr(>|t|)
+    ## (Intercept)                                                                     0.00135
+    ## `level of education`post-graduate education (ISCED97 6)                        5.30e-08
+    ## `level of education`post-secondary education 3 years or more (ISCED97 5A)       0.78244
+    ## `level of education`post-secondary education, less than 3 years (ISCED97 4+5B)  0.02673
+    ## `level of education`primary and secondary education 9-10 years (ISCED97 2)     1.11e-07
+    ## `level of education`upper secondary education 3 years (ISCED97 3A)             1.50e-05
+    ## `level of education`upper secondary education, 2 years or less (ISCED97 3C)    7.27e-08
+    ## sexwomen                                                                       5.86e-12
+    ## year2                                                                          8.56e-06
+    ##                                                                                   
+    ## (Intercept)                                                                    ** 
+    ## `level of education`post-graduate education (ISCED97 6)                        ***
+    ## `level of education`post-secondary education 3 years or more (ISCED97 5A)         
+    ## `level of education`post-secondary education, less than 3 years (ISCED97 4+5B) *  
+    ## `level of education`primary and secondary education 9-10 years (ISCED97 2)     ***
+    ## `level of education`upper secondary education 3 years (ISCED97 3A)             ***
+    ## `level of education`upper secondary education, 2 years or less (ISCED97 3C)    ***
+    ## sexwomen                                                                       ***
+    ## year2                                                                          ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.04021 on 58 degrees of freedom
+    ## Multiple R-squared:  0.8458, Adjusted R-squared:  0.8246 
+    ## F-statistic: 39.77 on 8 and 58 DF,  p-value: < 2.2e-16
+
+``` r
+Anova(model, type=2)
+```
+
+    ## Anova Table (Type II tests)
+    ## 
+    ## Response: log(salary)
+    ##                       Sum Sq Df F value    Pr(>F)    
+    ## `level of education` 0.37097  6  38.235 < 2.2e-16 ***
+    ## sex                  0.11988  1  74.136 5.863e-12 ***
+    ## year2                0.03856  1  23.847 8.558e-06 ***
+    ## Residuals            0.09379 58                      
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018
 age=total
 sex=total
@@ -2120,7 +2214,7 @@ tibble(by, A, B) %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-25-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-26-1.png)
 
 During the year both group A and B increase the sum of all salaries for respective group by two per cent.
 
@@ -2134,7 +2228,7 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
     )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-26-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-27-1.png)
 
 Suppose that each group increase is divided equally to the employees within respective group.
 
@@ -2151,7 +2245,7 @@ g %>%
   )       
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-27-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-28-1.png)
 
 Suppose that each group increase is divided equally to the employees within respective group.
 
@@ -2168,7 +2262,7 @@ g %>%
   )  
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-28-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-29-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for the respective group is determined by the age / salary structure.
 
@@ -2189,7 +2283,7 @@ t %>%
   )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-29-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-30-1.png)
 
 The oldest employees retire and new adolescents enter the job market. Suppose that the starting salary for the respective group is determined by the age / salary structure.
 
@@ -2210,7 +2304,7 @@ t %>%
   )    
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-30-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-31-1.png)
 
 Before next years’ salary revision the sum of the salaries have increased by
 2.0 % for group B and only 0.31% for group A
@@ -2225,7 +2319,7 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
     )     
 ```
 
-![](Engineer_files/figure-markdown_github/unnamed-chunk-31-1.png)
+![](Engineer_files/figure-markdown_github/unnamed-chunk-32-1.png)
 
 This animation shows how salary development progresses for a longer period of time according to the prerequisites stated above.
 
