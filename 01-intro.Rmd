@@ -1,0 +1,18 @@
+# Introduction {#intro}
+
+"Everybody should have the opportunity to find facts and break the myths with our statistics!" Statistics Sweden twitter account, sverigeisiffror.
+
+Introduction  
+Personal development in R, Statisics, Scientific Report, Markdown, and GitHub  
+with data from Statistics Sweden. I will extract statistics from Statistics   
+Sweden regarding the labour market, salaries and other relevant data from   
+engineers, primarily in Jönköping county. 
+
+About me
+In 1999 I finished my Master in Computing Science education at Gothenburg University. In spring 2000 I moved to Jönköping and started to work as an embedded programmer at Saab Avionics. 
+During the autumn that year I became a member of the local union. In 2001 I attended my first wage negotiation for The Swedish Association of Graduate Engineers at Saab Avionics. 
+Since then I have been interested in the wage formation for engineers in Sweden and the Jönköping county.
+In 2019 I am still employed at Saab Avionics, the chairman at The Swedish Association of Graduate Engineers at Saab Avionics, the chairman at The Swedish Association of Graduate Engineers at the Jönköpiong county and
+a member of Jönköpingslistan, The Swedish Association of Graduate Engineers council.c
+
+

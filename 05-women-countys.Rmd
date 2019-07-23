@@ -1,0 +1,27 @@
+# Percent women in the countys  
+
+214 Engineering professionals  
+  
+Percent women in the countys  
+214 Engineering professionals  
+Joint-stock corporations not controlled by the government sector  
+  
+```{r womencountys, echo = TRUE}  
+options(tibble.print_max = Inf)
+	 	 
+readfile ("000000NL_3.csv") %>%   
+  group_by (`region`, year) %>%   
+  summarise (perc_women = perc_women (salary)) %>%  
+  arrange (desc (perc_women)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Percent women in the countys')   
+       
+readfile ("000000RM.csv") %>%   
+  group_by (`region`, year) %>%   
+  summarise (perc_women = perc_women (salary)) %>%	  
+  arrange (desc (perc_women)) %>%
+  knitr::kable(  
+  booktabs = TRUE,
+  caption = 'Percent women in the countys, Joint-stock corporations not controlled by the government sector')
+``` 

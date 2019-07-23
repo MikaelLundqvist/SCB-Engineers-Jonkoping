@@ -1,0 +1,29 @@
+# Natural sciences
+
+Average monthly pay, pay dispersion etc., non-manual workers private sector (SLP) by educational orientation SUN 2000 and sex. Year 2001 - 2018  
+Average monthly pay (total pay), SEK  
+SUN2000, 4 natural sciences, mathematics and computing  
+sex, men and women  
+  
+```{r naturalsciences, echo = TRUE, fig.cap = 'Natural sciences'}  
+readfile ("AM0103I6.csv") %>%  
+  ggplot () +  
+    geom_line (mapping = aes(x = year2,y = salary, colour = `field of education SUN 2000`)) +  
+    theme (legend.position = "bottom")   
+  
+readfile ("AM0103I6.csv") %>%   
+  group_by (`field of education SUN 2000`) %>%   
+  mutate (growth = c (NA, diff(salary)) / salary) %>%  
+  ggplot () +    
+    geom_line (mapping = aes(x = year2, y = growth, colour = `field of education SUN 2000`)) +  
+    theme (legend.position = "bottom")	  
+  
+readfile ("AM0103I6_2.csv") %>%   
+  group_by (`field of education SUN 2000`) %>%   
+  summarise (tot = tot_dev (salary)) %>%  
+  arrange (desc (tot)) %>% 
+  knitr::kable(
+  booktabs = TRUE,
+  caption = 'The average increase in salary for different educations between the years 2001 to 2018.') 
+```
+

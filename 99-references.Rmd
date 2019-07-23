@@ -1,0 +1,5 @@
+`r if (knitr:::is_html_output()) '
+# References {-}
+'`
+nocite: | 
+  @wic2017, @kap2017

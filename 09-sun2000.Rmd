@@ -1,0 +1,67 @@
+# Average monthly pay Year 1991 - 2015
+
+Genomsnittlig månadslön, lön i fasta priser och lönespridning efter 
+utbildningsnivå SUN 2000 och kön. År 1991 - 2015  
+Genomsnittlig lön, kr
+Only available at the Swedish SCB site
+	    
+```{r monthlypaysun2000, echo = TRUE}  
+tb <- readfile("AM0112C1.csv") %>%
+  filter(year2 > 1994) %>%
+  group_by (`Utbildningsnivå SUN 2000`, kön) %>%   
+  mutate (grouprelsal = relative_dev (salary))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = grouprelsal, colour = `Utbildningsnivå SUN 2000`, shape=kön))  
+  
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(grouprelsal), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+	
+model <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` + year2 + kön, data = tb)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence")))) 
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+  
+model1 <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` * year2 * kön, data = tb)  
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model1, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit1), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+	
+model2 <- lm (log(grouprelsal) ~ `Utbildningsnivå SUN 2000` * poly(year2, 2) * kön, data = tb)  
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model2, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit2), colour = `Utbildningsnivå SUN 2000`, shape=kön))
+	
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = fit2, colour = `Utbildningsnivå SUN 2000`, shape=kön))	
+	
+tb <- tb %>% mutate(diffpolylin = fit2 - fit1)
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = diffpolylin, colour = `Utbildningsnivå SUN 2000`, shape=kön))
+	
+summary (model2) %>%
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+Anova(model2, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')  
+``` 

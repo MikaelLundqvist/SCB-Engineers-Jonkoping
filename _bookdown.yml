@@ -1,0 +1,5 @@
+book_filename: "SCB-Engineers-Jonkoping"
+language:
+  ui:
+    chapter_name: "Chapter "
+delete_merged_file: true

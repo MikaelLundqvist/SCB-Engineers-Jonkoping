@@ -1,0 +1,22 @@
+# Number of Physical and engineering science technicians in Jönköping county
+
+Employees 16-64 years by region of work, occupation (3-digit SSYK 2012) and sex. Year 2001 - 2017  
+Jönköping county, occupation=311 Physical and engineering science technicians, men and women    
+In 2014 SCB changed from SSYK96 to SSYK2012  
+      
+```{r techniciansjkpg, echo = TRUE, fig.cap = 'Technicians in Jönköping'}  
+readfile ("AM0208B6.csv") %>%   
+  group_by (year2) %>%   
+  summarise (total = sum (salary)) %>%  
+  ggplot ()+  
+    geom_line (mapping = aes (x = year2, y = total)) +  
+    theme (legend.position = "bottom")  
+    
+readfile ("000000NL.csv") %>%   
+  group_by (year2) %>%   
+  summarise (total = sum (salary)) %>%  
+  ggplot () +  
+    geom_line (mapping = aes (x = year2, y = total)) +  
+    theme (legend.position = "bottom")   
+```
+

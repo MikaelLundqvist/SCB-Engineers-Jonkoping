@@ -1,0 +1,39 @@
+# Engineering professionals
+
+Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK) and sex. Year 2000 - 2013  
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK  
+214 Engineering professionals	  
+men and women	  
+      
+```{r Engineeringpro00-13, echo = TRUE, fig.cap = 'Engineering professionals, Year 2000 - 2013'}  
+readfile ("AM0103H2.csv") %>%   
+  ggplot () +  
+    geom_line (mapping = aes (x = year2, y = salary, colour = region)) +  
+    theme (legend.position = "bottom")  
+
+readfile ("AM0103H2.csv") %>%   
+  group_by (region) %>%
+  mutate (growth = c (NA, diff(salary)) / salary) %>%  
+  ggplot () +    
+    geom_line (mapping = aes(x = year2, y = growth, colour = region)) +  
+    theme (legend.position = "bottom")	  
+```
+
+Average monthly pay, non-manual workers private sector (SLP) by region, occupational group (SSYK 2012) and sex. Year 2014 - 2018  
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK  
+214 Engineering professionals	  
+men and women  
+	
+```{r Engineeringpro14-18, echo = TRUE, fig.cap = 'Engineering professionals, Year 2014 - 2018'}  	
+readfile ("0000002T.csv") %>%   
+  ggplot () +  
+    geom_line (mapping = aes (x = year2, y = salary, colour = region)) +  
+    theme (legend.position = "bottom")  
+	
+readfile ("0000002T.csv") %>%   
+  group_by (region) %>%
+  mutate (growth = c (NA, diff(salary)) / salary) %>%  
+  ggplot () +    
+    geom_line (mapping = aes(x = year2, y = growth, colour = region)) +  
+    theme (legend.position = "bottom")	
+```
