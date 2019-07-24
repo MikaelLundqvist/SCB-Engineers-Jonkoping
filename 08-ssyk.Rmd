@@ -264,8 +264,7 @@ rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strt
    scale_y_continuous(name = "Salary")  
 anim_save("2000-2013.gif", width = 1000, height = 1000)	  
 ```	
-![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/2000-2013.gif)
-  
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/2000-2013.gif) 
     
 Average monthly pay (total pay), non-manual workers private sector (SLP),   
 SEK by occuptional (SSYK 2012), age, sex and year 2014-2018  
@@ -284,8 +283,7 @@ rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strt
    scale_y_continuous(name = "Salary")	  
 anim_save("2014-2018.gif", width = 1000, height = 1000)    
 ``` 
-![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/2014-2018.gif)	
- 
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/2014-2018.gif)	
   
 Average monthly pay (total pay), non-manual workers private sector (SLP),   
 SEK by occuptional (SSYK 2012), age, sex and year 2000-2013  
@@ -314,8 +312,7 @@ ageGroupGrowth %>%
   scale_y_continuous(name = "Salary increase (%)")	  
 anim_save("AgeGroupGrowth2000-2013.gif", width = 1000, height = 1000)    
 ``` 
-![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/AgeGroupGrowth2000-2013.gif)	   
-
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/AgeGroupGrowth2000-2013.gif)	   
   
 Average monthly pay (total pay), non-manual workers private sector (SLP),   
 SEK by occuptional (SSYK 2012), age, sex and year 2000-2013  
@@ -353,8 +350,7 @@ indGrowth %>%
   scale_y_continuous(name = "Salary increase (%)")   
 anim_save("indGrowth2000-2013.gif", width = 1000, height = 1000)  
 ```
-![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/indGrowth2000-2013.gif)  
-
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/indGrowth2000-2013.gif)  
   
 Average monthly pay (total pay), non-manual workers private sector (SLP),   
 SEK by occuptional (SSYK 2012), age, sex and year 2000-2013  
@@ -391,4 +387,4 @@ salaryStructure %>%
   scale_y_continuous(name = "Structural increase (%)")   
 anim_save("salaryStructure2000-2013.gif", width = 1000, height = 1000)  
 ```
-![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/salaryStructure2000-2013.gif)  
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/salaryStructure2000-2013.gif)
