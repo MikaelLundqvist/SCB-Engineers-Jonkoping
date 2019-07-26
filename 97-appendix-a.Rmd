@@ -1,10 +1,11 @@
 # Appendix A
 
-#'Theoretical study of salaries in groups with different age / salary structures.  
-#'Suppose there is two groups A and B that both have flat age distributions.   
-#'Group B have a flat salary distribution in general, in group A the oldest   
-#'employees earns twice as much as the youngest in general.    
+Theoretical study of salaries in groups with different age / salary structures.  
+Suppose there is two groups A and B that both have flat age distributions.   
+Group B have a flat salary distribution in general, in group A the oldest   
+employees earns twice as much as the youngest in general.    
     
+```{r AppendixA1, echo = TRUE, fig.cap = 'Salary structure of Group A and Group B'}  	
 A <- seq(30000, 60000, by=750)  
 B <- seq(30000, 30000, length=41)  
 year <- 2019  
@@ -16,10 +17,12 @@ tibble(by, A, B) %>%
   labs(  
     title = "Salary structure of Group A and Group B"  
   )  
+```
   
-#'During the year both group A and B increase the sum of all salaries for   
-#'respective group by two percent.  
-    
+During the year both group A and B increase the sum of all salaries for   
+respective group by two percent.  
+   
+```{r AppendixA2, echo = TRUE, fig.cap = 'Salary raise by 2.0%'}    
 tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%   
   gather(A_raise, B_raise, key="group", value="raise") %>%  
   ggplot() +  
@@ -27,11 +30,12 @@ tibble(A_raise = sum(A) * 0.02, B_raise = sum(B) * 0.02) %>%
 	labs(  
       title = "Salary raise by 2.0%"  
     )    
+```  
   
-  
-#'Suppose that each groups increase is divided equally to the employees within   
-#'respective group.  
-	  
+Suppose that each groups increase is divided equally to the employees within   
+respective group.  
+	
+```{r AppendixA3, echo = TRUE, fig.cap = 'Salary increase distribution over age Group A'} 	
 raise <- (A + sum(A) * 0.02 / length (A)) - A	  
 g <- tibble(by, A, raise) %>%   
   gather(A, raise, key = "group", value = "salary")  
@@ -42,10 +46,12 @@ g %>%
   labs(  
     title = "Salary increase distribution over age Group A"  
   )		  
+```
+	   
+Suppose that each groups increase is divided equally to the employees within   
+respective group.  
 	  
-#'Suppose that each groups increase is divided equally to the employees within   
-#'respective group.  
-	  
+```{r AppendixA4, echo = TRUE, fig.cap = 'Salary increase distribution over age Group A'} 	  
 raise <- (B + sum(B) * 0.02 / length (B)) - B	  
 g <- as_tibble(cbind(by, B, raise)) %>%   
   gather(B, raise, key = "group", value = "salary")  
@@ -56,11 +62,13 @@ g %>%
   labs(  
     title = "Salary increase distribution over age Group B"  
   )  
+```
     
-#'The oldest employees retire and new adolescents enter the job market. Suppose   
-#'that the starting salary for respective group is determined by the   
-#'age / salary structure.    
+The oldest employees retire and new adolescents enter the job market. Suppose   
+that the starting salary for respective group is determined by the   
+age / salary structure.    
     
+```{r AppendixA5, echo = TRUE, fig.cap = 'Salary distribution Group B after one year succession'} 	
 by_year2 <- by + 1  
 B_year2 <- lag(B)  
 B_year2[1] <- B[1] * 1.02  
@@ -74,12 +82,14 @@ t %>%
   geom_bar(mapping = aes(x = by_year2, y = salary, fill = group), stat = "identity") +  
   labs(  
     title = "Salary distribution Group B after one year succession"  
-  )	    
+  )	   
+```  
   
-#'The oldest employees retire and new adolescents enter the job market. Suppose   
-#'that the starting salary for respective group is determined by the   
-#'age / salary structure.      
+The oldest employees retire and new adolescents enter the job market. Suppose   
+that the starting salary for respective group is determined by the   
+age / salary structure.      
     
+```{r AppendixA6, echo = TRUE, fig.cap = 'Salary distribution Group A after one year succession'} 	
 by_year2 <- by + 1  
 raise_year2 <- lag(A + sum(A) * 0.02 / length (A) - A)  
 raise_year2[1] <- 0  
@@ -94,10 +104,12 @@ t %>%
   labs(  
     title = "Salary distribution Group A after one year succession"  
   )	   
+```  
   
-#'Before next years’ salary revision the sum of the salaries have increased by   
-#'2.0 % for group B and only 0.31% for group A  
+Before next years salary revision the sum of the salaries have increased by   
+2.0 % for group B and only 0.31% for group A  
     
+```{r AppendixA7, echo = TRUE, fig.cap = 'Salary raise since last revision'} 
 tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = sum(B) * 0.02) %>%   
   gather(A_raise_sum, B_raise_sum, key = "group", value = "raise") %>%  
   ggplot() +  
@@ -105,30 +117,33 @@ tibble(A_raise_sum = sum(A) * 0.02 - A[length(A)] + A_year2[1], B_raise_sum = su
 	labs(  
       title = "Salary raise since last revision"  
     )     
+```	
+	
+This animation shows how the salary development progresses for a longer   
+period of time according to the prerequicites stated above.  
+ 
+```{r AppendixA8, echo = TRUE, eval = FALSE, fig.cap = 'Salary development different groups.'}  
+A <- seq(30000, 60000, by = 750)  
+B <- seq(30000, 30000, length = 41)  
+for (year in 2019:2059){  
+ by <- (year - 25):(year - 65)    
+ tibble(by, A, B) %>%   
+   gather(A, B, key = "group", value = "salary") %>%  
+   ggplot() +  
+     geom_point(mapping = aes(x = by, y = salary, colour = group)) +  
+     labs(  
+       title = "Salary development different groups.",  
+		subtitle = paste ("Year of revision", year)  
+     ) +  
+	  scale_x_continuous(name = "Year of birth", limits = c(1954, 2034)) +  
+     scale_y_continuous(name = "Salary", limits = c(30000, 80000))		    
+ ggsave(paste (year, sep="", ".png"))  
+ A <- A + sum (A) * 0.020 / length (A)  
+ A <- c(A[1] - 750, A[1:40])  
+ B <- B * 1.02  
+}	  
+```
 	  
-#'This animation shows how the salary development progresses for a longer   
-#'period of time according to the prerequicites stated above.  
-  
-##A <- seq(30000, 60000, by = 750)  
-##B <- seq(30000, 30000, length = 41)  
-##for (year in 2019:2059){  
-## by <- (year - 25):(year - 65)    
-## tibble(by, A, B) %>%   
-##   gather(A, B, key = "group", value = "salary") %>%  
-##   ggplot() +  
-##     geom_point(mapping = aes(x = by, y = salary, colour = group)) +  
-##     labs(  
-##       title = "Salary development different groups.",  
-##		subtitle = paste ("Year of revision", year)  
-##     ) +  
-##	  scale_x_continuous(name = "Year of birth", limits = c(1954, 2034)) +  
-##     scale_y_continuous(name = "Salary", limits = c(30000, 80000))		    
-## ggsave(paste (year, sep="", ".png"))  
-## A <- A + sum (A) * 0.020 / length (A)  
-## A <- c(A[1] - 750, A[1:40])  
-## B <- B * 1.02  
-##}	  
-	  
-#' The animation was made with ImageMagick  
-##"c:\Program Files\ImageMagick-7.0.8-Q16\magick.exe" -delay 50 -loop 0 *.png animation.gif	  
-#'![](https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping/blob/master/animation.gif)	  
+ The animation was made with ImageMagick  
+"c:\Program Files\ImageMagick-7.0.8-Q16\magick.exe" -delay 50 -loop 0 *.png animation.gif	  
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/animation.gif)	  
