@@ -2,4 +2,4 @@
 # References {-}
 '`
 nocite: | 
-  @wic2017, @kap2017, @StatisticsSweden, @scb, @imagemagick
+  @wic2017, @kap2017, @StatisticsSweden, @scb, @mi, @si,@imagemagick
