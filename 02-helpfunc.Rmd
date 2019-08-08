@@ -5,15 +5,30 @@ library (tidyverse)
 library (broom) 
 library(gganimate)  
 library(car)
+library(swemaps) # devtools::install_github('reinholdsson/swemaps')
+library(ggpubr)
+
+nuts <- read_csv ("nuts.csv", col_types = cols(), locale = readr::locale (encoding = "UTF-8"), na = c("..", "NA"))
+
+options(tibble.print_max = Inf)
+
+nuts
+
+map_ln_n <- map_ln %>%
+  mutate(lnkod_n = as.numeric(lnkod)) 
+  
 relative_dev <- function (x){  
   return (x / x[1])  
 }  
+
 tot_dev <- function (x){  
   scales::percent ((tail(x, 1) / x[1]) - 1)  
 }  
+
 perc_women <- function(x){  
-  scales::percent (x[2] / x[1])  
+  scales::percent (x[2] / (x[1] + x[2]))  
 }   
+
 readfile <- function (file1){  
   read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
     gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  

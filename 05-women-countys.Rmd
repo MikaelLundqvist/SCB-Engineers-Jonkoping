@@ -16,6 +16,16 @@ readfile ("000000NL_3.csv") %>%
   knitr::kable( 
   booktabs = TRUE,
   caption = 'Percent women in the countys')   
+  
+readfile ("000000NL_3.csv") %>%   
+  group_by (`region`, year) %>%   
+  summarise (perc_women = perc_women (salary)) %>%
+  mutate(perc_women_n = as.numeric(sub("%", "", perc_women))) %>%
+  mutate(lnkod_n = as.numeric(substr(region, 1,2))) %>%
+  right_join(map_ln_n, by = "lnkod_n") %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = perc_women_n)) +
+    coord_equal()   
        
 readfile ("000000RM.csv") %>%   
   group_by (`region`, year) %>%   
@@ -24,4 +34,14 @@ readfile ("000000RM.csv") %>%
   knitr::kable(  
   booktabs = TRUE,
   caption = 'Percent women in the countys, Joint-stock corporations not controlled by the government sector')
+  
+readfile ("000000RM.csv") %>%   
+  group_by (`region`, year) %>%   
+  summarise (perc_women = perc_women (salary)) %>%
+  mutate(perc_women_n = as.numeric(sub("%", "", perc_women))) %>%
+  mutate(lnkod_n = as.numeric(substr(region, 1,2))) %>%
+  right_join(map_ln_n, by = "lnkod_n") %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = perc_women_n)) +
+    coord_equal()   
 ``` 

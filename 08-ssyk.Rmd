@@ -1,4 +1,38 @@
-# Average monthly pay increase by occuption year 2000 - 2013
+# SSYK 214
+
+## Average monthly salary, SEK by region
+
+Genomsnittlig grund- och månadslön samt kvinnors lön i procent av mäns lön efter region sektor, yrkesgrupp (SSYK 2012) och kön. År 2014 - 2018
+Månadslön
+Samtliga sektorer
+214 Cilvilingenjörsyrken
+Kön totalt
+2017
+
+```{r 214sweden, echo = TRUE}  
+readfile ("000000CG_1.csv") %>%
+  left_join(nuts, by = c("region" = "NUTS2")) %>%
+  right_join(map_ln_n, by = c("Länskod" = "lnkod_n")) %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = relsalary)) +
+    coord_equal() 
+	
+salary_2017 <- readfile ("000000CG_1.csv") %>%
+  left_join(nuts, by = c("region" = "NUTS2"))
+
+readfile ("000000NL_3.csv") %>%   
+  group_by (`region`, year) %>%   
+  summarise (perc_women = perc_women (salary)) %>%
+  mutate(perc_women_n = as.numeric(sub("%", "", perc_women))) %>%
+  mutate(lnkod_n = as.numeric(substr(region, 1,2)))%>%
+  right_join(salary_2017, by = c("lnkod_n" = "Länskod")) %>%
+  ggscatter(x = "relsalary", y = "perc_women_n", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson")  	
+``` 
+
+
+## Average monthly pay increase by occuption year 2000 - 2013
 
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2000 - 2013	  
 age=total  
@@ -10,7 +44,6 @@ sex=total
  
 	    
 ```{r occuptionpay, echo = TRUE}  
-options(tibble.print_max = Inf)	  
 readfile ("AM0103E6.csv") %>%   
   group_by (`occupational group (SSYK)`) %>%   
   summarise (tot = tot_dev (salary)) %>%  
