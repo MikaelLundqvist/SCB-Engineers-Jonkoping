@@ -203,35 +203,58 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <pre><code>## The following object is masked from &#39;package:tidyr&#39;:
 ## 
 ##     extract</code></pre>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1"><span class="co">#nuts &lt;- read_csv (&quot;nuts.csv&quot;, col_types = cols(), locale = readr::locale (encoding = &quot;UTF-8&quot;), na = c(&quot;..&quot;, &quot;NA&quot;))</span></a>
-<a class="sourceLine" id="cb15-2" title="2"></a>
-<a class="sourceLine" id="cb15-3" title="3"><span class="kw">options</span>(<span class="dt">tibble.print_max =</span> <span class="ot">Inf</span>)</a>
-<a class="sourceLine" id="cb15-4" title="4"></a>
-<a class="sourceLine" id="cb15-5" title="5"><span class="co">#nuts</span></a>
-<a class="sourceLine" id="cb15-6" title="6"></a>
-<a class="sourceLine" id="cb15-7" title="7">map_ln_n &lt;-<span class="st"> </span>map_ln <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb15-8" title="8"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lnkod_n =</span> <span class="kw">as.numeric</span>(lnkod)) </a>
-<a class="sourceLine" id="cb15-9" title="9">  </a>
-<a class="sourceLine" id="cb15-10" title="10">relative_dev &lt;-<span class="st"> </span><span class="cf">function</span> (x){  </a>
-<a class="sourceLine" id="cb15-11" title="11">  <span class="kw">return</span> (x <span class="op">/</span><span class="st"> </span>x[<span class="dv">1</span>])  </a>
-<a class="sourceLine" id="cb15-12" title="12">}  </a>
-<a class="sourceLine" id="cb15-13" title="13"></a>
-<a class="sourceLine" id="cb15-14" title="14">tot_dev &lt;-<span class="st"> </span><span class="cf">function</span> (x){  </a>
-<a class="sourceLine" id="cb15-15" title="15">  scales<span class="op">::</span><span class="kw">percent</span> ((<span class="kw">tail</span>(x, <span class="dv">1</span>) <span class="op">/</span><span class="st"> </span>x[<span class="dv">1</span>]) <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)  </a>
-<a class="sourceLine" id="cb15-16" title="16">}  </a>
-<a class="sourceLine" id="cb15-17" title="17"></a>
-<a class="sourceLine" id="cb15-18" title="18">perc_women &lt;-<span class="st"> </span><span class="cf">function</span>(x){  </a>
-<a class="sourceLine" id="cb15-19" title="19">  scales<span class="op">::</span><span class="kw">percent</span> (x[<span class="dv">2</span>] <span class="op">/</span><span class="st"> </span>(x[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>x[<span class="dv">2</span>]))  </a>
-<a class="sourceLine" id="cb15-20" title="20">}   </a>
-<a class="sourceLine" id="cb15-21" title="21"></a>
-<a class="sourceLine" id="cb15-22" title="22">readfile &lt;-<span class="st"> </span><span class="cf">function</span> (file1){  </a>
-<a class="sourceLine" id="cb15-23" title="23">  <span class="kw">read_csv</span> (file1, <span class="dt">col_types =</span> <span class="kw">cols</span>(), <span class="dt">locale =</span> readr<span class="op">::</span><span class="kw">locale</span> (<span class="dt">encoding =</span> <span class="st">&quot;latin1&quot;</span>), <span class="dt">na =</span> <span class="kw">c</span>(<span class="st">&quot;..&quot;</span>, <span class="st">&quot;NA&quot;</span>)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb15-24" title="24"><span class="st">    </span><span class="kw">gather</span> (<span class="kw">starts_with</span>(<span class="st">&quot;19&quot;</span>), <span class="kw">starts_with</span>(<span class="st">&quot;20&quot;</span>), <span class="dt">key =</span> <span class="st">&quot;year&quot;</span>, <span class="dt">value =</span> salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb15-25" title="25"><span class="st">    </span><span class="kw">drop_na</span>() <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb15-26" title="26"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">year2 =</span> <span class="kw">parse_number</span> (year)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb15-27" title="27"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">heading =</span> file1) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb15-28" title="28"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">relsalary =</span> <span class="kw">relative_dev</span> (salary))  </a>
-<a class="sourceLine" id="cb15-29" title="29">}</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1">nuts &lt;-<span class="st"> </span><span class="kw">read_csv</span> (<span class="st">&quot;nuts.csv&quot;</span>, <span class="dt">col_types =</span> <span class="kw">cols</span>(), <span class="dt">locale =</span> readr<span class="op">::</span><span class="kw">locale</span> (<span class="dt">encoding =</span> <span class="st">&quot;UTF-8&quot;</span>), <span class="dt">na =</span> <span class="kw">c</span>(<span class="st">&quot;..&quot;</span>, <span class="st">&quot;NA&quot;</span>))</a></code></pre></div>
+<pre><code>## Warning: Missing column names filled in: &#39;X1&#39; [1]</code></pre>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">options</span>(<span class="dt">tibble.print_max =</span> <span class="ot">Inf</span>)</a>
+<a class="sourceLine" id="cb17-2" title="2"></a>
+<a class="sourceLine" id="cb17-3" title="3">nuts</a></code></pre></div>
+<pre><code>## # A tibble: 21 x 6
+##       X1 Länskod Län             NUTS1           NUTS2                NUTS3
+##    &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;           &lt;chr&gt;                &lt;chr&gt;
+##  1     1       1 Stockholms      SE1 Östra Sver~ SE11 Stockholm       SE110
+##  2     2       3 Uppsala         SE1 Östra Sver~ SE12 Östra Mellansv~ SE121
+##  3     3       4 Södermanlands   SE1 Östra Sver~ SE12 Östra Mellansv~ SE122
+##  4     4       5 Östergötlands   SE1 Östra Sver~ SE12 Östra Mellansv~ SE123
+##  5     5       6 Jönköpings      SE2 Södra Sver~ SE21 Småland med öa~ SE211
+##  6     6       7 Kronobergs      SE2 Södra Sver~ SE21 Småland med öa~ SE212
+##  7     7       8 Kalmar          SE2 Södra Sver~ SE21 Småland med öa~ SE213
+##  8     8       9 Gotlands        SE2 Södra Sver~ SE21 Småland med öa~ SE214
+##  9     9      10 Blekinge        SE2 Södra Sver~ SE22 Sydsverige      SE221
+## 10    10      12 Skåne           SE2 Södra Sver~ SE22 Sydsverige      SE224
+## 11    11      13 Hallands        SE2 Södra Sver~ SE23 Västsverige     SE231
+## 12    12      14 Västra Götalan~ SE2 Södra Sver~ SE23 Västsverige     SE232
+## 13    13      17 Värmlands       SE3 Norra Sver~ SE31 Norra Mellansv~ SE311
+## 14    14      18 Örebro          SE1 Östra Sver~ SE12 Östra Mellansv~ SE124
+## 15    15      19 Västmanlands    SE1 Östra Sver~ SE12 Östra Mellansv~ SE125
+## 16    16      20 Dalarnas        SE3 Norra Sver~ SE31 Norra Mellansv~ SE312
+## 17    17      21 Gävleborgs      SE3 Norra Sver~ SE31 Norra Mellansv~ SE313
+## 18    18      22 Västernorrlands SE3 Norra Sver~ SE32 Mellersta Norr~ SE321
+## 19    19      23 Jämtlands       SE3 Norra Sver~ SE32 Mellersta Norr~ SE322
+## 20    20      24 Västerbottens   SE3 Norra Sver~ SE33 Övre Norrland   SE331
+## 21    21      25 Norrbottens     SE3 Norra Sver~ SE33 Övre Norrland   SE332</code></pre>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1">map_ln_n &lt;-<span class="st"> </span>map_ln <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb19-2" title="2"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lnkod_n =</span> <span class="kw">as.numeric</span>(lnkod)) </a>
+<a class="sourceLine" id="cb19-3" title="3">  </a>
+<a class="sourceLine" id="cb19-4" title="4">relative_dev &lt;-<span class="st"> </span><span class="cf">function</span> (x){  </a>
+<a class="sourceLine" id="cb19-5" title="5">  <span class="kw">return</span> (x <span class="op">/</span><span class="st"> </span>x[<span class="dv">1</span>])  </a>
+<a class="sourceLine" id="cb19-6" title="6">}  </a>
+<a class="sourceLine" id="cb19-7" title="7"></a>
+<a class="sourceLine" id="cb19-8" title="8">tot_dev &lt;-<span class="st"> </span><span class="cf">function</span> (x){  </a>
+<a class="sourceLine" id="cb19-9" title="9">  scales<span class="op">::</span><span class="kw">percent</span> ((<span class="kw">tail</span>(x, <span class="dv">1</span>) <span class="op">/</span><span class="st"> </span>x[<span class="dv">1</span>]) <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)  </a>
+<a class="sourceLine" id="cb19-10" title="10">}  </a>
+<a class="sourceLine" id="cb19-11" title="11"></a>
+<a class="sourceLine" id="cb19-12" title="12">perc_women &lt;-<span class="st"> </span><span class="cf">function</span>(x){  </a>
+<a class="sourceLine" id="cb19-13" title="13">  scales<span class="op">::</span><span class="kw">percent</span> (x[<span class="dv">2</span>] <span class="op">/</span><span class="st"> </span>(x[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>x[<span class="dv">2</span>]))  </a>
+<a class="sourceLine" id="cb19-14" title="14">}   </a>
+<a class="sourceLine" id="cb19-15" title="15"></a>
+<a class="sourceLine" id="cb19-16" title="16">readfile &lt;-<span class="st"> </span><span class="cf">function</span> (file1){  </a>
+<a class="sourceLine" id="cb19-17" title="17">  <span class="kw">read_csv</span> (file1, <span class="dt">col_types =</span> <span class="kw">cols</span>(), <span class="dt">locale =</span> readr<span class="op">::</span><span class="kw">locale</span> (<span class="dt">encoding =</span> <span class="st">&quot;latin1&quot;</span>), <span class="dt">na =</span> <span class="kw">c</span>(<span class="st">&quot;..&quot;</span>, <span class="st">&quot;NA&quot;</span>)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb19-18" title="18"><span class="st">    </span><span class="kw">gather</span> (<span class="kw">starts_with</span>(<span class="st">&quot;19&quot;</span>), <span class="kw">starts_with</span>(<span class="st">&quot;20&quot;</span>), <span class="dt">key =</span> <span class="st">&quot;year&quot;</span>, <span class="dt">value =</span> salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb19-19" title="19"><span class="st">    </span><span class="kw">drop_na</span>() <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb19-20" title="20"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">year2 =</span> <span class="kw">parse_number</span> (year)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb19-21" title="21"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">heading =</span> file1) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb19-22" title="22"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">relsalary =</span> <span class="kw">relative_dev</span> (salary))  </a>
+<a class="sourceLine" id="cb19-23" title="23">}</a></code></pre></div>
 
 </div>
             </section>
