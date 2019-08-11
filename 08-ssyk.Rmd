@@ -9,14 +9,16 @@ Samtliga sektorer
 Kön totalt
 2017
 
-```{r 214sweden, echo = TRUE}  
+```{r 214sweden, echo = TRUE, fig.cap = 'Engineers salaries in the different countys'} 
 readfile ("000000CG_1.csv") %>%
   left_join(nuts, by = c("region" = "NUTS2")) %>%
   right_join(map_ln_n, by = c("Länskod" = "lnkod_n")) %>%
   ggplot() +
     geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = relsalary)) +
     coord_equal() 
+```
 	
+```{r women, echo = TRUE, fig.cap = 'The correlation between the proportion of engineers who are women and the salaries of engineers in the region.'}
 salary_2017 <- readfile ("000000CG_1.csv") %>%
   left_join(nuts, by = c("region" = "NUTS2"))
 

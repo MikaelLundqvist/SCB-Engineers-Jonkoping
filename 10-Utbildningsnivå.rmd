@@ -1,0 +1,33 @@
+# Utbildningsnivå
+
+Befolkning efter region, ålder, utbildningsnivå, kön och år
+ålder 16-74 år
+kön män och kvinnor
+år 2017
+
+
+```{r utbildningsniva, echo = TRUE, fig.cap = 'Percentage of the population who have 3 years or more post-secondary education, but not postgraduate education.'} 
+readfile("UF0506A1.csv") %>%
+  group_by(utbildningsnivå, region) %>%
+  summarize(utbregno = sum(salary)) %>%
+  group_by(region) %>% mutate(perc = utbregno / sum(utbregno)) %>%
+  filter (utbildningsnivå == "eftergymnasial utbildning, 3 år eller mer") %>%
+  mutate(lnkod_n = as.numeric(substr(region, 1,2))) %>%
+  right_join(map_ln_n, by = "lnkod_n") %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = perc)) +
+    coord_equal()
+```
+	
+```{r utbildningsniva2, echo = TRUE, fig.cap = 'The correlation between the proportion of the population who have 3 years or more post-secondary education, but not postgraduate education, and the salaries of engineers in the region.'} 	
+readfile("UF0506A1.csv") %>%
+  group_by(utbildningsnivå, region) %>%
+  summarize(utbregno = sum(salary)) %>%
+  group_by(region) %>% mutate(perc = utbregno / sum(utbregno)) %>%
+  filter (utbildningsnivå == "eftergymnasial utbildning, 3 år eller mer") %>%
+  mutate(lnkod_n = as.numeric(substr(region, 1,2))) %>%
+  right_join(salary_2017, by = c("lnkod_n" = "Länskod")) %>%
+  ggscatter(x = "relsalary", y = "perc", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson")   
+```	

@@ -12,7 +12,10 @@ nuts <- read_csv ("nuts.csv", col_types = cols(), locale = readr::locale (encodi
 
 options(tibble.print_max = Inf)
 
-nuts
+nuts %>%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = 'NUTS (Nomenclature des Unités Territoriales Statistiques) is the EU\'s hierarchical regional division.') 
 
 map_ln_n <- map_ln %>%
   mutate(lnkod_n = as.numeric(lnkod)) 
