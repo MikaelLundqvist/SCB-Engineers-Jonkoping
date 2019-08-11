@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-08-08" />
+<meta name="date" content="2019-08-11" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -146,8 +146,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="9.7" data-path="ssyk-214.html"><a href="ssyk-214.html#animations-ssyk-214-architects-engineers-and-related-professionals"><i class="fa fa-check"></i><b>9.7</b> Animations , SSYK 214, Architects, engineers and related professionals</a></li>
 </ul></li>
 <li class="chapter" data-level="10" data-path="average-monthly-pay-year-1991-2015.html"><a href="average-monthly-pay-year-1991-2015.html"><i class="fa fa-check"></i><b>10</b> Average monthly pay Year 1991 - 2015</a></li>
-<li class="chapter" data-level="11" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>11</b> Appendix A</a></li>
-<li class="chapter" data-level="12" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>12</b> Appendix B</a></li>
+<li class="chapter" data-level="11" data-path="utbildningsniva.html"><a href="utbildningsniva.html"><i class="fa fa-check"></i><b>11</b> Utbildningsnivå</a></li>
+<li class="chapter" data-level="12" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>12</b> Appendix A</a></li>
+<li class="chapter" data-level="13" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>13</b> Appendix B</a></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
 <li class="divider"></li>
 <li><a href="https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping" target="blank">Github</a></li>
@@ -175,22 +176,22 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 Average monthly pay (total pay), SEK<br />
 SUN2000, 4 natural sciences, mathematics and computing<br />
 sex, men and women</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103I6.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb16-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb16-3" title="3"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> salary, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">field of education SUN 2000</span><span class="st">`</span>)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb16-4" title="4"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)   </a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103I6.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb19-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> salary, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">field of education SUN 2000</span><span class="st">`</span>)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb19-4" title="4"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)   </a></code></pre></div>
 <div class="figure"><span id="fig:naturalsciences1"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/naturalsciences-1.png" alt="Natural sciences" width="672" />
 <p class="caption">
 Figure 4.1: Natural sciences
 </p>
 </div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103I6.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb17-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">field of education SUN 2000</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb17-3" title="3"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">growth =</span> <span class="kw">c</span> (<span class="ot">NA</span>, <span class="kw">diff</span>(salary)) <span class="op">/</span><span class="st"> </span>salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb17-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">    </span></a>
-<a class="sourceLine" id="cb17-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2, <span class="dt">y =</span> growth, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">field of education SUN 2000</span><span class="st">`</span>)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb17-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)    </a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103I6.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb20-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">field of education SUN 2000</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb20-3" title="3"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">growth =</span> <span class="kw">c</span> (<span class="ot">NA</span>, <span class="kw">diff</span>(salary)) <span class="op">/</span><span class="st"> </span>salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb20-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">    </span></a>
+<a class="sourceLine" id="cb20-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2, <span class="dt">y =</span> growth, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">field of education SUN 2000</span><span class="st">`</span>)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb20-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)    </a></code></pre></div>
 <pre><code>## Warning: Removed 2 rows containing missing values (geom_path).</code></pre>
 <div class="figure"><span id="fig:naturalsciences2"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/naturalsciences-2.png" alt="Natural sciences" width="672" />
@@ -198,13 +199,13 @@ Figure 4.1: Natural sciences
 Figure 4.2: Natural sciences
 </p>
 </div>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103I6_2.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb19-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">field of education SUN 2000</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb19-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">tot =</span> <span class="kw">tot_dev</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb19-4" title="4"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (tot)) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb19-5" title="5"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>(</a>
-<a class="sourceLine" id="cb19-6" title="6">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb19-7" title="7">  <span class="dt">caption =</span> <span class="st">&#39;The average increase in salary for different educations between the years 2001 to 2018.&#39;</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103I6_2.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb22-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">field of education SUN 2000</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb22-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">tot =</span> <span class="kw">tot_dev</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb22-4" title="4"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (tot)) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb22-5" title="5"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>(</a>
+<a class="sourceLine" id="cb22-6" title="6">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb22-7" title="7">  <span class="dt">caption =</span> <span class="st">&#39;The average increase in salary for different educations between the years 2001 to 2018.&#39;</span>) </a></code></pre></div>
 <table>
 <caption><span id="tab:naturalsciences">Table 4.1: </span>The average increase in salary for different educations between the years 2001 to 2018.</caption>
 <thead>
