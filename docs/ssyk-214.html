@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-08-08" />
+<meta name="date" content="2019-08-11" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -186,8 +186,8 @@ Kön totalt
 <a class="sourceLine" id="cb38-5" title="5"><span class="st">    </span><span class="kw">geom_polygon</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> ggplot_long, <span class="dt">y =</span> ggplot_lat, <span class="dt">group =</span> lnkod, <span class="dt">fill =</span> relsalary)) <span class="op">+</span></a>
 <a class="sourceLine" id="cb38-6" title="6"><span class="st">    </span><span class="kw">coord_equal</span>() </a></code></pre></div>
 <p><img src="SCB-Engineers-Jonkoping_files/figure-html/214sweden-1.png" width="672" /></p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" title="1"><span class="co">#salary_2017 &lt;- readfile (&quot;000000CG_1.csv&quot;) %&gt;%</span></a>
-<a class="sourceLine" id="cb39-2" title="2"><span class="co">#  left_join(nuts, by = c(&quot;region&quot; = &quot;NUTS2&quot;))</span></a>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" title="1">salary_<span class="dv">2017</span> &lt;-<span class="st"> </span><span class="kw">readfile</span> (<span class="st">&quot;000000CG_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb39-2" title="2"><span class="st">  </span><span class="kw">left_join</span>(nuts, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span> =<span class="st"> &quot;NUTS2&quot;</span>))</a>
 <a class="sourceLine" id="cb39-3" title="3"></a>
 <a class="sourceLine" id="cb39-4" title="4"><span class="co">#readfile (&quot;000000NL_3.csv&quot;) %&gt;%   </span></a>
 <a class="sourceLine" id="cb39-5" title="5"><span class="co">#  group_by (`region`, year) %&gt;%   </span></a>
