@@ -1,0 +1,129 @@
+"sector","occuptional  (SSYK 2012)","sex","level of education","2014","2015","2016","2017","2018"
+"0 all sectors","214 Engineering professionals","men","primary and secondary education less than 9 years (ISCED97 1)",..,..,..,..,..
+"0 all sectors","214 Engineering professionals","men","primary and secondary education 9-10 years (ISCED97 2)",680,750,850,810,1000
+"0 all sectors","214 Engineering professionals","men","upper secondary education, 2 years or less (ISCED97 3C)",4500,5900,4700,5000,4800
+"0 all sectors","214 Engineering professionals","men","upper secondary education 3 years (ISCED97 3A)",5200,5300,5700,5900,6300
+"0 all sectors","214 Engineering professionals","men","post-secondary education, less than 3 years (ISCED97 4+5B)",15000,15200,15100,17500,17800
+"0 all sectors","214 Engineering professionals","men","post-secondary education 3 years or more (ISCED97 5A)",36100,36100,37100,40200,39200
+"0 all sectors","214 Engineering professionals","men","post-graduate education (ISCED97 6)",4300,4000,4000,4100,3900
+"0 all sectors","214 Engineering professionals","men","no information about level of educational attainment",700,650,630,690,690
+"0 all sectors","214 Engineering professionals","women","primary and secondary education less than 9 years (ISCED97 1)",..,..,..,..,..
+"0 all sectors","214 Engineering professionals","women","primary and secondary education 9-10 years (ISCED97 2)",..,120,120,130,140
+"0 all sectors","214 Engineering professionals","women","upper secondary education, 2 years or less (ISCED97 3C)",560,530,550,720,570
+"0 all sectors","214 Engineering professionals","women","upper secondary education 3 years (ISCED97 3A)",820,920,1100,1500,1300
+"0 all sectors","214 Engineering professionals","women","post-secondary education, less than 3 years (ISCED97 4+5B)",2200,2700,3100,3400,3300
+"0 all sectors","214 Engineering professionals","women","post-secondary education 3 years or more (ISCED97 5A)",12700,13000,13400,15300,15700
+"0 all sectors","214 Engineering professionals","women","post-graduate education (ISCED97 6)",1300,1300,1200,1300,1500
+"0 all sectors","214 Engineering professionals","women","no information about level of educational attainment",130,..,210,..,250
+"1-3 public sector","214 Engineering professionals","men","primary and secondary education less than 9 years (ISCED97 1)",0,0,0,0,0
+"1-3 public sector","214 Engineering professionals","men","primary and secondary education 9-10 years (ISCED97 2)",10,10,10,10,20
+"1-3 public sector","214 Engineering professionals","men","upper secondary education, 2 years or less (ISCED97 3C)",150,150,140,170,190
+"1-3 public sector","214 Engineering professionals","men","upper secondary education 3 years (ISCED97 3A)",140,140,120,160,170
+"1-3 public sector","214 Engineering professionals","men","post-secondary education, less than 3 years (ISCED97 4+5B)",500,490,450,510,540
+"1-3 public sector","214 Engineering professionals","men","post-secondary education 3 years or more (ISCED97 5A)",1000,1000,970,1100,1100
+"1-3 public sector","214 Engineering professionals","men","post-graduate education (ISCED97 6)",380,390,70,110,110
+"1-3 public sector","214 Engineering professionals","men","no information about level of educational attainment",60,40,0,0,0
+"1-3 public sector","214 Engineering professionals","women","primary and secondary education less than 9 years (ISCED97 1)",0,0,0,0,0
+"1-3 public sector","214 Engineering professionals","women","primary and secondary education 9-10 years (ISCED97 2)",10,0,0,0,0
+"1-3 public sector","214 Engineering professionals","women","upper secondary education, 2 years or less (ISCED97 3C)",10,10,10,10,10
+"1-3 public sector","214 Engineering professionals","women","upper secondary education 3 years (ISCED97 3A)",30,30,30,30,30
+"1-3 public sector","214 Engineering professionals","women","post-secondary education, less than 3 years (ISCED97 4+5B)",80,80,70,80,80
+"1-3 public sector","214 Engineering professionals","women","post-secondary education 3 years or more (ISCED97 5A)",450,470,370,420,470
+"1-3 public sector","214 Engineering professionals","women","post-graduate education (ISCED97 6)",170,140,30,40,50
+"1-3 public sector","214 Engineering professionals","women","no information about level of educational attainment",10,10,0,0,0
+"1 central government","214 Engineering professionals","men","primary and secondary education less than 9 years (ISCED97 1)",0,0,0,0,0
+"1 central government","214 Engineering professionals","men","primary and secondary education 9-10 years (ISCED97 2)",10,10,10,10,20
+"1 central government","214 Engineering professionals","men","upper secondary education, 2 years or less (ISCED97 3C)",150,150,140,170,190
+"1 central government","214 Engineering professionals","men","upper secondary education 3 years (ISCED97 3A)",140,140,120,160,170
+"1 central government","214 Engineering professionals","men","post-secondary education, less than 3 years (ISCED97 4+5B)",500,490,450,510,540
+"1 central government","214 Engineering professionals","men","post-secondary education 3 years or more (ISCED97 5A)",1000,1000,970,1100,1100
+"1 central government","214 Engineering professionals","men","post-graduate education (ISCED97 6)",380,390,70,110,110
+"1 central government","214 Engineering professionals","men","no information about level of educational attainment",60,40,0,0,0
+"1 central government","214 Engineering professionals","women","primary and secondary education less than 9 years (ISCED97 1)",0,0,0,0,0
+"1 central government","214 Engineering professionals","women","primary and secondary education 9-10 years (ISCED97 2)",10,0,0,0,0
+"1 central government","214 Engineering professionals","women","upper secondary education, 2 years or less (ISCED97 3C)",10,10,10,10,10
+"1 central government","214 Engineering professionals","women","upper secondary education 3 years (ISCED97 3A)",30,30,30,30,30
+"1 central government","214 Engineering professionals","women","post-secondary education, less than 3 years (ISCED97 4+5B)",80,80,70,80,80
+"1 central government","214 Engineering professionals","women","post-secondary education 3 years or more (ISCED97 5A)",450,470,370,420,470
+"1 central government","214 Engineering professionals","women","post-graduate education (ISCED97 6)",170,140,30,40,50
+"1 central government","214 Engineering professionals","women","no information about level of educational attainment",10,10,0,0,0
+"2 primary municipalities","214 Engineering professionals","men","primary and secondary education less than 9 years (ISCED97 1)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","men","primary and secondary education 9-10 years (ISCED97 2)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","men","upper secondary education, 2 years or less (ISCED97 3C)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","men","upper secondary education 3 years (ISCED97 3A)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","men","post-secondary education, less than 3 years (ISCED97 4+5B)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","men","post-secondary education 3 years or more (ISCED97 5A)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","men","post-graduate education (ISCED97 6)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","men","no information about level of educational attainment",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","women","primary and secondary education less than 9 years (ISCED97 1)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","women","primary and secondary education 9-10 years (ISCED97 2)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","women","upper secondary education, 2 years or less (ISCED97 3C)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","women","upper secondary education 3 years (ISCED97 3A)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","women","post-secondary education, less than 3 years (ISCED97 4+5B)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","women","post-secondary education 3 years or more (ISCED97 5A)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","women","post-graduate education (ISCED97 6)",0,0,0,0,0
+"2 primary municipalities","214 Engineering professionals","women","no information about level of educational attainment",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","men","primary and secondary education less than 9 years (ISCED97 1)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","men","primary and secondary education 9-10 years (ISCED97 2)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","men","upper secondary education, 2 years or less (ISCED97 3C)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","men","upper secondary education 3 years (ISCED97 3A)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","men","post-secondary education, less than 3 years (ISCED97 4+5B)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","men","post-secondary education 3 years or more (ISCED97 5A)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","men","post-graduate education (ISCED97 6)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","men","no information about level of educational attainment",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","women","primary and secondary education less than 9 years (ISCED97 1)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","women","primary and secondary education 9-10 years (ISCED97 2)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","women","upper secondary education, 2 years or less (ISCED97 3C)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","women","upper secondary education 3 years (ISCED97 3A)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","women","post-secondary education, less than 3 years (ISCED97 4+5B)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","women","post-secondary education 3 years or more (ISCED97 5A)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","women","post-graduate education (ISCED97 6)",0,0,0,0,0
+"3 county council sector","214 Engineering professionals","women","no information about level of educational attainment",0,0,0,0,0
+"4-5 private sector","214 Engineering professionals","men","primary and secondary education less than 9 years (ISCED97 1)",..,..,..,..,..
+"4-5 private sector","214 Engineering professionals","men","primary and secondary education 9-10 years (ISCED97 2)",670,740,840,790,990
+"4-5 private sector","214 Engineering professionals","men","upper secondary education, 2 years or less (ISCED97 3C)",4300,5700,4600,4800,4600
+"4-5 private sector","214 Engineering professionals","men","upper secondary education 3 years (ISCED97 3A)",5100,5200,5600,5800,6200
+"4-5 private sector","214 Engineering professionals","men","post-secondary education, less than 3 years (ISCED97 4+5B)",14500,14700,14600,17000,17200
+"4-5 private sector","214 Engineering professionals","men","post-secondary education 3 years or more (ISCED97 5A)",35100,35100,36200,39100,38100
+"4-5 private sector","214 Engineering professionals","men","post-graduate education (ISCED97 6)",3900,3600,3900,4000,3800
+"4-5 private sector","214 Engineering professionals","men","no information about level of educational attainment",650,610,630,690,690
+"4-5 private sector","214 Engineering professionals","women","primary and secondary education less than 9 years (ISCED97 1)",..,..,..,..,..
+"4-5 private sector","214 Engineering professionals","women","primary and secondary education 9-10 years (ISCED97 2)",..,120,120,..,..
+"4-5 private sector","214 Engineering professionals","women","upper secondary education, 2 years or less (ISCED97 3C)",550,520,540,710,560
+"4-5 private sector","214 Engineering professionals","women","upper secondary education 3 years (ISCED97 3A)",780,890,1100,1400,1200
+"4-5 private sector","214 Engineering professionals","women","post-secondary education, less than 3 years (ISCED97 4+5B)",2100,2600,3000,3300,3200
+"4-5 private sector","214 Engineering professionals","women","post-secondary education 3 years or more (ISCED97 5A)",12300,12500,13100,14900,15200
+"4-5 private sector","214 Engineering professionals","women","post-graduate education (ISCED97 6)",1100,1200,1200,1300,1400
+"4-5 private sector","214 Engineering professionals","women","no information about level of educational attainment",120,..,210,..,250
+"4 manual workers private sector","214 Engineering professionals","men","primary and secondary education less than 9 years (ISCED97 1)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","men","primary and secondary education 9-10 years (ISCED97 2)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","men","upper secondary education, 2 years or less (ISCED97 3C)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","men","upper secondary education 3 years (ISCED97 3A)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","men","post-secondary education, less than 3 years (ISCED97 4+5B)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","men","post-secondary education 3 years or more (ISCED97 5A)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","men","post-graduate education (ISCED97 6)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","men","no information about level of educational attainment",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","women","primary and secondary education less than 9 years (ISCED97 1)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","women","primary and secondary education 9-10 years (ISCED97 2)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","women","upper secondary education, 2 years or less (ISCED97 3C)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","women","upper secondary education 3 years (ISCED97 3A)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","women","post-secondary education, less than 3 years (ISCED97 4+5B)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","women","post-secondary education 3 years or more (ISCED97 5A)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","women","post-graduate education (ISCED97 6)",..,..,..,..,..
+"4 manual workers private sector","214 Engineering professionals","women","no information about level of educational attainment",..,..,..,..,..
+"5 non-manual workers private sector","214 Engineering professionals","men","primary and secondary education less than 9 years (ISCED97 1)",..,..,..,..,..
+"5 non-manual workers private sector","214 Engineering professionals","men","primary and secondary education 9-10 years (ISCED97 2)",670,740,840,790,990
+"5 non-manual workers private sector","214 Engineering professionals","men","upper secondary education, 2 years or less (ISCED97 3C)",4300,5700,4600,4800,4600
+"5 non-manual workers private sector","214 Engineering professionals","men","upper secondary education 3 years (ISCED97 3A)",5100,5200,5600,5800,6200
+"5 non-manual workers private sector","214 Engineering professionals","men","post-secondary education, less than 3 years (ISCED97 4+5B)",14500,14700,14600,17000,17200
+"5 non-manual workers private sector","214 Engineering professionals","men","post-secondary education 3 years or more (ISCED97 5A)",35100,35100,36200,39100,38100
+"5 non-manual workers private sector","214 Engineering professionals","men","post-graduate education (ISCED97 6)",3900,3600,3900,4000,3800
+"5 non-manual workers private sector","214 Engineering professionals","men","no information about level of educational attainment",650,610,630,690,690
+"5 non-manual workers private sector","214 Engineering professionals","women","primary and secondary education less than 9 years (ISCED97 1)",..,..,..,..,..
+"5 non-manual workers private sector","214 Engineering professionals","women","primary and secondary education 9-10 years (ISCED97 2)",..,120,120,..,..
+"5 non-manual workers private sector","214 Engineering professionals","women","upper secondary education, 2 years or less (ISCED97 3C)",550,520,540,710,560
+"5 non-manual workers private sector","214 Engineering professionals","women","upper secondary education 3 years (ISCED97 3A)",780,890,1100,1400,1200
+"5 non-manual workers private sector","214 Engineering professionals","women","post-secondary education, less than 3 years (ISCED97 4+5B)",2100,2600,3000,3300,3200
+"5 non-manual workers private sector","214 Engineering professionals","women","post-secondary education 3 years or more (ISCED97 5A)",12300,12500,13100,14900,15200
+"5 non-manual workers private sector","214 Engineering professionals","women","post-graduate education (ISCED97 6)",1100,1200,1200,1300,1400
+"5 non-manual workers private sector","214 Engineering professionals","women","no information about level of educational attainment",120,..,210,..,250

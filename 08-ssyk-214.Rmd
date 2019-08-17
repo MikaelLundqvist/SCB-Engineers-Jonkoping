@@ -33,6 +33,54 @@ readfile ("000000NL_3.csv") %>%
     cor.coef = TRUE, cor.method = "pearson")  	
 ``` 
 
+## Age distribution in the different countys
+
+Employees 16-64 years by region of work, occupation (3-digit SSYK 2012), age and sex. Year 2014 - 2017
+occupation=214, Architects, engineers and related professionals
+
+```{r 214age, echo = TRUE, fig.cap = 'The age distribution in the different countys for engineers, year 2017'}
+readfile("000000NK.csv") %>% filter(year2 == 2017) %>%
+  rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>% 
+  rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  ggplot() +
+    geom_line(aes(x = (age2 + age3) / 2, y = salary, color = region)) +
+    theme(legend.position="bottom") +
+    facet_grid(. ~ sex)
+```
+
+## Sector distribution in the different countys
+
+Employees 16-64 years by region of work, occupation (3-digit SSYK 2012), sector and sex. Year 2014 - 2017
+occupation=214, Architects, engineers and related professionals
+
+```{r 214sector, echo = TRUE, fig.cap = 'The sector distribution in the different countys for engineers, year 2017'}
+readfile("000000RM_1.csv") %>% 
+  filter(year2 == 2017) %>%
+  mutate(lnkod_n = substr(region, 1,2))%>%
+  ggplot(aes(x = lnkod_n, y = salary, fill = sector)) +
+    geom_col(position = "fill") +
+    theme(legend.position="bottom") +
+    facet_grid(. ~ sex)
+```
+
+## Education distribution for engineers
+
+Number of employees by sector, occuptional (SSYK 2012), sex, level of education and year
+214 Engineering professionals
+All sectors
+Year 2017
+
+```{r 214edu, echo = TRUE, fig.cap = 'The education distribution for engineers, year 2017'}
+edu <- readfile("000000CV_1.csv")
+edu$`level of education` <- as.factor(edu$`level of education`)
+edu$`level of education` <- factor(edu$`level of education`, levels(edu$`level of education`)[c(2, 3, 4, 6, 7, 5, 1)])
+edu %>%
+  filter(year2 == 2017) %>%  
+  ggplot(aes(x = `occuptional  (SSYK 2012)`, y = salary, fill = `level of education`)) +
+    geom_col(position = "fill") +
+    theme(legend.position="bottom") +
+    facet_grid(. ~ sex)	
+```
 
 ## Average monthly pay increase by occuption year 2000 - 2013
 
