@@ -1,0 +1,425 @@
+# SSYK 214
+
+## Average monthly salary, SEK by region
+
+Genomsnittlig grund- och månadslön samt kvinnors lön i procent av mäns lön efter region sektor, yrkesgrupp (SSYK 2012) och kön. År 2014 - 2018
+Månadslön
+Samtliga sektorer
+214 Cilvilingenjörsyrken
+Kön totalt
+2017
+
+```{r 214sweden, echo = TRUE, fig.cap = 'Engineers salaries in the different countys'} 
+readfile ("000000CG_1.csv") %>%
+  left_join(nuts, by = c("region" = "NUTS2")) %>%
+  right_join(map_ln_n, by = c("Länskod" = "lnkod_n")) %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = relsalary)) +
+    coord_equal() 
+```
+	
+```{r women, echo = TRUE, fig.cap = 'The correlation between the proportion of engineers who are women and the salaries of engineers in the region.'}
+salary_2017 <- readfile ("000000CG_1.csv") %>%
+  left_join(nuts, by = c("region" = "NUTS2"))
+
+readfile ("000000NL_3.csv") %>%   
+  group_by (`region`, year) %>%   
+  summarise (perc_women = perc_women (salary)) %>%
+  mutate(perc_women_n = as.numeric(sub("%", "", perc_women))) %>%
+  mutate(lnkod_n = as.numeric(substr(region, 1,2)))%>%
+  right_join(salary_2017, by = c("lnkod_n" = "Länskod")) %>%
+  ggscatter(x = "relsalary", y = "perc_women_n", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson")  	
+``` 
+
+
+## Average monthly pay increase by occuption year 2000 - 2013
+
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2000 - 2013	  
+age=total  
+sex=total  
+
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occuptional (SSYK 2012), age, sex and year, Year 2014 - 2018  
+age=total  
+sex=total  
+ 
+	    
+```{r occuptionpay, echo = TRUE}  
+readfile ("AM0103E6.csv") %>%   
+  group_by (`occupational group (SSYK)`) %>%   
+  summarise (tot = tot_dev (salary)) %>%  
+  arrange (desc (tot)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Average monthly pay increase by occuption (SSYK 2012), Year 2000 - 2013')  
+
+readfile ("00000031.csv") %>%   
+  group_by (`occuptional  (SSYK 2012)`) %>%   
+  summarise (tot = parse_number (tot_dev (salary))) %>%  
+  arrange (desc (tot)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Average monthly pay increase by occuption (SSYK 2012), Year 2014 - 2018')  
+``` 
+
+## SSYK 214, Architects, engineers and related professionals, Year 2000 - 2013
+
+Average monthly pay, non-manual workers private sector (SLP) by occupational 
+group (SSYK) age and sex. Year 2000 - 2013
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK 
+by occupational group (SSYK), age, sex and year
+
+```{r ssyk00-13, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2000 - 2013'}
+tb <- readfile("AM0103A9_1.csv") %>% 
+  rowwise() %>% 
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% 
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+  mutate(age4 = (age3 + age2) / 2) %>% 
+  group_by (`occupational group (SSYK)`, age, sex) %>%   
+  mutate (grouprelsal = relative_dev (salary))  
+  
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(salary), colour = age, shape=sex))  
+	
+model <- lm (log(salary) ~ year2 + sex + poly(age4, 3), data = tb)
+
+```{r ssyk00-13_2, echo = TRUE, fig.cap = 'SSYK, Year 2000 - 2013'} 
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit), colour = age, shape=sex))
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')  
+  
+tb <- readfile("AM0103A9_2.csv") %>% 
+  rowwise() %>% 
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% 
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+  mutate(age4 = (age3 + age2) / 2) %>% 
+  group_by (`occupational group (SSYK)`, age, sex) %>%   
+  mutate (grouprelsal = relative_dev (salary))  
+   	
+model <- lm (log(salary) ~ `occupational group (SSYK)` + year2 + sex + poly(age4, 3), data = tb)
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')
+```
+
+## SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+
+Average monthly pay, non-manual workers private sector (SLP) by occupational 
+group (SSYK 2012) age and sex. Year 2014 - 2018
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK 
+by occupational group (SSYK), age, sex and year
+
+```{r ssyk14-18, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}   
+tb <- readfile("00000031_1.csv") %>% 
+  rowwise() %>% 
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% 
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+  mutate(age4 = (age3 + age2) / 2) %>% 
+  group_by (`occuptional  (SSYK 2012)`, age, sex) %>%   
+  mutate (grouprelsal = relative_dev (salary))  
+   
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(salary), colour = age, shape=sex))  
+	
+model <- lm (log(salary) ~ year2 + sex + poly(age4, 3), data = tb)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+```
+
+```{r ssyk14-18_2, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year2,y = log(fit), colour = age, shape=sex))
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')
+
+tb <- readfile("00000031_3.csv") %>% 
+  rowwise() %>% 
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% 
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>% 
+  mutate(age4 = (age3 + age2) / 2) %>% 
+  group_by (`occuptional  (SSYK 2012)`, age, sex) %>%   
+  mutate (grouprelsal = relative_dev (salary))
+   	
+model <- lm (log(salary) ~ `occuptional  (SSYK 2012)` + year2 + sex + poly(age4, 3), data = tb)
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')  
+```  
+  
+## SSYK 214, Architects, engineers and related professionals by region, Year 2000 - 2018  
+
+Average monthly pay, non-manual workers private sector (SLP) by region, 
+occupational group (SSYK) and sex. Year 2000 - 2013
+Average monthly pay (total pay), non-manual workers private sector (SLP)
+214 Engineering professionals 
+
+```{r ssyk00-13_3, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2000 - 2013'}
+tb <- readfile("AM0103H2_4.csv") %>%
+    filter(year2 > 1994) %>%
+    group_by (`occupational group (SSYK)`, region, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ year2 + region + sex, data = tb)
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+``` 
+
+Average monthly pay, non-manual workers private sector (SLP) by region, 
+occupational group (SSYK 2012) and sex. Year 2014 - 2018
+Average monthly pay (total pay), non-manual workers private sector (SLP)
+214 Engineering professionals 	  
+
+```{r ssyk14-18_3, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}	  
+tb <- readfile("0000002T_1.csv") %>%
+    filter(year2 > 1994) %>%
+    group_by (`occuptional  (SSYK 2012)`, region, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ year2 + region + sex, data = tb)
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+``` 
+
+## Level of education , SSYK 214, Architects, engineers and related professionals
+
+Average basic salary, monthly salary and women´s salary as a percentage of 
+men´s salary by sector, occupational group (SSYK 2012), sex and educational 
+level (SUN). Year 2014 - 2018
+Monthly salary
+5 non-manual workers private sector
+214 Engineering professionals
+
+```{r ssyk14-18_4, echo = TRUE}	
+tb <- readfile("000000CY.csv") %>%
+    group_by (`level of education`, sex) %>%   
+    mutate (grouprelsal = relative_dev (salary))
+
+model <- lm (log(salary) ~ `level of education` + sex + year2, data = tb)
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Level of education for SSYK 214')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+``` 
+
+## Animations , SSYK 214, Architects, engineers and related professionals
+
+Approximaton with B-spline  		
+Average monthly pay (total pay), non-manual workers private sector (SLP),   
+SEK by occuptional group (SSYK), age, sex and year 2000-2013   
+214 Engineering professionals   
+sex=total   
+
+```{r ssyk_1, echo = TRUE, eval = FALSE}	 
+readfile("AM0103A9.csv") %>% rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%   
+ ggplot(mapping = aes(x = year2 - (age2 + age3) / 2, y = salary)) +  
+   geom_point() +   
+   geom_smooth(method = lm, formula = y ~ splines::bs(x, 8), se = FALSE) +  
+   transition_time(year2) +  
+   labs(title = "Year: {frame_time}") +  
+	scale_x_continuous(name = "Year of birth") +  
+   scale_y_continuous(name = "Salary")  
+anim_save("2000-2013.gif", width = 1000, height = 1000)	  
+```	
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/2000-2013.gif) 
+    
+Average monthly pay (total pay), non-manual workers private sector (SLP),   
+SEK by occuptional (SSYK 2012), age, sex and year 2014-2018  
+214 Engineering professionals   
+sex=total  
+
+```{r ssyk_2, echo = TRUE, eval = FALSE}
+readfile("00000031_2.csv") %>% rowwise() %>% mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%   
+ ggplot(mapping = aes(x = year2 - (age2 + age3) / 2, y = salary)) +  
+   geom_point() +   
+   geom_smooth(method = lm, formula = y ~ splines::bs(x, 8), se = FALSE) +  
+   transition_time(year2) +  
+   labs(title = "Year: {frame_time}") +  
+	scale_x_continuous(name = "Year of birth") +  
+   scale_y_continuous(name = "Salary")	  
+anim_save("2014-2018.gif", width = 1000, height = 1000)    
+``` 
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/2014-2018.gif)	
+  
+Average monthly pay (total pay), non-manual workers private sector (SLP),   
+SEK by occuptional (SSYK 2012), age, sex and year 2000-2013  
+214 Engineering professionals   
+sex=total  
+Growth of salaries by age group  
+
+```{r ssyk_3, echo = TRUE, eval = FALSE}
+csvfile <- readfile("AM0103A9.csv") %>%   
+  rowwise() %>%   
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2])	  
+yearwise <- group_split(csvfile %>% group_by(year2))	  
+ageGroupGrowth = data.frame()	  
+for (i in 1:13){  
+  temp <- cbind(year = 1999 + i, age = (yearwise[[i]]$age2 + yearwise[[i]]$age3) / 2, growth = yearwise[[i+1]]$relsalary / yearwise[[i]]$relsalary) - 1  
+  ageGroupGrowth <- rbind(ageGroupGrowth, temp)  
+}	  
+ageGroupGrowth[, 'age'] <- factor(ageGroupGrowth[, 'age'])		  
+ageGroupGrowth %>%	  
+  ggplot(mapping = aes(x = age, y = growth)) +  
+  geom_bar(stat = "identity") +  
+  transition_time(as.numeric(year)) +  
+  labs(title = "Year: {frame_time}") +  
+  scale_x_discrete(name = "Age group") +  
+  scale_y_continuous(name = "Salary increase (%)")	  
+anim_save("AgeGroupGrowth2000-2013.gif", width = 1000, height = 1000)    
+``` 
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/AgeGroupGrowth2000-2013.gif)	   
+  
+Average monthly pay (total pay), non-manual workers private sector (SLP),   
+SEK by occuptional (SSYK 2012), age, sex and year 2000-2013  
+214 Engineering professionals   
+sex=total  
+Individual salary increase by birthyear, estimated from B-spline approximation  
+
+```{r ssyk_4, echo = TRUE, eval = FALSE}
+csvfile <- readfile("AM0103A9.csv") %>%   
+  rowwise() %>%   
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2])  
+indGrowth = data.frame()  
+for (i in 2000:2012){  
+  yearfile <- filter(csvfile, year2 == i)  
+  x = yearfile$year2 - (yearfile$age2 + yearfile$age3) / 2  
+  model = lm(yearfile$salary ~ splines::bs(x, 8))  
+  X1 = data.frame(x = unlist(map2( i - 62, i - 22, seq)))  
+  Y1 = predict(model, X1)   
+  yearfile <- filter(csvfile, year2 == i + 1)  
+  x = yearfile$year2 - (yearfile$age2 + yearfile$age3) / 2  
+  model = lm(yearfile$salary ~ splines::bs(x, 8))  
+  X2 = data.frame(x = unlist(map2( i + 1 - 62, i + 1 - 22, seq)))      
+  Y2 = predict(model, X2)  
+  growth = Y2[1:40] / Y1[2:41]    
+  temp <- as_tibble(cbind(year = i+1, by=X2[1:40,1], growth=growth))  
+  indGrowth <- rbind(indGrowth, temp)  
+}   
+indGrowth %>%	  
+  ggplot(mapping = aes(x = by, y = growth)) +  
+  geom_line() +  
+ transition_time(year) +  
+  labs(title = "Year: {frame_time}") +  
+  scale_x_continuous(name = "Year of birth") +  
+  scale_y_continuous(name = "Salary increase (%)")   
+anim_save("indGrowth2000-2013.gif", width = 1000, height = 1000)  
+```
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/indGrowth2000-2013.gif)  
+  
+Average monthly pay (total pay), non-manual workers private sector (SLP),   
+SEK by occuptional (SSYK 2012), age, sex and year 2000-2013  
+214 Engineering professionals   
+sex=total  
+Changes in the salary structure part by birthyear, salary structure part is   
+defined as the derivative of the age / salary function, salary structure   
+part defines how much the salaries needs to increase each year so that the  
+structure remains unchanged.  
+
+```{r ssyk_5, echo = TRUE, eval = FALSE}
+csvfile <- readfile("AM0103A9.csv") %>%   
+  rowwise() %>%   
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+  rowwise() %>% mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2])    
+salaryStructure = data.frame()  
+for (i in min(csvfile$year2):max(csvfile$year2)){  
+  yearfile <- filter(csvfile, year2 == i)  
+  x = yearfile$year2 - (yearfile$age2 + yearfile$age3) / 2  
+  model = lm(yearfile$salary ~ splines::bs(x, 8))  
+  X = data.frame(x = unlist(map2( i - 62, i - 22, seq, length = 100)))  
+  Y = predict(model, X)   
+  dX = rowMeans(embed(X$x, 2))  
+  dY = -diff(Y) / diff(X$x) / Y  
+  temp <- as_tibble(cbind(year = i, dX = dX, dY = dY))  
+  salaryStructure <- rbind(salaryStructure, temp)  
+}   
+salaryStructure %>%	  
+  ggplot(mapping = aes(x = dX, y = dY)) +  
+  geom_line() +  
+  transition_time(year) +  
+  labs(title = "Year: {frame_time}") +  
+  scale_x_continuous(name = "Year of birth") +  
+  scale_y_continuous(name = "Structural increase (%)")   
+anim_save("salaryStructure2000-2013.gif", width = 1000, height = 1000)  
+```
+![](https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/salaryStructure2000-2013.gif)

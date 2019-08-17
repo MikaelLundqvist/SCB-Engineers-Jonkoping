@@ -1,10 +1,8 @@
 # Percent women in the countys  
 
+Employees 16-64 years by region of work, occupation (3-digit SSYK 2012) and sex. Year 2014 - 2017
 214 Engineering professionals  
-  
-Percent women in the countys  
-214 Engineering professionals  
-Joint-stock corporations not controlled by the government sector  
+Year 2017  
   
 ```{r womencountys, echo = TRUE}  
 options(tibble.print_max = Inf)
@@ -15,10 +13,10 @@ readfile ("000000NL_3.csv") %>%
   arrange (desc (perc_women)) %>%
   knitr::kable( 
   booktabs = TRUE,
-  caption = 'Percent women in the countys')   
+  caption = 'Percent women in the countys, 214 Engineering professionals')   
 ```  
   
-```{r womencountys2, echo = TRUE, fig.cap = 'Percent women in the countys'}    
+```{r womencountys2, echo = TRUE, fig.cap = 'Percent women in the countys, 214 Engineering professionals'}    
 readfile ("000000NL_3.csv") %>%   
   group_by (`region`, year) %>%   
   summarise (perc_women = perc_women (salary)) %>%
@@ -29,6 +27,41 @@ readfile ("000000NL_3.csv") %>%
     geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = perc_women_n)) +
     coord_equal()
 ``` 	
+
+Employees 16-64 years by region of work, occupation (3-digit SSYK 2012) and sex. Year 2014 - 2017
+311 Physical and engineering science technicians
+Year 2017  
+
+```{r 311womencountys, echo = TRUE}  
+options(tibble.print_max = Inf)
+	 	 
+readfile ("000000NL_4.csv") %>%   
+  group_by (`region`, year) %>%   
+  summarise (perc_women = perc_women (salary)) %>%  
+  arrange (desc (perc_women)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Percent women in the countys, 311 Physical and engineering science technicians')   
+```  
+  
+```{r 311womencountys2, echo = TRUE, fig.cap = 'Percent women in the countys, 311 Physical and engineering science technicians'}    
+readfile ("000000NL_4.csv") %>%   
+  group_by (`region`, year) %>%   
+  summarise (perc_women = perc_women (salary)) %>%
+  mutate(perc_women_n = as.numeric(sub("%", "", perc_women))) %>%
+  mutate(lnkod_n = as.numeric(substr(region, 1,2))) %>%
+  right_join(map_ln_n, by = "lnkod_n") %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = perc_women_n)) +
+    coord_equal()
+``` 	
+
+
+
+
+Percent women in the countys  
+214 Engineering professionals  
+Joint-stock corporations not controlled by the government sector 
       
 ```{r womencountys3, echo = TRUE}  	  
 readfile ("000000RM.csv") %>%   
@@ -37,10 +70,10 @@ readfile ("000000RM.csv") %>%
   arrange (desc (perc_women)) %>%
   knitr::kable(  
   booktabs = TRUE,
-  caption = 'Percent women in the countys, Joint-stock corporations not controlled by the government sector')
+  caption = 'Percent women in the countys, 214 Engineering professionals, Joint-stock corporations not controlled by the government sector')
 ```   
   
-```{r womencountys4, echo = TRUE, fig.cap = 'Percent women in the countys, Joint-stock corporations not controlled by the government sector'}      
+```{r womencountys4, echo = TRUE, fig.cap = 'Percent women in the countys, 214 Engineering professionals, Joint-stock corporations not controlled by the government sector'}      
 readfile ("000000RM.csv") %>%   
   group_by (`region`, year) %>%   
   summarise (perc_women = perc_women (salary)) %>%
