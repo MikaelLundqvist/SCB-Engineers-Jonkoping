@@ -29,7 +29,7 @@ tot_dev <- function (x){
 }  
 
 perc_women <- function(x){  
-  scales::percent (x[2] / (x[1] + x[2]))  
+  ifelse (length(x) == 2, scales::percent (x[2] / (x[1] + x[2])), NA)
 }   
 
 readfile <- function (file1){  

@@ -287,6 +287,62 @@ Anova(model, type=2) %>%
   caption = 'Anova report from linear model fit') 
 ``` 
 
+## The correlation between the proportion of engineers who are women and the salaries of engineers in the region. Year 2014 - 2018
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2014 - 2018
+Number of employees
+All sectors
+311, Physical and engineering science technicians
+
+```{r 311ssyk14-18_5, echo = TRUE}	
+tb <- readfile("000000CG_11.csv")
+tb <- readfile("000000CD_11.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x))))
+  
+model <- lm (log(salary.y) ~ year2.x + perc_women, data = tb)
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'The correlation between the proportion of Physical and engineering science technicians who are women and the salaries of Physical and engineering science technicians in the region. Year 2014 - 2018')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+``` 
+
+## The correlation between the proportion of engineers who are women and the salaries of engineers in the region. Year 2003 - 2013
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2003 - 2013
+Number of employees
+All sectors
+311, Physical and engineering science technicians
+
+```{r 311ssyk14-18_6, echo = TRUE}	
+tb <- readfile("AM0110A2_1.csv")
+tb <- readfile("AM0110A4_1.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x))))
+  
+model <- lm (log(salary.y) ~ year2.x + perc_women, data = tb)
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'The correlation between the proportion of Physical and engineering science technicians who are women and the salaries of Physical and engineering science technicians in the region. Year 2003 - 2013')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+``` 
+
 ## Animations , SSYK 214, Architects, engineers and related professionals
 
 Approximaton with B-spline  		
