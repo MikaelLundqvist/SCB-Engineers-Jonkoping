@@ -33,6 +33,37 @@ readfile ("000000NL_3.csv") %>%
     cor.coef = TRUE, cor.method = "pearson")  	
 ``` 
 
+## Number of men and women in SSYK 214 and the percentage of women in SSYK 214 Year 2014 - 2018
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and educational level (SUN). Year 2014 - 2018
+Number of employees
+All sectors
+214, Architects, engineers and related professionals
+```{r 214percwomen, echo = TRUE, fig.cap = 'Number of men and women in SSYK 214 and the percentage of women in SSYK 214 Year 2014 - 2018'}
+readfile("000000CV_3.csv") %>%   
+  group_by (year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary)))) %>%
+  ggplot(aes(x = year2)) +
+  geom_line(mapping = aes(y = salary, colour = sex)) +
+  geom_line(mapping = aes(y = perc_women * 2000)) +
+  scale_y_continuous(sec.axis = sec_axis(~ . * 0.0005, name = "Percent women [%]"))
+```
+
+## Number of men and women in SSYK 214 and the percentage of women in SSYK 214 Year 2003 - 2013
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK), sex and educational level (SUN). Year 2003 - 2013
+Number of employees
+All sectors
+214, Architects, engineers and related professionals
+```{r 214percwomen2, echo = TRUE, fig.cap = 'Number of men and women in SSYK 214 and the percentage of women in SSYK 214 Year 2003 - 2013'}
+readfile("AM0110B4.csv") %>%   
+  group_by (year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary)))) %>%
+  ggplot(aes(x = year2)) +
+  geom_line(mapping = aes(y = salary, colour = sex)) +
+  geom_line(mapping = aes(y = perc_women * 2000)) +
+  scale_y_continuous(sec.axis = sec_axis(~ . * 0.0005, name = "Percent women [%]"))
+```
+
+
 ## Age distribution in the different countys
 
 Employees 16-64 years by region of work, occupation (3-digit SSYK 2012), age and sex. Year 2014 - 2017
