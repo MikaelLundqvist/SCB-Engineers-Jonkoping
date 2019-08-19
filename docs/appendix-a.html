@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-08-18" />
+<meta name="date" content="2019-08-19" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -168,7 +168,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="10.13" data-path="ssyk-311.html"><a href="ssyk-311.html#animations-ssyk-214-architects-engineers-and-related-professionals-1"><i class="fa fa-check"></i><b>10.13</b> Animations , SSYK 214, Architects, engineers and related professionals</a></li>
 </ul></li>
 <li class="chapter" data-level="11" data-path="average-monthly-pay-year-1991-2015.html"><a href="average-monthly-pay-year-1991-2015.html"><i class="fa fa-check"></i><b>11</b> Average monthly pay Year 1991 - 2015</a></li>
-<li class="chapter" data-level="12" data-path="utbildningsniva.html"><a href="utbildningsniva.html"><i class="fa fa-check"></i><b>12</b> Utbildningsnivå</a></li>
+<li class="chapter" data-level="12" data-path="utbildningsniva.html"><a href="utbildningsniva.html"><i class="fa fa-check"></i><b>12</b> Utbildningsnivå</a><ul>
+<li class="chapter" data-level="12.1" data-path="utbildningsniva.html"><a href="utbildningsniva.html#the-correlation-between-the-proportion-of-engineers-who-are-women-and-the-salaries-of-engineers-in-the-region.-year-2014---2018-2"><i class="fa fa-check"></i><b>12.1</b> The correlation between the proportion of engineers who are women and the salaries of engineers in the region. Year 2014 - 2018</a></li>
+</ul></li>
 <li class="chapter" data-level="13" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>13</b> Appendix A</a></li>
 <li class="chapter" data-level="14" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>14</b> Appendix B</a></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
@@ -198,17 +200,17 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 Suppose there is two groups A and B that both have flat age distributions.<br />
 Group B have a flat salary distribution in general, in group A the oldest<br />
 employees earns twice as much as the youngest in general.</p>
-<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb133-1" title="1">A &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30000</span>, <span class="dv">60000</span>, <span class="dt">by=</span><span class="dv">750</span>)  </a>
-<a class="sourceLine" id="cb133-2" title="2">B &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30000</span>, <span class="dv">30000</span>, <span class="dt">length=</span><span class="dv">41</span>)  </a>
-<a class="sourceLine" id="cb133-3" title="3">year &lt;-<span class="st"> </span><span class="dv">2019</span>  </a>
-<a class="sourceLine" id="cb133-4" title="4">by &lt;-<span class="st"> </span>(year <span class="op">-</span><span class="st"> </span><span class="dv">25</span>)<span class="op">:</span>(year <span class="op">-</span><span class="st"> </span><span class="dv">65</span>)    </a>
-<a class="sourceLine" id="cb133-5" title="5"><span class="kw">tibble</span>(by, A, B) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb133-6" title="6"><span class="st">  </span><span class="kw">gather</span>(A, B, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb133-7" title="7"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb133-8" title="8"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>, <span class="dt">position =</span> <span class="st">&quot;dodge&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb133-9" title="9"><span class="st">  </span><span class="kw">labs</span>(  </a>
-<a class="sourceLine" id="cb133-10" title="10">    <span class="dt">title =</span> <span class="st">&quot;Salary structure of Group A and Group B&quot;</span>  </a>
-<a class="sourceLine" id="cb133-11" title="11">  )  </a></code></pre></div>
+<div class="sourceCode" id="cb137"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb137-1" title="1">A &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30000</span>, <span class="dv">60000</span>, <span class="dt">by=</span><span class="dv">750</span>)  </a>
+<a class="sourceLine" id="cb137-2" title="2">B &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30000</span>, <span class="dv">30000</span>, <span class="dt">length=</span><span class="dv">41</span>)  </a>
+<a class="sourceLine" id="cb137-3" title="3">year &lt;-<span class="st"> </span><span class="dv">2019</span>  </a>
+<a class="sourceLine" id="cb137-4" title="4">by &lt;-<span class="st"> </span>(year <span class="op">-</span><span class="st"> </span><span class="dv">25</span>)<span class="op">:</span>(year <span class="op">-</span><span class="st"> </span><span class="dv">65</span>)    </a>
+<a class="sourceLine" id="cb137-5" title="5"><span class="kw">tibble</span>(by, A, B) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb137-6" title="6"><span class="st">  </span><span class="kw">gather</span>(A, B, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb137-7" title="7"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb137-8" title="8"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>, <span class="dt">position =</span> <span class="st">&quot;dodge&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb137-9" title="9"><span class="st">  </span><span class="kw">labs</span>(  </a>
+<a class="sourceLine" id="cb137-10" title="10">    <span class="dt">title =</span> <span class="st">&quot;Salary structure of Group A and Group B&quot;</span>  </a>
+<a class="sourceLine" id="cb137-11" title="11">  )  </a></code></pre></div>
 <div class="figure"><span id="fig:AppendixA1"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/AppendixA1-1.png" alt="Salary structure of Group A and Group B" width="672" />
 <p class="caption">
@@ -217,13 +219,13 @@ Figure 13.1: Salary structure of Group A and Group B
 </div>
 <p>During the year both group A and B increase the sum of all salaries for<br />
 respective group by two percent.</p>
-<div class="sourceCode" id="cb134"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb134-1" title="1"><span class="kw">tibble</span>(<span class="dt">A_raise =</span> <span class="kw">sum</span>(A) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span>, <span class="dt">B_raise =</span> <span class="kw">sum</span>(B) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb134-2" title="2"><span class="st">  </span><span class="kw">gather</span>(A_raise, B_raise, <span class="dt">key=</span><span class="st">&quot;group&quot;</span>, <span class="dt">value=</span><span class="st">&quot;raise&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb134-3" title="3"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb134-4" title="4"><span class="st">    </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x=</span>group, <span class="dt">y=</span>raise, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb134-5" title="5"><span class="st">    </span><span class="kw">labs</span>(  </a>
-<a class="sourceLine" id="cb134-6" title="6">      <span class="dt">title =</span> <span class="st">&quot;Salary raise by 2.0%&quot;</span>  </a>
-<a class="sourceLine" id="cb134-7" title="7">    )    </a></code></pre></div>
+<div class="sourceCode" id="cb138"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb138-1" title="1"><span class="kw">tibble</span>(<span class="dt">A_raise =</span> <span class="kw">sum</span>(A) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span>, <span class="dt">B_raise =</span> <span class="kw">sum</span>(B) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb138-2" title="2"><span class="st">  </span><span class="kw">gather</span>(A_raise, B_raise, <span class="dt">key=</span><span class="st">&quot;group&quot;</span>, <span class="dt">value=</span><span class="st">&quot;raise&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb138-3" title="3"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb138-4" title="4"><span class="st">    </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x=</span>group, <span class="dt">y=</span>raise, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb138-5" title="5"><span class="st">    </span><span class="kw">labs</span>(  </a>
+<a class="sourceLine" id="cb138-6" title="6">      <span class="dt">title =</span> <span class="st">&quot;Salary raise by 2.0%&quot;</span>  </a>
+<a class="sourceLine" id="cb138-7" title="7">    )    </a></code></pre></div>
 <div class="figure"><span id="fig:AppendixA2"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/AppendixA2-1.png" alt="Salary raise by 2.0%" width="672" />
 <p class="caption">
@@ -232,16 +234,16 @@ Figure 13.2: Salary raise by 2.0%
 </div>
 <p>Suppose that each groups increase is divided equally to the employees within<br />
 respective group.</p>
-<div class="sourceCode" id="cb135"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb135-1" title="1">raise &lt;-<span class="st"> </span>(A <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(A) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (A)) <span class="op">-</span><span class="st"> </span>A     </a>
-<a class="sourceLine" id="cb135-2" title="2">g &lt;-<span class="st"> </span><span class="kw">tibble</span>(by, A, raise) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb135-3" title="3"><span class="st">  </span><span class="kw">gather</span>(A, raise, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>)  </a>
-<a class="sourceLine" id="cb135-4" title="4">g<span class="op">$</span>group &lt;-<span class="st">  </span><span class="kw">factor</span>(g<span class="op">$</span>group, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;raise&quot;</span>, <span class="st">&quot;A&quot;</span>))  </a>
-<a class="sourceLine" id="cb135-5" title="5">g <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb135-6" title="6"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb135-7" title="7"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb135-8" title="8"><span class="st">  </span><span class="kw">labs</span>(  </a>
-<a class="sourceLine" id="cb135-9" title="9">    <span class="dt">title =</span> <span class="st">&quot;Salary increase distribution over age Group A&quot;</span>  </a>
-<a class="sourceLine" id="cb135-10" title="10">  )       </a></code></pre></div>
+<div class="sourceCode" id="cb139"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb139-1" title="1">raise &lt;-<span class="st"> </span>(A <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(A) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (A)) <span class="op">-</span><span class="st"> </span>A     </a>
+<a class="sourceLine" id="cb139-2" title="2">g &lt;-<span class="st"> </span><span class="kw">tibble</span>(by, A, raise) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb139-3" title="3"><span class="st">  </span><span class="kw">gather</span>(A, raise, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>)  </a>
+<a class="sourceLine" id="cb139-4" title="4">g<span class="op">$</span>group &lt;-<span class="st">  </span><span class="kw">factor</span>(g<span class="op">$</span>group, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;raise&quot;</span>, <span class="st">&quot;A&quot;</span>))  </a>
+<a class="sourceLine" id="cb139-5" title="5">g <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb139-6" title="6"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb139-7" title="7"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb139-8" title="8"><span class="st">  </span><span class="kw">labs</span>(  </a>
+<a class="sourceLine" id="cb139-9" title="9">    <span class="dt">title =</span> <span class="st">&quot;Salary increase distribution over age Group A&quot;</span>  </a>
+<a class="sourceLine" id="cb139-10" title="10">  )       </a></code></pre></div>
 <div class="figure"><span id="fig:AppendixA3"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/AppendixA3-1.png" alt="Salary increase distribution over age Group A" width="672" />
 <p class="caption">
@@ -250,16 +252,16 @@ Figure 13.3: Salary increase distribution over age Group A
 </div>
 <p>Suppose that each groups increase is divided equally to the employees within<br />
 respective group.</p>
-<div class="sourceCode" id="cb136"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb136-1" title="1">raise &lt;-<span class="st"> </span>(B <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(B) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (B)) <span class="op">-</span><span class="st"> </span>B     </a>
-<a class="sourceLine" id="cb136-2" title="2">g &lt;-<span class="st"> </span><span class="kw">as_tibble</span>(<span class="kw">cbind</span>(by, B, raise)) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb136-3" title="3"><span class="st">  </span><span class="kw">gather</span>(B, raise, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>)  </a>
-<a class="sourceLine" id="cb136-4" title="4">g<span class="op">$</span>group &lt;-<span class="st">  </span><span class="kw">factor</span>(g<span class="op">$</span>group, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;raise&quot;</span>, <span class="st">&quot;B&quot;</span>))  </a>
-<a class="sourceLine" id="cb136-5" title="5">g <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb136-6" title="6"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb136-7" title="7"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb136-8" title="8"><span class="st">  </span><span class="kw">labs</span>(  </a>
-<a class="sourceLine" id="cb136-9" title="9">    <span class="dt">title =</span> <span class="st">&quot;Salary increase distribution over age Group B&quot;</span>  </a>
-<a class="sourceLine" id="cb136-10" title="10">  )  </a></code></pre></div>
+<div class="sourceCode" id="cb140"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb140-1" title="1">raise &lt;-<span class="st"> </span>(B <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(B) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (B)) <span class="op">-</span><span class="st"> </span>B     </a>
+<a class="sourceLine" id="cb140-2" title="2">g &lt;-<span class="st"> </span><span class="kw">as_tibble</span>(<span class="kw">cbind</span>(by, B, raise)) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb140-3" title="3"><span class="st">  </span><span class="kw">gather</span>(B, raise, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>)  </a>
+<a class="sourceLine" id="cb140-4" title="4">g<span class="op">$</span>group &lt;-<span class="st">  </span><span class="kw">factor</span>(g<span class="op">$</span>group, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;raise&quot;</span>, <span class="st">&quot;B&quot;</span>))  </a>
+<a class="sourceLine" id="cb140-5" title="5">g <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb140-6" title="6"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb140-7" title="7"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb140-8" title="8"><span class="st">  </span><span class="kw">labs</span>(  </a>
+<a class="sourceLine" id="cb140-9" title="9">    <span class="dt">title =</span> <span class="st">&quot;Salary increase distribution over age Group B&quot;</span>  </a>
+<a class="sourceLine" id="cb140-10" title="10">  )  </a></code></pre></div>
 <div class="figure"><span id="fig:AppendixA4"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/AppendixA4-1.png" alt="Salary increase distribution over age Group A" width="672" />
 <p class="caption">
@@ -269,20 +271,20 @@ Figure 13.4: Salary increase distribution over age Group A
 <p>The oldest employees retire and new adolescents enter the job market. Suppose<br />
 that the starting salary for respective group is determined by the<br />
 age / salary structure.</p>
-<div class="sourceCode" id="cb137"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb137-1" title="1">by_year2 &lt;-<span class="st"> </span>by <span class="op">+</span><span class="st"> </span><span class="dv">1</span>  </a>
-<a class="sourceLine" id="cb137-2" title="2">B_year2 &lt;-<span class="st"> </span><span class="kw">lag</span>(B)  </a>
-<a class="sourceLine" id="cb137-3" title="3">B_year2[<span class="dv">1</span>] &lt;-<span class="st"> </span>B[<span class="dv">1</span>] <span class="op">*</span><span class="st"> </span><span class="fl">1.02</span>  </a>
-<a class="sourceLine" id="cb137-4" title="4">raise_year2 &lt;-<span class="st"> </span><span class="kw">lag</span>(B <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(B) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (B) <span class="op">-</span><span class="st"> </span>B)  </a>
-<a class="sourceLine" id="cb137-5" title="5">raise_year2[<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">0</span>  </a>
-<a class="sourceLine" id="cb137-6" title="6">t &lt;-<span class="st"> </span><span class="kw">tibble</span>(by_year2, B_year2, raise_year2) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb137-7" title="7"><span class="st">  </span><span class="kw">gather</span>(B_year2, raise_year2, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>)  </a>
-<a class="sourceLine" id="cb137-8" title="8">t<span class="op">$</span>group &lt;-<span class="st"> </span><span class="kw">factor</span>(t<span class="op">$</span>group, <span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&quot;raise_year2&quot;</span>, <span class="st">&quot;B_year2&quot;</span>))  </a>
-<a class="sourceLine" id="cb137-9" title="9">t <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb137-10" title="10"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb137-11" title="11"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by_year2, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb137-12" title="12"><span class="st">  </span><span class="kw">labs</span>(  </a>
-<a class="sourceLine" id="cb137-13" title="13">    <span class="dt">title =</span> <span class="st">&quot;Salary distribution Group B after one year succession&quot;</span>  </a>
-<a class="sourceLine" id="cb137-14" title="14">  )    </a></code></pre></div>
+<div class="sourceCode" id="cb141"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb141-1" title="1">by_year2 &lt;-<span class="st"> </span>by <span class="op">+</span><span class="st"> </span><span class="dv">1</span>  </a>
+<a class="sourceLine" id="cb141-2" title="2">B_year2 &lt;-<span class="st"> </span><span class="kw">lag</span>(B)  </a>
+<a class="sourceLine" id="cb141-3" title="3">B_year2[<span class="dv">1</span>] &lt;-<span class="st"> </span>B[<span class="dv">1</span>] <span class="op">*</span><span class="st"> </span><span class="fl">1.02</span>  </a>
+<a class="sourceLine" id="cb141-4" title="4">raise_year2 &lt;-<span class="st"> </span><span class="kw">lag</span>(B <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(B) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (B) <span class="op">-</span><span class="st"> </span>B)  </a>
+<a class="sourceLine" id="cb141-5" title="5">raise_year2[<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">0</span>  </a>
+<a class="sourceLine" id="cb141-6" title="6">t &lt;-<span class="st"> </span><span class="kw">tibble</span>(by_year2, B_year2, raise_year2) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb141-7" title="7"><span class="st">  </span><span class="kw">gather</span>(B_year2, raise_year2, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>)  </a>
+<a class="sourceLine" id="cb141-8" title="8">t<span class="op">$</span>group &lt;-<span class="st"> </span><span class="kw">factor</span>(t<span class="op">$</span>group, <span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&quot;raise_year2&quot;</span>, <span class="st">&quot;B_year2&quot;</span>))  </a>
+<a class="sourceLine" id="cb141-9" title="9">t <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb141-10" title="10"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb141-11" title="11"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by_year2, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb141-12" title="12"><span class="st">  </span><span class="kw">labs</span>(  </a>
+<a class="sourceLine" id="cb141-13" title="13">    <span class="dt">title =</span> <span class="st">&quot;Salary distribution Group B after one year succession&quot;</span>  </a>
+<a class="sourceLine" id="cb141-14" title="14">  )    </a></code></pre></div>
 <div class="figure"><span id="fig:AppendixA5"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/AppendixA5-1.png" alt="Salary distribution Group B after one year succession" width="672" />
 <p class="caption">
@@ -292,20 +294,20 @@ Figure 13.5: Salary distribution Group B after one year succession
 <p>The oldest employees retire and new adolescents enter the job market. Suppose<br />
 that the starting salary for respective group is determined by the<br />
 age / salary structure.</p>
-<div class="sourceCode" id="cb138"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb138-1" title="1">by_year2 &lt;-<span class="st"> </span>by <span class="op">+</span><span class="st"> </span><span class="dv">1</span>  </a>
-<a class="sourceLine" id="cb138-2" title="2">raise_year2 &lt;-<span class="st"> </span><span class="kw">lag</span>(A <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(A) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (A) <span class="op">-</span><span class="st"> </span>A)  </a>
-<a class="sourceLine" id="cb138-3" title="3">raise_year2[<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">0</span>  </a>
-<a class="sourceLine" id="cb138-4" title="4">A_year2 &lt;-<span class="st"> </span><span class="kw">lag</span>(A)  </a>
-<a class="sourceLine" id="cb138-5" title="5">A_year2[<span class="dv">1</span>] &lt;-<span class="st"> </span>A[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>raise_year2[<span class="dv">2</span>] <span class="op">-</span><span class="st"> </span>(A[<span class="dv">2</span>] <span class="op">-</span><span class="st"> </span>A[<span class="dv">1</span>])  </a>
-<a class="sourceLine" id="cb138-6" title="6">t &lt;-<span class="st"> </span><span class="kw">tibble</span>(by_year2, A_year2, raise_year2) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb138-7" title="7"><span class="st">  </span><span class="kw">gather</span>(A_year2, raise_year2, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>)  </a>
-<a class="sourceLine" id="cb138-8" title="8">t<span class="op">$</span>group &lt;-<span class="st"> </span><span class="kw">factor</span>(t<span class="op">$</span>group, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;raise_year2&quot;</span>, <span class="st">&quot;A_year2&quot;</span>))  </a>
-<a class="sourceLine" id="cb138-9" title="9">t <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb138-10" title="10"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb138-11" title="11"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by_year2, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb138-12" title="12"><span class="st">  </span><span class="kw">labs</span>(  </a>
-<a class="sourceLine" id="cb138-13" title="13">    <span class="dt">title =</span> <span class="st">&quot;Salary distribution Group A after one year succession&quot;</span>  </a>
-<a class="sourceLine" id="cb138-14" title="14">  )    </a></code></pre></div>
+<div class="sourceCode" id="cb142"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb142-1" title="1">by_year2 &lt;-<span class="st"> </span>by <span class="op">+</span><span class="st"> </span><span class="dv">1</span>  </a>
+<a class="sourceLine" id="cb142-2" title="2">raise_year2 &lt;-<span class="st"> </span><span class="kw">lag</span>(A <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(A) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (A) <span class="op">-</span><span class="st"> </span>A)  </a>
+<a class="sourceLine" id="cb142-3" title="3">raise_year2[<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">0</span>  </a>
+<a class="sourceLine" id="cb142-4" title="4">A_year2 &lt;-<span class="st"> </span><span class="kw">lag</span>(A)  </a>
+<a class="sourceLine" id="cb142-5" title="5">A_year2[<span class="dv">1</span>] &lt;-<span class="st"> </span>A[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>raise_year2[<span class="dv">2</span>] <span class="op">-</span><span class="st"> </span>(A[<span class="dv">2</span>] <span class="op">-</span><span class="st"> </span>A[<span class="dv">1</span>])  </a>
+<a class="sourceLine" id="cb142-6" title="6">t &lt;-<span class="st"> </span><span class="kw">tibble</span>(by_year2, A_year2, raise_year2) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb142-7" title="7"><span class="st">  </span><span class="kw">gather</span>(A_year2, raise_year2, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>)  </a>
+<a class="sourceLine" id="cb142-8" title="8">t<span class="op">$</span>group &lt;-<span class="st"> </span><span class="kw">factor</span>(t<span class="op">$</span>group, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;raise_year2&quot;</span>, <span class="st">&quot;A_year2&quot;</span>))  </a>
+<a class="sourceLine" id="cb142-9" title="9">t <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb142-10" title="10"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb142-11" title="11"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by_year2, <span class="dt">y =</span> salary, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb142-12" title="12"><span class="st">  </span><span class="kw">labs</span>(  </a>
+<a class="sourceLine" id="cb142-13" title="13">    <span class="dt">title =</span> <span class="st">&quot;Salary distribution Group A after one year succession&quot;</span>  </a>
+<a class="sourceLine" id="cb142-14" title="14">  )    </a></code></pre></div>
 <div class="figure"><span id="fig:AppendixA6"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/AppendixA6-1.png" alt="Salary distribution Group A after one year succession" width="672" />
 <p class="caption">
@@ -314,13 +316,13 @@ Figure 13.6: Salary distribution Group A after one year succession
 </div>
 <p>Before next years salary revision the sum of the salaries have increased by<br />
 2.0 % for group B and only 0.31% for group A</p>
-<div class="sourceCode" id="cb139"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb139-1" title="1"><span class="kw">tibble</span>(<span class="dt">A_raise_sum =</span> <span class="kw">sum</span>(A) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">-</span><span class="st"> </span>A[<span class="kw">length</span>(A)] <span class="op">+</span><span class="st"> </span>A_year2[<span class="dv">1</span>], <span class="dt">B_raise_sum =</span> <span class="kw">sum</span>(B) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb139-2" title="2"><span class="st">  </span><span class="kw">gather</span>(A_raise_sum, B_raise_sum, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;raise&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb139-3" title="3"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb139-4" title="4"><span class="st">    </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x=</span>group, <span class="dt">y=</span>raise, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb139-5" title="5"><span class="st">    </span><span class="kw">labs</span>(  </a>
-<a class="sourceLine" id="cb139-6" title="6">      <span class="dt">title =</span> <span class="st">&quot;Salary raise since last revision&quot;</span>  </a>
-<a class="sourceLine" id="cb139-7" title="7">    )     </a></code></pre></div>
+<div class="sourceCode" id="cb143"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb143-1" title="1"><span class="kw">tibble</span>(<span class="dt">A_raise_sum =</span> <span class="kw">sum</span>(A) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span> <span class="op">-</span><span class="st"> </span>A[<span class="kw">length</span>(A)] <span class="op">+</span><span class="st"> </span>A_year2[<span class="dv">1</span>], <span class="dt">B_raise_sum =</span> <span class="kw">sum</span>(B) <span class="op">*</span><span class="st"> </span><span class="fl">0.02</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb143-2" title="2"><span class="st">  </span><span class="kw">gather</span>(A_raise_sum, B_raise_sum, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;raise&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb143-3" title="3"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb143-4" title="4"><span class="st">    </span><span class="kw">geom_bar</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x=</span>group, <span class="dt">y=</span>raise, <span class="dt">fill =</span> group), <span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb143-5" title="5"><span class="st">    </span><span class="kw">labs</span>(  </a>
+<a class="sourceLine" id="cb143-6" title="6">      <span class="dt">title =</span> <span class="st">&quot;Salary raise since last revision&quot;</span>  </a>
+<a class="sourceLine" id="cb143-7" title="7">    )     </a></code></pre></div>
 <div class="figure"><span id="fig:AppendixA7"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/AppendixA7-1.png" alt="Salary raise since last revision" width="672" />
 <p class="caption">
@@ -329,25 +331,25 @@ Figure 13.7: Salary raise since last revision
 </div>
 <p>This animation shows how the salary development progresses for a longer<br />
 period of time according to the prerequicites stated above.</p>
-<div class="sourceCode" id="cb140"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb140-1" title="1">A &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30000</span>, <span class="dv">60000</span>, <span class="dt">by =</span> <span class="dv">750</span>)  </a>
-<a class="sourceLine" id="cb140-2" title="2">B &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30000</span>, <span class="dv">30000</span>, <span class="dt">length =</span> <span class="dv">41</span>)  </a>
-<a class="sourceLine" id="cb140-3" title="3"><span class="cf">for</span> (year <span class="cf">in</span> <span class="dv">2019</span><span class="op">:</span><span class="dv">2059</span>){  </a>
-<a class="sourceLine" id="cb140-4" title="4"> by &lt;-<span class="st"> </span>(year <span class="op">-</span><span class="st"> </span><span class="dv">25</span>)<span class="op">:</span>(year <span class="op">-</span><span class="st"> </span><span class="dv">65</span>)    </a>
-<a class="sourceLine" id="cb140-5" title="5"> <span class="kw">tibble</span>(by, A, B) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb140-6" title="6"><span class="st">   </span><span class="kw">gather</span>(A, B, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb140-7" title="7"><span class="st">   </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb140-8" title="8"><span class="st">     </span><span class="kw">geom_point</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> salary, <span class="dt">colour =</span> group)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb140-9" title="9"><span class="st">     </span><span class="kw">labs</span>(  </a>
-<a class="sourceLine" id="cb140-10" title="10">       <span class="dt">title =</span> <span class="st">&quot;Salary development different groups.&quot;</span>,  </a>
-<a class="sourceLine" id="cb140-11" title="11">        <span class="dt">subtitle =</span> <span class="kw">paste</span> (<span class="st">&quot;Year of revision&quot;</span>, year)  </a>
-<a class="sourceLine" id="cb140-12" title="12">     ) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb140-13" title="13"><span class="st">      </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">1954</span>, <span class="dv">2034</span>)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb140-14" title="14"><span class="st">     </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary&quot;</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">30000</span>, <span class="dv">80000</span>))          </a>
-<a class="sourceLine" id="cb140-15" title="15"> <span class="kw">ggsave</span>(<span class="kw">paste</span> (year, <span class="dt">sep=</span><span class="st">&quot;&quot;</span>, <span class="st">&quot;.png&quot;</span>))  </a>
-<a class="sourceLine" id="cb140-16" title="16"> A &lt;-<span class="st"> </span>A <span class="op">+</span><span class="st"> </span><span class="kw">sum</span> (A) <span class="op">*</span><span class="st"> </span><span class="fl">0.020</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (A)  </a>
-<a class="sourceLine" id="cb140-17" title="17"> A &lt;-<span class="st"> </span><span class="kw">c</span>(A[<span class="dv">1</span>] <span class="op">-</span><span class="st"> </span><span class="dv">750</span>, A[<span class="dv">1</span><span class="op">:</span><span class="dv">40</span>])  </a>
-<a class="sourceLine" id="cb140-18" title="18"> B &lt;-<span class="st"> </span>B <span class="op">*</span><span class="st"> </span><span class="fl">1.02</span>  </a>
-<a class="sourceLine" id="cb140-19" title="19">}     </a></code></pre></div>
+<div class="sourceCode" id="cb144"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb144-1" title="1">A &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30000</span>, <span class="dv">60000</span>, <span class="dt">by =</span> <span class="dv">750</span>)  </a>
+<a class="sourceLine" id="cb144-2" title="2">B &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30000</span>, <span class="dv">30000</span>, <span class="dt">length =</span> <span class="dv">41</span>)  </a>
+<a class="sourceLine" id="cb144-3" title="3"><span class="cf">for</span> (year <span class="cf">in</span> <span class="dv">2019</span><span class="op">:</span><span class="dv">2059</span>){  </a>
+<a class="sourceLine" id="cb144-4" title="4"> by &lt;-<span class="st"> </span>(year <span class="op">-</span><span class="st"> </span><span class="dv">25</span>)<span class="op">:</span>(year <span class="op">-</span><span class="st"> </span><span class="dv">65</span>)    </a>
+<a class="sourceLine" id="cb144-5" title="5"> <span class="kw">tibble</span>(by, A, B) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb144-6" title="6"><span class="st">   </span><span class="kw">gather</span>(A, B, <span class="dt">key =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">value =</span> <span class="st">&quot;salary&quot;</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb144-7" title="7"><span class="st">   </span><span class="kw">ggplot</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb144-8" title="8"><span class="st">     </span><span class="kw">geom_point</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> salary, <span class="dt">colour =</span> group)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb144-9" title="9"><span class="st">     </span><span class="kw">labs</span>(  </a>
+<a class="sourceLine" id="cb144-10" title="10">       <span class="dt">title =</span> <span class="st">&quot;Salary development different groups.&quot;</span>,  </a>
+<a class="sourceLine" id="cb144-11" title="11">        <span class="dt">subtitle =</span> <span class="kw">paste</span> (<span class="st">&quot;Year of revision&quot;</span>, year)  </a>
+<a class="sourceLine" id="cb144-12" title="12">     ) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb144-13" title="13"><span class="st">      </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">1954</span>, <span class="dv">2034</span>)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb144-14" title="14"><span class="st">     </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary&quot;</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">30000</span>, <span class="dv">80000</span>))          </a>
+<a class="sourceLine" id="cb144-15" title="15"> <span class="kw">ggsave</span>(<span class="kw">paste</span> (year, <span class="dt">sep=</span><span class="st">&quot;&quot;</span>, <span class="st">&quot;.png&quot;</span>))  </a>
+<a class="sourceLine" id="cb144-16" title="16"> A &lt;-<span class="st"> </span>A <span class="op">+</span><span class="st"> </span><span class="kw">sum</span> (A) <span class="op">*</span><span class="st"> </span><span class="fl">0.020</span> <span class="op">/</span><span class="st"> </span><span class="kw">length</span> (A)  </a>
+<a class="sourceLine" id="cb144-17" title="17"> A &lt;-<span class="st"> </span><span class="kw">c</span>(A[<span class="dv">1</span>] <span class="op">-</span><span class="st"> </span><span class="dv">750</span>, A[<span class="dv">1</span><span class="op">:</span><span class="dv">40</span>])  </a>
+<a class="sourceLine" id="cb144-18" title="18"> B &lt;-<span class="st"> </span>B <span class="op">*</span><span class="st"> </span><span class="fl">1.02</span>  </a>
+<a class="sourceLine" id="cb144-19" title="19">}     </a></code></pre></div>
 <p>The animation was made with ImageMagick<br />
 “c:Files-7.0.8-Q16.exe” -delay 50 -loop 0 *.png animation.gif<br />
 <img src="https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/animation.gif" /></p>

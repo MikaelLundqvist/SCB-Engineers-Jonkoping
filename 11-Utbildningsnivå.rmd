@@ -43,3 +43,37 @@ readfile("UF0506A1.csv") %>%
     add = "reg.line", conf.int = TRUE, 
     cor.coef = TRUE, cor.method = "pearson")   
 ```	
+
+## The correlation between the proportion of engineers who are women and the salaries of engineers in the region. Year 2014 - 2018
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2014 - 2018
+Monthly salaty
+All sectors
+214 Engineering professionals
+
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2014 - 2018
+Number of employees
+All sectors
+214 Engineering professionals
+
+Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018
+total 16-74 years
+
+```{r utbildningsniva3, echo = TRUE, fig.cap = 'The correlation between the proportion of the population who have 3 years or more post-secondary education, but not postgraduate education, and the proportion of engineers who are women.'} 	
+tb <- readfile("000000CG_10.csv")
+tb <- readfile("000000CD_10.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x))))		
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  ggscatter(x = "perc_edu", y = "perc_women", 
+  add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.method = "pearson")
+```
+
+
+
