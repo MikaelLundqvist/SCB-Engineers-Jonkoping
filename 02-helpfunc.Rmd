@@ -30,7 +30,11 @@ tot_dev <- function (x){
 
 perc_women <- function(x){  
   ifelse (length(x) == 2, scales::percent (x[2] / (x[1] + x[2])), NA)
-}   
+}  
+
+perc_sal <- function(x){  
+  ifelse (length(x) == 2, scales::percent (x[2] / x[1]), NA)
+}  
 
 readfile <- function (file1){  
   read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  

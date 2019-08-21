@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-08-19" />
+<meta name="date" content="2019-08-21" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -432,16 +432,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb18-11" title="11"></a>
 <a class="sourceLine" id="cb18-12" title="12">perc_women &lt;-<span class="st"> </span><span class="cf">function</span>(x){  </a>
 <a class="sourceLine" id="cb18-13" title="13">  <span class="kw">ifelse</span> (<span class="kw">length</span>(x) <span class="op">==</span><span class="st"> </span><span class="dv">2</span>, scales<span class="op">::</span><span class="kw">percent</span> (x[<span class="dv">2</span>] <span class="op">/</span><span class="st"> </span>(x[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>x[<span class="dv">2</span>])), <span class="ot">NA</span>)</a>
-<a class="sourceLine" id="cb18-14" title="14">}   </a>
+<a class="sourceLine" id="cb18-14" title="14">}  </a>
 <a class="sourceLine" id="cb18-15" title="15"></a>
-<a class="sourceLine" id="cb18-16" title="16">readfile &lt;-<span class="st"> </span><span class="cf">function</span> (file1){  </a>
-<a class="sourceLine" id="cb18-17" title="17">  <span class="kw">read_csv</span> (file1, <span class="dt">col_types =</span> <span class="kw">cols</span>(), <span class="dt">locale =</span> readr<span class="op">::</span><span class="kw">locale</span> (<span class="dt">encoding =</span> <span class="st">&quot;latin1&quot;</span>), <span class="dt">na =</span> <span class="kw">c</span>(<span class="st">&quot;..&quot;</span>, <span class="st">&quot;NA&quot;</span>)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb18-18" title="18"><span class="st">    </span><span class="kw">gather</span> (<span class="kw">starts_with</span>(<span class="st">&quot;19&quot;</span>), <span class="kw">starts_with</span>(<span class="st">&quot;20&quot;</span>), <span class="dt">key =</span> <span class="st">&quot;year&quot;</span>, <span class="dt">value =</span> salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb18-19" title="19"><span class="st">    </span><span class="kw">drop_na</span>() <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb18-20" title="20"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">year2 =</span> <span class="kw">parse_number</span> (year)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb18-21" title="21"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">heading =</span> file1) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb18-22" title="22"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">relsalary =</span> <span class="kw">relative_dev</span> (salary))  </a>
-<a class="sourceLine" id="cb18-23" title="23">}</a></code></pre></div>
+<a class="sourceLine" id="cb18-16" title="16">perc_sal &lt;-<span class="st"> </span><span class="cf">function</span>(x){  </a>
+<a class="sourceLine" id="cb18-17" title="17">  <span class="kw">ifelse</span> (<span class="kw">length</span>(x) <span class="op">==</span><span class="st"> </span><span class="dv">2</span>, scales<span class="op">::</span><span class="kw">percent</span> (x[<span class="dv">2</span>] <span class="op">/</span><span class="st"> </span>x[<span class="dv">1</span>]), <span class="ot">NA</span>)</a>
+<a class="sourceLine" id="cb18-18" title="18">}  </a>
+<a class="sourceLine" id="cb18-19" title="19"></a>
+<a class="sourceLine" id="cb18-20" title="20">readfile &lt;-<span class="st"> </span><span class="cf">function</span> (file1){  </a>
+<a class="sourceLine" id="cb18-21" title="21">  <span class="kw">read_csv</span> (file1, <span class="dt">col_types =</span> <span class="kw">cols</span>(), <span class="dt">locale =</span> readr<span class="op">::</span><span class="kw">locale</span> (<span class="dt">encoding =</span> <span class="st">&quot;latin1&quot;</span>), <span class="dt">na =</span> <span class="kw">c</span>(<span class="st">&quot;..&quot;</span>, <span class="st">&quot;NA&quot;</span>)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb18-22" title="22"><span class="st">    </span><span class="kw">gather</span> (<span class="kw">starts_with</span>(<span class="st">&quot;19&quot;</span>), <span class="kw">starts_with</span>(<span class="st">&quot;20&quot;</span>), <span class="dt">key =</span> <span class="st">&quot;year&quot;</span>, <span class="dt">value =</span> salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb18-23" title="23"><span class="st">    </span><span class="kw">drop_na</span>() <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb18-24" title="24"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">year2 =</span> <span class="kw">parse_number</span> (year)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb18-25" title="25"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">heading =</span> file1) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb18-26" title="26"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">relsalary =</span> <span class="kw">relative_dev</span> (salary))  </a>
+<a class="sourceLine" id="cb18-27" title="27">}</a></code></pre></div>
 
 </div>
             </section>
