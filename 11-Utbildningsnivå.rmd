@@ -217,7 +217,8 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggplot(aes(x = sum_edu, y = salary.y, colour = region, size = year2)) +
   geom_point() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  facet_grid(. ~ sex)
 ```
 
 ```{r utbildningsniva10, echo = TRUE, fig.cap = 'The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	

@@ -451,7 +451,8 @@ Figure 12.9: The correlation between the number of engineers and the number of t
 <a class="sourceLine" id="cb147-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb147-17" title="17"><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> sum_edu, <span class="dt">y =</span> salary.y, <span class="dt">colour =</span> region, <span class="dt">size =</span> year2)) <span class="op">+</span></a>
 <a class="sourceLine" id="cb147-18" title="18"><span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb147-19" title="19"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb147-19" title="19"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb147-20" title="20"><span class="st">  </span><span class="kw">facet_grid</span>(. <span class="op">~</span><span class="st"> </span>sex)</a></code></pre></div>
 <div class="figure"><span id="fig:utbildningsniva9"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/utbildningsniva9-1.png" alt="The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018." width="672" />
 <p class="caption">
