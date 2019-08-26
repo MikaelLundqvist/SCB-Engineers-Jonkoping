@@ -5,7 +5,7 @@ Befolkning efter region, ålder, utbildningsnivå, kön och år
 kön män och kvinnor
 år 2017
 
-```{r edudist, echo = TRUE, fig.cap = 'Education distribution in the different countys'} 
+```{r edudist, echo = TRUE, fig.cap = 'Education distribution in different counties.'} 
 utb <- readfile("UF0506A1.csv") 
 utb$utbildningsnivå <- as.factor(utb$utbildningsnivå)
 utb$utbildningsnivå <- factor(utb$utbildningsnivå, levels(utb$utbildningsnivå)[c(3, 1, 2, 6, 7, 5, 4, 8)])
@@ -20,15 +20,16 @@ utb %>%
 
 ```{r utbildningsniva, echo = TRUE, fig.cap = 'Percentage of the population who have 3 years or more post-secondary education, but not postgraduate education.'} 
 readfile("UF0506A1.csv") %>%
-  group_by(utbildningsnivå, region) %>%
-  summarize(utbregno = sum(salary)) %>%
+  group_by(utbildningsnivå, region, kön) %>%
+  mutate(utbregno = sum(salary)) %>%
   group_by(region) %>% mutate(perc = utbregno / sum(utbregno)) %>%
   filter (utbildningsnivå == "eftergymnasial utbildning, 3 år eller mer") %>%
   mutate(lnkod_n = as.numeric(substr(region, 1,2))) %>%
   right_join(map_ln_n, by = "lnkod_n") %>%
   ggplot() +
     geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = perc)) +
-    coord_equal()
+    coord_equal() +
+	facet_grid(. ~ kön)	
 ```
 	
 ```{r utbildningsniva2, echo = TRUE, fig.cap = 'The correlation between the proportion of the population who have 3 years or more post-secondary education, but not postgraduate education, and the salaries of engineers in the region.'} 	
@@ -39,9 +40,13 @@ readfile("UF0506A1.csv") %>%
   filter (utbildningsnivå == "eftergymnasial utbildning, 3 år eller mer") %>%
   mutate(lnkod_n = as.numeric(substr(region, 1,2))) %>%
   right_join(salary_2017, by = c("lnkod_n" = "Länskod")) %>%
-  ggscatter(x = "relsalary", y = "perc", 
+  ggscatter(x = "salary", y = "perc", 
     add = "reg.line", conf.int = TRUE, 
-    cor.coef = TRUE, cor.method = "pearson")   
+    cor.coef = TRUE, cor.method = "pearson") +
+    labs(
+      x = "Salary (SEK)",
+      y = "Percent with 3 years post-secondary education"
+	)
 ```	
 
 ## The correlation between the proportion of engineers who are women and the number of the population who have 3 years or more post-secondary education in the region. Year 2014 - 2018
@@ -55,7 +60,7 @@ Number of employees
 All sectors
 214 Engineering professionals
 
-Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018
+Population 16-74 years of age by region, highest level of education, age and sex. The year 1985 - 2018.
 total 16-74 years
 
 ```{r utbildningsniva3, echo = TRUE, fig.cap = 'The correlation between the proportion of engineers who are women and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -77,7 +82,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggplot(aes(x = sum_edu, y = perc_women, colour = region, size = year2)) +
   geom_point() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Per cent of engineers who are women"
+  )
 ```
 
 ```{r utbildningsniva4, echo = TRUE, fig.cap = 'The correlation between the proportion of engineers who are women and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -99,7 +108,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggscatter(x = "sum_edu", y = "perc_women", 
   add = "reg.line", conf.int = TRUE, 
-  cor.coef = TRUE, cor.method = "pearson")
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Per cent of engineers who are women"
+  )
 ```
 
 ## The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018.
@@ -123,7 +136,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggplot(aes(x = sum_edu, y = sum_ing, colour = region, size = year2)) +
   geom_point() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Number of the population who are engineers"
+  )
 ```
 
 ```{r utbildningsniva6, echo = TRUE, fig.cap = 'The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -145,7 +162,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggscatter(x = "sum_edu", y = "sum_ing", 
   add = "reg.line", conf.int = TRUE, 
-  cor.coef = TRUE, cor.method = "pearson")
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Number of the population who are engineers"
+  )
 ```
 
 ## The correlation between the number of engineers and the proportion of engineers who are women in the regions, Year 2014 - 2018
@@ -170,7 +191,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggplot(aes(x = perc_women, y = sum_ing, colour = region, size = year2)) +
   geom_point() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  labs(
+    x = "Per cent of engineers who are women",
+    y = "Number of the population who are engineers"
+  )
 ```
 
 ```{r utbildningsniva8, echo = TRUE, fig.cap = 'The correlation between the number of engineers and the proportion of engineers who are women in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -193,7 +218,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggscatter(x = "perc_women", y = "sum_ing", 
   add = "reg.line", conf.int = TRUE, 
-  cor.coef = TRUE, cor.method = "pearson")
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Per cent of engineers who are women",
+    y = "Number of the population who are engineers"
+  )
 ```
 
 ## The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018
@@ -218,7 +247,11 @@ readfile("UF0506A1_1.csv") %>%
   ggplot(aes(x = sum_edu, y = salary.y, colour = region, size = year2)) +
   geom_point() +
   theme(legend.position="bottom") +
-  facet_grid(. ~ sex)
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Salary of engineers"
+  )
 ```
 
 ```{r utbildningsniva10, echo = TRUE, fig.cap = 'The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -241,12 +274,16 @@ readfile("UF0506A1_1.csv") %>%
   ggscatter(x = "sum_edu", y = "salary.y", 
   add = "reg.line", conf.int = TRUE, 
   cor.coef = TRUE, cor.method = "pearson") +
-  facet_grid(. ~ sex)
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Salary of engineers"
+  )
 ```
 
-## The correlation between the propotion of the population who have 3 years or more post-secondary education and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018
+## The correlation between the proportion  of the population who have 3 years or more post-secondary education and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018
 
-```{r utbildningsniva11, echo = TRUE, fig.cap = 'The correlation between the propotion of the population who have 3 years or more post-secondary education, but not postgraduate education and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	
+```{r utbildningsniva11, echo = TRUE, fig.cap = 'The correlation between the proportion  of the population who have 3 years or more post-secondary education, but not postgraduate education and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	
 tb <- readfile("000000CG_10.csv")
 tb <- readfile("000000CD_10.csv") %>% 
   left_join(tb, by = c("region", "year", "sex")) %>%
@@ -266,7 +303,11 @@ readfile("UF0506A1_1.csv") %>%
   ggplot(aes(x = perc_edu, y = salary, colour = region, size = year2)) +
   geom_point() +
   theme(legend.position="bottom") +
-  facet_grid(. ~ sex)
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Per cent of the population with 3 years or more post-secondary education",
+    y = "Number of the population with 3 years or more post-secondary education"
+  )
 ```
 
 # The correlation between the proportion of Physical and engineering science technicians who are women and the number of the population in the region. Year 2014 - 2018
@@ -303,7 +344,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggplot(aes(x = sum_pop, y = perc_women, colour = region, size = year2)) +
   geom_point() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  labs(
+    x = "Number of population",
+    y = "Per cent of technicians who are women"
+  )
 ```
 
 ```{r utbildningsniva13, echo = TRUE, fig.cap = 'The correlation between the proportion of Physical and engineering science technicians who are women and the number of the population in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -326,7 +371,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggscatter(x = "sum_pop", y = "perc_women", 
   add = "reg.line", conf.int = TRUE, 
-  cor.coef = TRUE, cor.method = "pearson")
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Number of population",
+    y = "Per cent of technicians who are women"
+  )
 ```  
   
 ## The correlation between the number of Physical and engineering science technicians and the number of the population in the regions, Year 2014 - 2018.
@@ -351,7 +400,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggplot(aes(x = sum_pop, y = sum_ing, colour = region, size = year2)) +
   geom_point() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  labs(
+    x = "Number of population",
+    y = "Number of the population who are technicians"
+  )
 ```
  
 ```{r utbildningsniva15, echo = TRUE, fig.cap = 'The correlation between the number of Physical and engineering science technicians and the number of the population in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -374,7 +427,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggscatter(x = "sum_pop", y = "sum_ing", 
   add = "reg.line", conf.int = TRUE, 
-  cor.coef = TRUE, cor.method = "pearson")
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Number of population",
+    y = "Number of the population who are technicians"
+  )
 ```
 
 ## The correlation between the number of Physical and engineering science technicians and the proportion of Physical and engineering science technicians who are women in the regions, Year 2014 - 2018
@@ -397,7 +454,11 @@ readfile("UF0506A1_1.csv") %>%
   right_join(tb, by = c("region", "year", "sex")) %>%
   ggplot(aes(x = perc_women, y = sum_ing, colour = region, size = year2)) +
   geom_point() +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  labs(
+    x = "Per cent of technicians who are women",
+    y = "Number of the population who are technicians"
+  )
 ```
 
 ```{r utbildningsniva17, echo = TRUE, fig.cap = 'The correlation between the number of Physical and engineering science technicians and the proportion of Physical and engineering science technicians who are women in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -419,7 +480,11 @@ readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   ggscatter(x = "perc_women", y = "sum_ing", 
   add = "reg.line", conf.int = TRUE, 
-  cor.coef = TRUE, cor.method = "pearson")
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Per cent of technicians who are women",
+    y = "Number of the population who are technicians"
+  )
 ```
 
 ## The correlation between the salary of Physical and engineering science technicians and the number of the population in the regions, Year 2014 - 2018
@@ -445,7 +510,11 @@ readfile("UF0506A1_1.csv") %>%
   ggplot(aes(x = sum_pop, y = salary.y, colour = region, size = year2)) +
   geom_point() +
   theme(legend.position="bottom") +
-  facet_grid(. ~ sex)
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Number of population",
+    y = "Salary of engineers"
+  )
 ```
 
 ```{r utbildningsniva19, echo = TRUE, fig.cap = 'The correlation between the salary of Physical and engineering science technicians and the number of the population in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -469,7 +538,12 @@ tb <- readfile("000000CD_12.csv") %>%
   ggscatter(x = "sum_pop", y = "salary.y", 
   add = "reg.line", conf.int = TRUE, 
   cor.coef = TRUE, cor.method = "pearson") +
-  facet_grid(. ~ sex)
+  facet_grid(. ~ sex) +
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Number of population",
+    y = "Salary of technicians"
+  )
 ```
 
 ## The correlation between the salary of Physical and engineering science technicians and the number of Physical and engineering science technicians in the regions, Year 2014 - 2018
@@ -495,7 +569,11 @@ readfile("UF0506A1_1.csv") %>%
   ggplot(aes(x = sum_ing, y = salary.y, colour = region, size = year2)) +
   geom_point() +
   theme(legend.position="bottom") +
-  facet_grid(. ~ sex)
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Number of the population who are technicians",
+    y = "Salary of technicians"
+  )
 ```
 
 ```{r utbildningsniva21, echo = TRUE, fig.cap = 'The correlation between the salary of Physical and engineering science technicians and the number of Physical and engineering science technicians in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -519,5 +597,9 @@ tb <- readfile("000000CD_12.csv") %>%
   ggscatter(x = "sum_ing", y = "salary.y", 
   add = "reg.line", conf.int = TRUE, 
   cor.coef = TRUE, cor.method = "pearson") +
-  facet_grid(. ~ sex)
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Number of the population who are technicians",
+    y = "Salary of technicians"
+  )
 ```
