@@ -115,6 +115,39 @@ readfile("UF0506A1_1.csv") %>%
   )
 ```
 
+```{r utbildningsniva41, echo = TRUE}
+tb <- readfile("000000CG_10.csv")
+tb <- readfile("000000CD_10.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu)
+  
+model <- lm(perc_women ~ sum_edu + `level of education` + year2 + log(salary.y), data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Women engineers and population with 3 years or more post-secondary education')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+```
+
 ## The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018.
 
 ```{r utbildningsniva5, echo = TRUE, fig.cap = 'The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -225,6 +258,39 @@ readfile("UF0506A1_1.csv") %>%
   )
 ```
 
+```{r utbildningsniva43, echo = TRUE}
+tb <- readfile("000000CG_10.csv")
+tb <- readfile("000000CD_10.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu)
+  
+model <- lm(sum_ing ~ sum_edu + perc_women + `level of education` + year2 + log(salary.y), data = tb) 
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Engineers and per cent of engineers who are women')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+```
+
 ## The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018
 
 ```{r utbildningsniva9, echo = TRUE, fig.cap = 'The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -279,6 +345,39 @@ readfile("UF0506A1_1.csv") %>%
     x = "Number of the population with 3 years or more post-secondary education",
     y = "Salary of engineers"
   )
+```
+
+```{r utbildningsniva44, echo = TRUE}
+tb <- readfile("000000CG_10.csv")
+tb <- readfile("000000CD_10.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu)
+  
+model <- lm(log(salary.y) ~ sum_edu + `level of education` + year2 + perc_women, data = tb) 
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Salary of engineers and population with 3 years or more post-secondary education')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
 ```
 
 ## The correlation between the proportion  of the population who have 3 years or more post-secondary education and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018
@@ -377,6 +476,39 @@ readfile("UF0506A1_1.csv") %>%
     y = "Per cent of technicians who are women"
   )
 ```  
+```{r utbildningsniva51, echo = TRUE}
+tb <- readfile("000000CG_12.csv")
+tb <- readfile("000000CD_12.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  drop_na %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x)) 
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu)
+  
+model <- lm(perc_women ~ sum_pop + `level of education` + year2 + log(salary.y), data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Women technicians and population with 3 years or more post-secondary education')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+```
   
 ## The correlation between the number of Physical and engineering science technicians and the number of the population in the regions, Year 2014 - 2018.
 
@@ -433,7 +565,6 @@ readfile("UF0506A1_1.csv") %>%
     y = "Number of the population who are technicians"
   )
 ```
-
 ## The correlation between the number of Physical and engineering science technicians and the proportion of Physical and engineering science technicians who are women in the regions, Year 2014 - 2018
 
 ```{r utbildningsniva16, echo = TRUE, fig.cap = 'The correlation between the number of Physical and engineering science technicians and the proportion of Physical and engineering science technicians who are women in the regions (NUTS2), Year 2014 - 2018.'} 	
@@ -485,6 +616,40 @@ readfile("UF0506A1_1.csv") %>%
     x = "Per cent of technicians who are women",
     y = "Number of the population who are technicians"
   )
+```
+
+```{r utbildningsniva53, echo = TRUE}
+tb <- readfile("000000CG_12.csv")
+tb <- readfile("000000CD_12.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  drop_na %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x)) 
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu)
+  
+model <- lm(sum_ing ~ sum_pop + perc_women + `level of education` + year2 + log(salary.y), data = tb) 
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Engineers and per cent of engineers who are women')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
 ```
 
 ## The correlation between the salary of Physical and engineering science technicians and the number of the population in the regions, Year 2014 - 2018
@@ -603,3 +768,39 @@ tb <- readfile("000000CD_12.csv") %>%
     y = "Salary of technicians"
   )
 ```
+
+```{r utbildningsniva54, echo = TRUE}
+tb <- readfile("000000CG_12.csv")
+tb <- readfile("000000CD_12.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  drop_na %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x)) 
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu)
+  
+model <- lm(log(salary.y) ~ sum_pop + `level of education` + year2 + perc_women, data = tb) 
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Salary of engineers and population with 3 years or more post-secondary education')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+```
+
+
