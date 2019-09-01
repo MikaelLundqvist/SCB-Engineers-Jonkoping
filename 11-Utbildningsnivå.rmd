@@ -131,9 +131,10 @@ tb <- readfile("UF0506A1_1.csv") %>%
   group_by(`level of education`, region, year) %>%
   mutate (sum_edu = sum(utbregno)) %>%
   right_join(tb, by = c("region", "year", "sex")) %>%
-  mutate (perc_eng = sum_ing / sum_edu)
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
   
-model <- lm(perc_women ~ sum_edu + `level of education` + year2 + log(salary.y), data = tb)
+model <- lm(perc_women ~ sum_edu + year2 + log(salary.y), data = tb)
 
 summary(model) %>%	
   tidy() %>%
@@ -200,6 +201,40 @@ readfile("UF0506A1_1.csv") %>%
     x = "Number of the population with 3 years or more post-secondary education",
     y = "Number of the population who are engineers"
   )
+```
+
+```{r utbildningsniva45, echo = TRUE}
+tb <- readfile("000000CG_10.csv")
+tb <- readfile("000000CD_10.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
+  
+model <- lm(sum_edu ~ sum_pop + year2 + log(salary.y) + perc_women, data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Population with 3 years or more post-secondary education and number of population')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
 ```
 
 ## The correlation between the number of engineers and the proportion of engineers who are women in the regions, Year 2014 - 2018
@@ -274,9 +309,10 @@ tb <- readfile("UF0506A1_1.csv") %>%
   group_by(`level of education`, region, year) %>%
   mutate (sum_edu = sum(utbregno)) %>%
   right_join(tb, by = c("region", "year", "sex")) %>%
-  mutate (perc_eng = sum_ing / sum_edu)
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") 
   
-model <- lm(sum_ing ~ sum_edu + perc_women + `level of education` + year2 + log(salary.y), data = tb) 
+model <- lm(sum_ing ~ sum_edu + perc_women + year2 + log(salary.y), data = tb) 
 
 summary(model) %>%	
   tidy() %>%
@@ -363,9 +399,10 @@ tb <- readfile("UF0506A1_1.csv") %>%
   group_by(`level of education`, region, year) %>%
   mutate (sum_edu = sum(utbregno)) %>%
   right_join(tb, by = c("region", "year", "sex")) %>%
-  mutate (perc_eng = sum_ing / sum_edu)
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
   
-model <- lm(log(salary.y) ~ sum_edu + `level of education` + year2 + perc_women, data = tb) 
+model <- lm(log(salary.y) ~ sum_edu + year2 + perc_women, data = tb) 
 
 summary(model) %>%	
   tidy() %>%
@@ -493,9 +530,10 @@ tb <- readfile("UF0506A1_1.csv") %>%
   group_by(`level of education`, region, year) %>%
   mutate (sum_edu = sum(utbregno)) %>%
   right_join(tb, by = c("region", "year", "sex")) %>%
-  mutate (perc_eng = sum_ing / sum_edu)
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
   
-model <- lm(perc_women ~ sum_pop + `level of education` + year2 + log(salary.y), data = tb)
+model <- lm(perc_women ~ sum_edu + year2 + log(salary.y), data = tb)
 
 summary(model) %>%	
   tidy() %>%
@@ -635,9 +673,10 @@ tb <- readfile("UF0506A1_1.csv") %>%
   group_by(`level of education`, region, year) %>%
   mutate (sum_edu = sum(utbregno)) %>%
   right_join(tb, by = c("region", "year", "sex")) %>%
-  mutate (perc_eng = sum_ing / sum_edu)
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
   
-model <- lm(sum_ing ~ sum_pop + perc_women + `level of education` + year2 + log(salary.y), data = tb) 
+model <- lm(sum_ing ~ sum_pop + perc_women + year2 + log(salary.y), data = tb) 
 
 summary(model) %>%	
   tidy() %>%
@@ -786,9 +825,10 @@ tb <- readfile("UF0506A1_1.csv") %>%
   group_by(`level of education`, region, year) %>%
   mutate (sum_edu = sum(utbregno)) %>%
   right_join(tb, by = c("region", "year", "sex")) %>%
-  mutate (perc_eng = sum_ing / sum_edu)
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
   
-model <- lm(log(salary.y) ~ sum_pop + `level of education` + year2 + perc_women, data = tb) 
+model <- lm(log(salary.y) ~ sum_edu + year2 + perc_women, data = tb) 
 
 summary(model) %>%	
   tidy() %>%

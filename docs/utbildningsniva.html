@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-08-28" />
+<meta name="date" content="2019-09-01" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -352,15 +352,16 @@ Figure 12.5: The correlation between the proportion of engineers who are women a
 <a class="sourceLine" id="cb139-13" title="13"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb139-14" title="14"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb139-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb139-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu)</a>
-<a class="sourceLine" id="cb139-17" title="17">  </a>
-<a class="sourceLine" id="cb139-18" title="18">model &lt;-<span class="st"> </span><span class="kw">lm</span>(perc_women <span class="op">~</span><span class="st"> </span>sum_edu <span class="op">+</span><span class="st"> `</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y), <span class="dt">data =</span> tb)</a>
-<a class="sourceLine" id="cb139-19" title="19"></a>
-<a class="sourceLine" id="cb139-20" title="20"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb139-21" title="21"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb139-22" title="22"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb139-23" title="23">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb139-24" title="24">  <span class="dt">caption =</span> <span class="st">&#39;Women engineers and population with 3 years or more post-secondary education&#39;</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb139-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb139-17" title="17"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>)</a>
+<a class="sourceLine" id="cb139-18" title="18">  </a>
+<a class="sourceLine" id="cb139-19" title="19">model &lt;-<span class="st"> </span><span class="kw">lm</span>(perc_women <span class="op">~</span><span class="st"> </span>sum_edu <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y), <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb139-20" title="20"></a>
+<a class="sourceLine" id="cb139-21" title="21"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb139-22" title="22"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb139-23" title="23"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb139-24" title="24">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb139-25" title="25">  <span class="dt">caption =</span> <span class="st">&#39;Women engineers and population with 3 years or more post-secondary education&#39;</span>)</a></code></pre></div>
 <table>
 <caption><span id="tab:utbildningsniva41">Table 12.1: </span>Women engineers and population with 3 years or more post-secondary education</caption>
 <thead>
@@ -375,80 +376,31 @@ Figure 12.5: The correlation between the proportion of engineers who are women a
 <tbody>
 <tr class="odd">
 <td align="left">(Intercept)</td>
-<td align="right">-518.3905944</td>
-<td align="right">124.6626882</td>
-<td align="right">-4.1583460</td>
-<td align="right">0.0000368</td>
+<td align="right">-885.3287385</td>
+<td align="right">229.7997838</td>
+<td align="right">-3.852609</td>
+<td align="right">0.0002512</td>
 </tr>
 <tr class="even">
 <td align="left">sum_edu</td>
-<td align="right">0.0000209</td>
-<td align="right">0.0000013</td>
-<td align="right">16.2320138</td>
+<td align="right">0.0000214</td>
+<td align="right">0.0000016</td>
+<td align="right">13.652812</td>
 <td align="right">0.0000000</td>
 </tr>
 <tr class="odd">
-<td align="left"><code>level of education</code>post-graduate education (ISCED97 6)</td>
-<td align="right">0.2477324</td>
-<td align="right">0.3152515</td>
-<td align="right">0.7858249</td>
-<td align="right">0.4322819</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>post-secondary education 3 years or more (ISCED97 5A)</td>
-<td align="right">-3.5878812</td>
-<td align="right">0.3847182</td>
-<td align="right">-9.3259990</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>post-secondary education, less than 3 years (ISCED97 4+5B)</td>
-<td align="right">-2.3229918</td>
-<td align="right">0.3458779</td>
-<td align="right">-6.7162191</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>primary and secondary education 9-10 years (ISCED97 2)</td>
-<td align="right">-2.0858710</td>
-<td align="right">0.3400937</td>
-<td align="right">-6.1332246</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>primary and secondary education less than 9 years (ISCED97 1)</td>
-<td align="right">-0.4461763</td>
-<td align="right">0.3160793</td>
-<td align="right">-1.4115962</td>
-<td align="right">0.1585899</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>upper secondary education 3 years (ISCED97 3A)</td>
-<td align="right">-4.0182258</td>
-<td align="right">0.4005387</td>
-<td align="right">-10.0320529</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>upper secondary education, 2 years or less (ISCED97 3C)</td>
-<td align="right">-3.4764459</td>
-<td align="right">0.3808153</td>
-<td align="right">-9.1289557</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="even">
 <td align="left">year2</td>
-<td align="right">0.1856562</td>
-<td align="right">0.0657158</td>
-<td align="right">2.8251388</td>
-<td align="right">0.0048840</td>
+<td align="right">0.4719358</td>
+<td align="right">0.1228379</td>
+<td align="right">3.841941</td>
+<td align="right">0.0002604</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">log(salary.y)</td>
-<td align="right">15.4092007</td>
-<td align="right">1.6781455</td>
-<td align="right">9.1822795</td>
-<td align="right">0.0000000</td>
+<td align="right">-4.6839227</td>
+<td align="right">3.6243664</td>
+<td align="right">-1.292342</td>
+<td align="right">0.2003709</td>
 </tr>
 </tbody>
 </table>
@@ -471,36 +423,29 @@ Figure 12.5: The correlation between the proportion of engineers who are women a
 <tbody>
 <tr class="odd">
 <td align="left">sum_edu</td>
-<td align="right">992.71268</td>
+<td align="right">292.335537</td>
 <td align="right">1</td>
-<td align="right">263.478273</td>
-<td align="right">0.000000</td>
+<td align="right">186.399278</td>
+<td align="right">0.0000000</td>
 </tr>
 <tr class="even">
-<td align="left"><code>level of education</code></td>
-<td align="right">604.51757</td>
-<td align="right">7</td>
-<td align="right">22.920924</td>
-<td align="right">0.000000</td>
-</tr>
-<tr class="odd">
 <td align="left">year2</td>
-<td align="right">30.07172</td>
+<td align="right">23.149348</td>
 <td align="right">1</td>
-<td align="right">7.981409</td>
-<td align="right">0.004884</td>
-</tr>
-<tr class="even">
-<td align="left">log(salary.y)</td>
-<td align="right">317.67262</td>
-<td align="right">1</td>
-<td align="right">84.314257</td>
-<td align="right">0.000000</td>
+<td align="right">14.760510</td>
+<td align="right">0.0002604</td>
 </tr>
 <tr class="odd">
+<td align="left">log(salary.y)</td>
+<td align="right">2.619345</td>
+<td align="right">1</td>
+<td align="right">1.670149</td>
+<td align="right">0.2003709</td>
+</tr>
+<tr class="even">
 <td align="left">Residuals</td>
-<td align="right">2249.32957</td>
-<td align="right">597</td>
+<td align="right">112.919744</td>
+<td align="right">72</td>
 <td align="right">NA</td>
 <td align="right">NA</td>
 </tr>
@@ -567,9 +512,6 @@ Figure 12.6: The correlation between the number of engineers and the number of t
 Figure 12.7: The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.
 </p>
 </div>
-</div>
-<div id="the-correlation-between-the-number-of-engineers-and-the-proportion-of-engineers-who-are-women-in-the-regions-year-2014---2018" class="section level2">
-<h2><span class="header-section-number">12.3</span> The correlation between the number of engineers and the proportion of engineers who are women in the regions, Year 2014 - 2018</h2>
 <div class="sourceCode" id="cb143"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb143-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
 <a class="sourceLine" id="cb143-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
 <a class="sourceLine" id="cb143-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
@@ -577,30 +519,130 @@ Figure 12.7: The correlation between the number of engineers and the number of t
 <a class="sourceLine" id="cb143-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb143-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb143-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
-<a class="sourceLine" id="cb143-8" title="8"><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb143-8" title="8">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb143-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb143-10" title="10"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb143-11" title="11"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb143-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb143-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb143-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb143-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(region, year) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">sum_pop =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb143-13" title="13"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb143-14" title="14"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb143-15" title="15"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb143-16" title="16"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb143-17" title="17"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb143-18" title="18"><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> perc_women, <span class="dt">y =</span> sum_ing, <span class="dt">colour =</span> region, <span class="dt">size =</span> year2)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb143-19" title="19"><span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb143-20" title="20"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb143-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
-<a class="sourceLine" id="cb143-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Per cent of engineers who are women&quot;</span>,</a>
-<a class="sourceLine" id="cb143-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Number of the population who are engineers&quot;</span></a>
-<a class="sourceLine" id="cb143-24" title="24">  )</a></code></pre></div>
-<pre><code>## Warning: Removed 2 rows containing missing values (geom_point).</code></pre>
-<div class="figure"><span id="fig:utbildningsniva7"></span>
-<img src="SCB-Engineers-Jonkoping_files/figure-html/utbildningsniva7-1.png" alt="The correlation between the number of engineers and the proportion of engineers who are women in the regions (NUTS2), Year 2014 - 2018." width="672" />
-<p class="caption">
-Figure 12.8: The correlation between the number of engineers and the proportion of engineers who are women in the regions (NUTS2), Year 2014 - 2018.
-</p>
+<a class="sourceLine" id="cb143-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb143-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb143-17" title="17"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>)</a>
+<a class="sourceLine" id="cb143-18" title="18">  </a>
+<a class="sourceLine" id="cb143-19" title="19">model &lt;-<span class="st"> </span><span class="kw">lm</span>(sum_edu <span class="op">~</span><span class="st"> </span>sum_pop <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y) <span class="op">+</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb143-20" title="20"></a>
+<a class="sourceLine" id="cb143-21" title="21"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb143-22" title="22"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb143-23" title="23"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb143-24" title="24">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb143-25" title="25">  <span class="dt">caption =</span> <span class="st">&#39;Population with 3 years or more post-secondary education and number of population&#39;</span>)</a></code></pre></div>
+<table>
+<caption><span id="tab:utbildningsniva45">Table 12.2: </span>Population with 3 years or more post-secondary education and number of population</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">6.868374e+06</td>
+<td align="right">6.208239e+06</td>
+<td align="right">1.106332</td>
+<td align="right">0.2723173</td>
+</tr>
+<tr class="even">
+<td align="left">sum_pop</td>
+<td align="right">1.881103e-01</td>
+<td align="right">1.715110e-02</td>
+<td align="right">10.967839</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year2</td>
+<td align="right">-4.459663e+03</td>
+<td align="right">3.301904e+03</td>
+<td align="right">-1.350633</td>
+<td align="right">0.1811021</td>
+</tr>
+<tr class="even">
+<td align="left">log(salary.y)</td>
+<td align="right">1.789696e+05</td>
+<td align="right">8.703467e+04</td>
+<td align="right">2.056302</td>
+<td align="right">0.0434304</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women</td>
+<td align="right">1.160185e+04</td>
+<td align="right">2.520454e+03</td>
+<td align="right">4.603078</td>
+<td align="right">0.0000178</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb144"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb144-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb144-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb144-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb144-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb144-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
+<table>
+<caption><span id="tab:utbildningsniva45">Table 12.2: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">sum_pop</td>
+<td align="right">111793842754</td>
+<td align="right">1</td>
+<td align="right">120.293488</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year2</td>
+<td align="right">1695316390</td>
+<td align="right">1</td>
+<td align="right">1.824211</td>
+<td align="right">0.1811021</td>
+</tr>
+<tr class="odd">
+<td align="left">log(salary.y)</td>
+<td align="right">3929610704</td>
+<td align="right">1</td>
+<td align="right">4.228378</td>
+<td align="right">0.0434304</td>
+</tr>
+<tr class="even">
+<td align="left">perc_women</td>
+<td align="right">19691208116</td>
+<td align="right">1</td>
+<td align="right">21.188323</td>
+<td align="right">0.0000178</td>
+</tr>
+<tr class="odd">
+<td align="left">Residuals</td>
+<td align="right">65983312675</td>
+<td align="right">71</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
 </div>
+<div id="the-correlation-between-the-number-of-engineers-and-the-proportion-of-engineers-who-are-women-in-the-regions-year-2014---2018" class="section level2">
+<h2><span class="header-section-number">12.3</span> The correlation between the number of engineers and the proportion of engineers who are women in the regions, Year 2014 - 2018</h2>
 <div class="sourceCode" id="cb145"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb145-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
 <a class="sourceLine" id="cb145-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
 <a class="sourceLine" id="cb145-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
@@ -618,13 +660,44 @@ Figure 12.8: The correlation between the number of engineers and the proportion 
 <a class="sourceLine" id="cb145-15" title="15"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb145-16" title="16"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb145-17" title="17"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb145-18" title="18"><span class="st">  </span><span class="kw">ggscatter</span>(<span class="dt">x =</span> <span class="st">&quot;perc_women&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;sum_ing&quot;</span>, </a>
-<a class="sourceLine" id="cb145-19" title="19">  <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, </a>
-<a class="sourceLine" id="cb145-20" title="20">  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.method =</span> <span class="st">&quot;pearson&quot;</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb145-18" title="18"><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> perc_women, <span class="dt">y =</span> sum_ing, <span class="dt">colour =</span> region, <span class="dt">size =</span> year2)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb145-19" title="19"><span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb145-20" title="20"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>) <span class="op">+</span></a>
 <a class="sourceLine" id="cb145-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
 <a class="sourceLine" id="cb145-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Per cent of engineers who are women&quot;</span>,</a>
 <a class="sourceLine" id="cb145-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Number of the population who are engineers&quot;</span></a>
 <a class="sourceLine" id="cb145-24" title="24">  )</a></code></pre></div>
+<pre><code>## Warning: Removed 2 rows containing missing values (geom_point).</code></pre>
+<div class="figure"><span id="fig:utbildningsniva7"></span>
+<img src="SCB-Engineers-Jonkoping_files/figure-html/utbildningsniva7-1.png" alt="The correlation between the number of engineers and the proportion of engineers who are women in the regions (NUTS2), Year 2014 - 2018." width="672" />
+<p class="caption">
+Figure 12.8: The correlation between the number of engineers and the proportion of engineers who are women in the regions (NUTS2), Year 2014 - 2018.
+</p>
+</div>
+<div class="sourceCode" id="cb147"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb147-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
+<a class="sourceLine" id="cb147-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb147-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb147-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
+<a class="sourceLine" id="cb147-8" title="8"><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-10" title="10"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-11" title="11"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-13" title="13"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-14" title="14"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-15" title="15"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-16" title="16"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-17" title="17"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb147-18" title="18"><span class="st">  </span><span class="kw">ggscatter</span>(<span class="dt">x =</span> <span class="st">&quot;perc_women&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;sum_ing&quot;</span>, </a>
+<a class="sourceLine" id="cb147-19" title="19">  <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, </a>
+<a class="sourceLine" id="cb147-20" title="20">  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.method =</span> <span class="st">&quot;pearson&quot;</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb147-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
+<a class="sourceLine" id="cb147-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Per cent of engineers who are women&quot;</span>,</a>
+<a class="sourceLine" id="cb147-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Number of the population who are engineers&quot;</span></a>
+<a class="sourceLine" id="cb147-24" title="24">  )</a></code></pre></div>
 <pre><code>## Warning: Removed 2 rows containing non-finite values (stat_smooth).</code></pre>
 <pre><code>## Warning: Removed 2 rows containing non-finite values (stat_cor).</code></pre>
 <pre><code>## Warning: Removed 2 rows containing missing values (geom_point).</code></pre>
@@ -634,32 +707,33 @@ Figure 12.8: The correlation between the number of engineers and the proportion 
 Figure 12.9: The correlation between the number of engineers and the proportion of engineers who are women in the regions (NUTS2), Year 2014 - 2018.
 </p>
 </div>
-<div class="sourceCode" id="cb149"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb149-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
-<a class="sourceLine" id="cb149-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb149-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb149-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
-<a class="sourceLine" id="cb149-8" title="8">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(region, year) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">sum_pop =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-13" title="13"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-14" title="14"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu)</a>
-<a class="sourceLine" id="cb149-17" title="17">  </a>
-<a class="sourceLine" id="cb149-18" title="18">model &lt;-<span class="st"> </span><span class="kw">lm</span>(sum_ing <span class="op">~</span><span class="st"> </span>sum_edu <span class="op">+</span><span class="st"> </span>perc_women <span class="op">+</span><span class="st"> `</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y), <span class="dt">data =</span> tb) </a>
-<a class="sourceLine" id="cb149-19" title="19"></a>
-<a class="sourceLine" id="cb149-20" title="20"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb149-21" title="21"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb149-22" title="22"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb149-23" title="23">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb149-24" title="24">  <span class="dt">caption =</span> <span class="st">&#39;Engineers and per cent of engineers who are women&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb151"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb151-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
+<a class="sourceLine" id="cb151-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb151-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb151-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
+<a class="sourceLine" id="cb151-8" title="8">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(region, year) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">sum_pop =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-13" title="13"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-14" title="14"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-17" title="17"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) </a>
+<a class="sourceLine" id="cb151-18" title="18">  </a>
+<a class="sourceLine" id="cb151-19" title="19">model &lt;-<span class="st"> </span><span class="kw">lm</span>(sum_ing <span class="op">~</span><span class="st"> </span>sum_edu <span class="op">+</span><span class="st"> </span>perc_women <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y), <span class="dt">data =</span> tb) </a>
+<a class="sourceLine" id="cb151-20" title="20"></a>
+<a class="sourceLine" id="cb151-21" title="21"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb151-22" title="22"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb151-23" title="23"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb151-24" title="24">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb151-25" title="25">  <span class="dt">caption =</span> <span class="st">&#39;Engineers and per cent of engineers who are women&#39;</span>)</a></code></pre></div>
 <table>
-<caption><span id="tab:utbildningsniva43">Table 12.2: </span>Engineers and per cent of engineers who are women</caption>
+<caption><span id="tab:utbildningsniva43">Table 12.3: </span>Engineers and per cent of engineers who are women</caption>
 <thead>
 <tr class="header">
 <th align="left">term</th>
@@ -672,97 +746,48 @@ Figure 12.9: The correlation between the number of engineers and the proportion 
 <tbody>
 <tr class="odd">
 <td align="left">(Intercept)</td>
-<td align="right">1.814111e+06</td>
-<td align="right">2.530095e+05</td>
-<td align="right">7.1701322</td>
-<td align="right">0.0000000</td>
+<td align="right">-2.204967e+05</td>
+<td align="right">5.361110e+05</td>
+<td align="right">-0.4112893</td>
+<td align="right">0.6820993</td>
 </tr>
 <tr class="even">
 <td align="left">sum_edu</td>
-<td align="right">3.238560e-02</td>
-<td align="right">3.085800e-03</td>
-<td align="right">10.4951573</td>
+<td align="right">6.828150e-02</td>
+<td align="right">6.309400e-03</td>
+<td align="right">10.8222540</td>
 <td align="right">0.0000000</td>
 </tr>
 <tr class="odd">
 <td align="left">perc_women</td>
-<td align="right">1.908742e+03</td>
-<td align="right">8.188662e+01</td>
-<td align="right">23.3095722</td>
-<td align="right">0.0000000</td>
+<td align="right">8.321495e+01</td>
+<td align="right">2.503449e+02</td>
+<td align="right">0.3324013</td>
+<td align="right">0.7405657</td>
 </tr>
 <tr class="even">
-<td align="left"><code>level of education</code>post-graduate education (ISCED97 6)</td>
-<td align="right">3.847533e+02</td>
-<td align="right">6.310761e+02</td>
-<td align="right">0.6096781</td>
-<td align="right">0.5423074</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>post-secondary education 3 years or more (ISCED97 5A)</td>
-<td align="right">-5.572339e+03</td>
-<td align="right">8.239019e+02</td>
-<td align="right">-6.7633520</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>post-secondary education, less than 3 years (ISCED97 4+5B)</td>
-<td align="right">-3.607839e+03</td>
-<td align="right">7.176946e+02</td>
-<td align="right">-5.0269834</td>
-<td align="right">0.0000007</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>primary and secondary education 9-10 years (ISCED97 2)</td>
-<td align="right">-3.239566e+03</td>
-<td align="right">7.015638e+02</td>
-<td align="right">-4.6176362</td>
-<td align="right">0.0000048</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>primary and secondary education less than 9 years (ISCED97 1)</td>
-<td align="right">-6.929565e+02</td>
-<td align="right">6.334608e+02</td>
-<td align="right">-1.0939217</td>
-<td align="right">0.2744312</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>upper secondary education 3 years (ISCED97 3A)</td>
-<td align="right">-6.240707e+03</td>
-<td align="right">8.663109e+02</td>
-<td align="right">-7.2037723</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>upper secondary education, 2 years or less (ISCED97 3C)</td>
-<td align="right">-5.399268e+03</td>
-<td align="right">8.133728e+02</td>
-<td align="right">-6.6381229</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="odd">
 <td align="left">year2</td>
-<td align="right">-1.077164e+03</td>
-<td align="right">1.323590e+02</td>
-<td align="right">-8.1381945</td>
-<td align="right">0.0000000</td>
+<td align="right">1.185970e+02</td>
+<td align="right">2.864389e+02</td>
+<td align="right">0.4140393</td>
+<td align="right">0.6800934</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">log(salary.y)</td>
-<td align="right">3.095496e+04</td>
-<td align="right">3.586875e+03</td>
-<td align="right">8.6300630</td>
-<td align="right">0.0000000</td>
+<td align="right">-2.051953e+03</td>
+<td align="right">7.787832e+03</td>
+<td align="right">-0.2634820</td>
+<td align="right">0.7929423</td>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb150"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb150-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb150-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb150-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb150-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb150-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb152"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb152-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb152-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb152-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb152-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb152-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
 <table>
-<caption><span id="tab:utbildningsniva43">Table 12.2: </span>Anova report from linear model fit</caption>
+<caption><span id="tab:utbildningsniva43">Table 12.3: </span>Anova report from linear model fit</caption>
 <thead>
 <tr class="header">
 <th align="left">term</th>
@@ -775,43 +800,36 @@ Figure 12.9: The correlation between the number of engineers and the proportion 
 <tbody>
 <tr class="odd">
 <td align="left">sum_edu</td>
-<td align="right">1661333720</td>
+<td align="right">828862843.2</td>
 <td align="right">1</td>
-<td align="right">110.14833</td>
-<td align="right">0</td>
+<td align="right">117.1211811</td>
+<td align="right">0.0000000</td>
 </tr>
 <tr class="even">
 <td align="left">perc_women</td>
-<td align="right">8194974041</td>
+<td align="right">781938.6</td>
 <td align="right">1</td>
-<td align="right">543.33615</td>
-<td align="right">0</td>
+<td align="right">0.1104906</td>
+<td align="right">0.7405657</td>
 </tr>
 <tr class="odd">
-<td align="left"><code>level of education</code></td>
-<td align="right">1149291513</td>
-<td align="right">7</td>
-<td align="right">10.88562</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
 <td align="left">year2</td>
-<td align="right">998930126</td>
+<td align="right">1213194.5</td>
 <td align="right">1</td>
-<td align="right">66.23021</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="left">log(salary.y)</td>
-<td align="right">1123328846</td>
-<td align="right">1</td>
-<td align="right">74.47799</td>
-<td align="right">0</td>
+<td align="right">0.1714286</td>
+<td align="right">0.6800934</td>
 </tr>
 <tr class="even">
+<td align="left">log(salary.y)</td>
+<td align="right">491302.6</td>
+<td align="right">1</td>
+<td align="right">0.0694228</td>
+<td align="right">0.7929423</td>
+</tr>
+<tr class="odd">
 <td align="left">Residuals</td>
-<td align="right">8989286812</td>
-<td align="right">596</td>
+<td align="right">502464723.3</td>
+<td align="right">71</td>
 <td align="right">NA</td>
 <td align="right">NA</td>
 </tr>
@@ -820,66 +838,6 @@ Figure 12.9: The correlation between the number of engineers and the proportion 
 </div>
 <div id="the-correlation-between-the-salary-of-engineers-and-the-number-of-the-population-who-have-3-years-or-more-post-secondary-education-in-the-regions-year-2014---2018" class="section level2">
 <h2><span class="header-section-number">12.4</span> The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018</h2>
-<div class="sourceCode" id="cb151"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb151-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
-<a class="sourceLine" id="cb151-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb151-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb151-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
-<a class="sourceLine" id="cb151-8" title="8"><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-13" title="13"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-14" title="14"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb151-17" title="17"><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> sum_edu, <span class="dt">y =</span> salary.y, <span class="dt">colour =</span> region, <span class="dt">size =</span> year2)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb151-18" title="18"><span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb151-19" title="19"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb151-20" title="20"><span class="st">  </span><span class="kw">facet_grid</span>(. <span class="op">~</span><span class="st"> </span>sex) <span class="op">+</span></a>
-<a class="sourceLine" id="cb151-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
-<a class="sourceLine" id="cb151-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Number of the population with 3 years or more post-secondary education&quot;</span>,</a>
-<a class="sourceLine" id="cb151-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Salary of engineers&quot;</span></a>
-<a class="sourceLine" id="cb151-24" title="24">  )</a></code></pre></div>
-<div class="figure"><span id="fig:utbildningsniva9"></span>
-<img src="SCB-Engineers-Jonkoping_files/figure-html/utbildningsniva9-1.png" alt="The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018." width="672" />
-<p class="caption">
-Figure 12.10: The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.
-</p>
-</div>
-<div class="sourceCode" id="cb152"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb152-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
-<a class="sourceLine" id="cb152-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb152-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb152-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
-<a class="sourceLine" id="cb152-8" title="8"><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-13" title="13"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-14" title="14"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb152-17" title="17"><span class="st">  </span><span class="kw">ggscatter</span>(<span class="dt">x =</span> <span class="st">&quot;sum_edu&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;salary.y&quot;</span>, </a>
-<a class="sourceLine" id="cb152-18" title="18">  <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, </a>
-<a class="sourceLine" id="cb152-19" title="19">  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.method =</span> <span class="st">&quot;pearson&quot;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb152-20" title="20"><span class="st">  </span><span class="kw">facet_grid</span>(. <span class="op">~</span><span class="st"> </span>sex) <span class="op">+</span></a>
-<a class="sourceLine" id="cb152-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
-<a class="sourceLine" id="cb152-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Number of the population with 3 years or more post-secondary education&quot;</span>,</a>
-<a class="sourceLine" id="cb152-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Salary of engineers&quot;</span></a>
-<a class="sourceLine" id="cb152-24" title="24">  )</a></code></pre></div>
-<div class="figure"><span id="fig:utbildningsniva10"></span>
-<img src="SCB-Engineers-Jonkoping_files/figure-html/utbildningsniva10-1.png" alt="The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018." width="672" />
-<p class="caption">
-Figure 12.11: The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.
-</p>
-</div>
 <div class="sourceCode" id="cb153"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb153-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
 <a class="sourceLine" id="cb153-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
 <a class="sourceLine" id="cb153-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
@@ -887,25 +845,86 @@ Figure 12.11: The correlation between the salary of engineers and the number of 
 <a class="sourceLine" id="cb153-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb153-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb153-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
-<a class="sourceLine" id="cb153-8" title="8">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb153-8" title="8"><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb153-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb153-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb153-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb153-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(region, year) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">sum_pop =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb153-13" title="13"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb153-14" title="14"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb153-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb153-13" title="13"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb153-14" title="14"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb153-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb153-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu)</a>
-<a class="sourceLine" id="cb153-17" title="17">  </a>
-<a class="sourceLine" id="cb153-18" title="18">model &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="kw">log</span>(salary.y) <span class="op">~</span><span class="st"> </span>sum_edu <span class="op">+</span><span class="st"> `</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb) </a>
-<a class="sourceLine" id="cb153-19" title="19"></a>
-<a class="sourceLine" id="cb153-20" title="20"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb153-21" title="21"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb153-22" title="22"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb153-23" title="23">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb153-24" title="24">  <span class="dt">caption =</span> <span class="st">&#39;Salary of engineers and population with 3 years or more post-secondary education&#39;</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb153-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb153-17" title="17"><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> sum_edu, <span class="dt">y =</span> salary.y, <span class="dt">colour =</span> region, <span class="dt">size =</span> year2)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb153-18" title="18"><span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb153-19" title="19"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb153-20" title="20"><span class="st">  </span><span class="kw">facet_grid</span>(. <span class="op">~</span><span class="st"> </span>sex) <span class="op">+</span></a>
+<a class="sourceLine" id="cb153-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
+<a class="sourceLine" id="cb153-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Number of the population with 3 years or more post-secondary education&quot;</span>,</a>
+<a class="sourceLine" id="cb153-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Salary of engineers&quot;</span></a>
+<a class="sourceLine" id="cb153-24" title="24">  )</a></code></pre></div>
+<div class="figure"><span id="fig:utbildningsniva9"></span>
+<img src="SCB-Engineers-Jonkoping_files/figure-html/utbildningsniva9-1.png" alt="The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018." width="672" />
+<p class="caption">
+Figure 12.10: The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.
+</p>
+</div>
+<div class="sourceCode" id="cb154"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb154-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
+<a class="sourceLine" id="cb154-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb154-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb154-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
+<a class="sourceLine" id="cb154-8" title="8"><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-13" title="13"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-14" title="14"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb154-17" title="17"><span class="st">  </span><span class="kw">ggscatter</span>(<span class="dt">x =</span> <span class="st">&quot;sum_edu&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;salary.y&quot;</span>, </a>
+<a class="sourceLine" id="cb154-18" title="18">  <span class="dt">add =</span> <span class="st">&quot;reg.line&quot;</span>, <span class="dt">conf.int =</span> <span class="ot">TRUE</span>, </a>
+<a class="sourceLine" id="cb154-19" title="19">  <span class="dt">cor.coef =</span> <span class="ot">TRUE</span>, <span class="dt">cor.method =</span> <span class="st">&quot;pearson&quot;</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb154-20" title="20"><span class="st">  </span><span class="kw">facet_grid</span>(. <span class="op">~</span><span class="st"> </span>sex) <span class="op">+</span></a>
+<a class="sourceLine" id="cb154-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
+<a class="sourceLine" id="cb154-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Number of the population with 3 years or more post-secondary education&quot;</span>,</a>
+<a class="sourceLine" id="cb154-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Salary of engineers&quot;</span></a>
+<a class="sourceLine" id="cb154-24" title="24">  )</a></code></pre></div>
+<div class="figure"><span id="fig:utbildningsniva10"></span>
+<img src="SCB-Engineers-Jonkoping_files/figure-html/utbildningsniva10-1.png" alt="The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018." width="672" />
+<p class="caption">
+Figure 12.11: The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018.
+</p>
+</div>
+<div class="sourceCode" id="cb155"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb155-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
+<a class="sourceLine" id="cb155-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb155-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb155-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
+<a class="sourceLine" id="cb155-8" title="8">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(region, year) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">sum_pop =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-13" title="13"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-14" title="14"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-17" title="17"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>)</a>
+<a class="sourceLine" id="cb155-18" title="18">  </a>
+<a class="sourceLine" id="cb155-19" title="19">model &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="kw">log</span>(salary.y) <span class="op">~</span><span class="st"> </span>sum_edu <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb) </a>
+<a class="sourceLine" id="cb155-20" title="20"></a>
+<a class="sourceLine" id="cb155-21" title="21"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb155-22" title="22"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb155-23" title="23"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb155-24" title="24">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb155-25" title="25">  <span class="dt">caption =</span> <span class="st">&#39;Salary of engineers and population with 3 years or more post-secondary education&#39;</span>)</a></code></pre></div>
 <table>
-<caption><span id="tab:utbildningsniva44">Table 12.3: </span>Salary of engineers and population with 3 years or more post-secondary education</caption>
+<caption><span id="tab:utbildningsniva44">Table 12.4: </span>Salary of engineers and population with 3 years or more post-secondary education</caption>
 <thead>
 <tr class="header">
 <th align="left">term</th>
@@ -918,90 +937,41 @@ Figure 12.11: The correlation between the salary of engineers and the number of 
 <tbody>
 <tr class="odd">
 <td align="left">(Intercept)</td>
-<td align="right">-20.5931884</td>
-<td align="right">2.7611416</td>
-<td align="right">-7.4582154</td>
-<td align="right">0.0000000</td>
+<td align="right">-29.0343654</td>
+<td align="right">7.3559234</td>
+<td align="right">-3.947073</td>
+<td align="right">0.0001821</td>
 </tr>
 <tr class="even">
 <td align="left">sum_edu</td>
-<td align="right">0.0000002</td>
-<td align="right">0.0000000</td>
-<td align="right">6.4198460</td>
-<td align="right">0.0000000</td>
+<td align="right">0.0000004</td>
+<td align="right">0.0000001</td>
+<td align="right">4.966338</td>
+<td align="right">0.0000044</td>
 </tr>
 <tr class="odd">
-<td align="left"><code>level of education</code>post-graduate education (ISCED97 6)</td>
-<td align="right">0.0025973</td>
-<td align="right">0.0072000</td>
-<td align="right">0.3607343</td>
-<td align="right">0.7184257</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>post-secondary education 3 years or more (ISCED97 5A)</td>
-<td align="right">-0.0376161</td>
-<td align="right">0.0092740</td>
-<td align="right">-4.0560613</td>
-<td align="right">0.0000565</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>post-secondary education, less than 3 years (ISCED97 4+5B)</td>
-<td align="right">-0.0243547</td>
-<td align="right">0.0081282</td>
-<td align="right">-2.9963201</td>
-<td align="right">0.0028460</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>primary and secondary education 9-10 years (ISCED97 2)</td>
-<td align="right">-0.0218687</td>
-<td align="right">0.0079549</td>
-<td align="right">-2.7491023</td>
-<td align="right">0.0061567</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>primary and secondary education less than 9 years (ISCED97 1)</td>
-<td align="right">-0.0046778</td>
-<td align="right">0.0072254</td>
-<td align="right">-0.6474082</td>
-<td align="right">0.5176167</td>
-</tr>
-<tr class="even">
-<td align="left"><code>level of education</code>upper secondary education 3 years (ISCED97 3A)</td>
-<td align="right">-0.0421279</td>
-<td align="right">0.0097333</td>
-<td align="right">-4.3282138</td>
-<td align="right">0.0000176</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>level of education</code>upper secondary education, 2 years or less (ISCED97 3C)</td>
-<td align="right">-0.0364478</td>
-<td align="right">0.0091602</td>
-<td align="right">-3.9789490</td>
-<td align="right">0.0000777</td>
-</tr>
-<tr class="even">
 <td align="left">year2</td>
-<td align="right">0.0154117</td>
-<td align="right">0.0013722</td>
-<td align="right">11.2311161</td>
-<td align="right">0.0000000</td>
+<td align="right">0.0196919</td>
+<td align="right">0.0036610</td>
+<td align="right">5.378806</td>
+<td align="right">0.0000009</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">perc_women</td>
-<td align="right">0.0080311</td>
-<td align="right">0.0008746</td>
-<td align="right">9.1822795</td>
-<td align="right">0.0000000</td>
+<td align="right">-0.0048401</td>
+<td align="right">0.0037452</td>
+<td align="right">-1.292342</td>
+<td align="right">0.2003709</td>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb154"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb154-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb154-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb154-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb154-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb154-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb156"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb156-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb156-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb156-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb156-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb156-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
 <table>
-<caption><span id="tab:utbildningsniva44">Table 12.3: </span>Anova report from linear model fit</caption>
+<caption><span id="tab:utbildningsniva44">Table 12.4: </span>Anova report from linear model fit</caption>
 <thead>
 <tr class="header">
 <th align="left">term</th>
@@ -1014,36 +984,29 @@ Figure 12.11: The correlation between the salary of engineers and the number of 
 <tbody>
 <tr class="odd">
 <td align="left">sum_edu</td>
-<td align="right">0.0809322</td>
+<td align="right">0.0399718</td>
 <td align="right">1</td>
-<td align="right">41.214423</td>
-<td align="right">0.0000000</td>
+<td align="right">24.664513</td>
+<td align="right">0.0000044</td>
 </tr>
 <tr class="even">
-<td align="left"><code>level of education</code></td>
-<td align="right">0.0548215</td>
-<td align="right">7</td>
-<td align="right">3.988234</td>
-<td align="right">0.0002825</td>
-</tr>
-<tr class="odd">
 <td align="left">year2</td>
-<td align="right">0.2476954</td>
+<td align="right">0.0468871</td>
 <td align="right">1</td>
-<td align="right">126.137969</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="even">
-<td align="left">perc_women</td>
-<td align="right">0.1655667</td>
-<td align="right">1</td>
-<td align="right">84.314257</td>
-<td align="right">0.0000000</td>
+<td align="right">28.931550</td>
+<td align="right">0.0000009</td>
 </tr>
 <tr class="odd">
+<td align="left">perc_women</td>
+<td align="right">0.0027067</td>
+<td align="right">1</td>
+<td align="right">1.670149</td>
+<td align="right">0.2003709</td>
+</tr>
+<tr class="even">
 <td align="left">Residuals</td>
-<td align="right">1.1723206</td>
-<td align="right">597</td>
+<td align="right">0.1166848</td>
+<td align="right">72</td>
 <td align="right">NA</td>
 <td align="right">NA</td>
 </tr>
@@ -1052,30 +1015,30 @@ Figure 12.11: The correlation between the salary of engineers and the number of 
 </div>
 <div id="the-correlation-between-the-proportion-of-the-population-who-have-3-years-or-more-post-secondary-education-and-the-number-of-the-population-who-have-3-years-or-more-post-secondary-education-in-the-regions-year-2014---2018" class="section level2">
 <h2><span class="header-section-number">12.5</span> The correlation between the proportion of the population who have 3 years or more post-secondary education and the number of the population who have 3 years or more post-secondary education in the regions, Year 2014 - 2018</h2>
-<div class="sourceCode" id="cb155"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb155-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
-<a class="sourceLine" id="cb155-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb155-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb155-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
-<a class="sourceLine" id="cb155-8" title="8"><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-13" title="13"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-14" title="14"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb155-17" title="17"><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> perc_edu, <span class="dt">y =</span> salary, <span class="dt">colour =</span> region, <span class="dt">size =</span> year2)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb155-18" title="18"><span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb155-19" title="19"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb155-20" title="20"><span class="st">  </span><span class="kw">facet_grid</span>(. <span class="op">~</span><span class="st"> </span>sex) <span class="op">+</span></a>
-<a class="sourceLine" id="cb155-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
-<a class="sourceLine" id="cb155-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Per cent of the population with 3 years or more post-secondary education&quot;</span>,</a>
-<a class="sourceLine" id="cb155-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Number of the population with 3 years or more post-secondary education&quot;</span></a>
-<a class="sourceLine" id="cb155-24" title="24">  )</a></code></pre></div>
+<div class="sourceCode" id="cb157"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb157-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
+<a class="sourceLine" id="cb157-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb157-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb157-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-6" title="6"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_salary =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_sal</span> (salary.y)))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-7" title="7"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_ing =</span> <span class="kw">sum</span>(salary.x))  </a>
+<a class="sourceLine" id="cb157-8" title="8"><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-10" title="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-11" title="11"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-12" title="12"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-13" title="13"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-14" title="14"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-15" title="15"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb157-17" title="17"><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> perc_edu, <span class="dt">y =</span> salary, <span class="dt">colour =</span> region, <span class="dt">size =</span> year2)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb157-18" title="18"><span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb157-19" title="19"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb157-20" title="20"><span class="st">  </span><span class="kw">facet_grid</span>(. <span class="op">~</span><span class="st"> </span>sex) <span class="op">+</span></a>
+<a class="sourceLine" id="cb157-21" title="21"><span class="st">  </span><span class="kw">labs</span>(</a>
+<a class="sourceLine" id="cb157-22" title="22">    <span class="dt">x =</span> <span class="st">&quot;Per cent of the population with 3 years or more post-secondary education&quot;</span>,</a>
+<a class="sourceLine" id="cb157-23" title="23">    <span class="dt">y =</span> <span class="st">&quot;Number of the population with 3 years or more post-secondary education&quot;</span></a>
+<a class="sourceLine" id="cb157-24" title="24">  )</a></code></pre></div>
 <div class="figure"><span id="fig:utbildningsniva11"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/utbildningsniva11-1.png" alt="The correlation between the proportion  of the population who have 3 years or more post-secondary education, but not postgraduate education and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2014 - 2018." width="672" />
 <p class="caption">
