@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-09-01" />
+<meta name="date" content="2019-09-12" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1922,7 +1922,7 @@ Figure 9.9: SSYK 214, Architects, engineers and related professionals, Year 2014
 <div class="figure">
 <img src="SCB-Engineers-Jonkoping_files/figure-html/ssyk14-18_2-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
 <p class="caption">
-(#fig:ssyk14-18_2)Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+(#fig:ssyk14-18_21)Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
 </p>
 </div>
 <div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb64-1" title="1"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
@@ -2620,7 +2620,7 @@ Figure 9.9: SSYK 214, Architects, engineers and related professionals, Year 2014
 <a class="sourceLine" id="cb69-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
 <a class="sourceLine" id="cb69-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
 <a class="sourceLine" id="cb69-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb69-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>)  </a></code></pre></div>
+<a class="sourceLine" id="cb69-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_2)Anova report from linear model fit</caption>
 <thead>
@@ -2670,6 +2670,238 @@ Figure 9.9: SSYK 214, Architects, engineers and related professionals, Year 2014
 </tr>
 </tbody>
 </table>
+<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" title="1">summary_table =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb70-2" title="2">anova_table =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb70-3" title="3"><span class="cf">for</span> (i <span class="cf">in</span> <span class="kw">unique</span>(tb<span class="op">$</span><span class="st">`</span><span class="dt">occuptional  (SSYK 2012)</span><span class="st">`</span>)){</a>
+<a class="sourceLine" id="cb70-4" title="4">  temp &lt;-<span class="st"> </span><span class="kw">filter</span>(tb, <span class="st">`</span><span class="dt">occuptional  (SSYK 2012)</span><span class="st">`</span> <span class="op">==</span><span class="st"> </span>i)</a>
+<a class="sourceLine" id="cb70-5" title="5">  <span class="cf">if</span> (<span class="kw">dim</span>(temp)[<span class="dv">1</span>] <span class="op">&gt;</span><span class="st"> </span><span class="dv">50</span>){</a>
+<a class="sourceLine" id="cb70-6" title="6">    model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary) <span class="op">~</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span><span class="kw">poly</span>(age4, <span class="dv">3</span>), <span class="dt">data =</span> temp)</a>
+<a class="sourceLine" id="cb70-7" title="7">    summary_table &lt;-<span class="st"> </span><span class="kw">rbind</span> (summary_table, <span class="kw">mutate</span> (<span class="kw">mutate</span> (<span class="kw">tidy</span> (<span class="kw">summary</span> (model)), <span class="dt">ssyk =</span> i), <span class="dt">spannvidd =</span> <span class="kw">max</span> (<span class="kw">filter</span> (temp, year2 <span class="op">==</span><span class="st"> </span><span class="dv">2018</span>)<span class="op">$</span>salary) <span class="op">/</span><span class="st"> </span><span class="kw">min</span> (<span class="kw">filter</span> (temp, year2 <span class="op">==</span><span class="st"> </span><span class="dv">2018</span>)<span class="op">$</span>salary)))</a>
+<a class="sourceLine" id="cb70-8" title="8">    anova_table &lt;-<span class="st"> </span><span class="kw">rbind</span> (anova_table, <span class="kw">mutate</span> (<span class="kw">tidy</span> (<span class="kw">Anova</span> (model, <span class="dt">type =</span> <span class="dv">2</span>)), <span class="dt">ssyk =</span> i))</a>
+<a class="sourceLine" id="cb70-9" title="9">  }</a>
+<a class="sourceLine" id="cb70-10" title="10">}</a>
+<a class="sourceLine" id="cb70-11" title="11"></a>
+<a class="sourceLine" id="cb70-12" title="12"><span class="kw">merge</span>(summary_table, anova_table, <span class="dt">by =</span> <span class="st">&quot;ssyk&quot;</span>, <span class="dt">all =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb70-13" title="13"><span class="st">  </span><span class="kw">filter</span> (term.y <span class="op">==</span><span class="st"> &quot;poly(age4, 3)&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb70-14" title="14"><span class="st">  </span><span class="kw">filter</span> (term.x <span class="op">==</span><span class="st"> &quot;year2&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb70-15" title="15"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb70-16" title="16"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> estimate, <span class="dt">y =</span> statistic.y))</a></code></pre></div>
+<div class="figure">
+<img src="SCB-Engineers-Jonkoping_files/figure-html/ssyk14-18_2-2.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+(#fig:ssyk14-18_22)Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb71-1" title="1"><span class="kw">merge</span>(summary_table, anova_table, <span class="dt">by =</span> <span class="st">&quot;ssyk&quot;</span>, <span class="dt">all =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb71-2" title="2"><span class="st">  </span><span class="kw">filter</span> (term.y <span class="op">==</span><span class="st"> &quot;poly(age4, 3)&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb71-3" title="3"><span class="st">  </span><span class="kw">filter</span> (term.x <span class="op">==</span><span class="st"> &quot;year2&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb71-4" title="4"><span class="st">  </span><span class="kw">select</span> (ssyk, estimate, statistic.y) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb71-5" title="5"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (statistic.y)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb71-6" title="6"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb71-7" title="7">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb71-8" title="8">  <span class="dt">caption =</span> <span class="st">&#39;Correlation for F-value (age) and yearly increase in salaries&#39;</span>)  </a></code></pre></div>
+<table>
+<caption>(#tab:ssyk14-18_2)Correlation for F-value (age) and yearly increase in salaries</caption>
+<thead>
+<tr class="header">
+<th align="left">ssyk</th>
+<th align="right">estimate</th>
+<th align="right">statistic.y</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">231 University and higher education teachers</td>
+<td align="right">0.0175400</td>
+<td align="right">1489.94759</td>
+</tr>
+<tr class="even">
+<td align="left">214 Engineering professionals</td>
+<td align="right">0.0191776</td>
+<td align="right">1137.26462</td>
+</tr>
+<tr class="odd">
+<td align="left">351 ICT operations and user support technicians</td>
+<td align="right">0.0201026</td>
+<td align="right">994.73077</td>
+</tr>
+<tr class="even">
+<td align="left">332 Insurance advisers, sales and purchasing agents</td>
+<td align="right">0.0198331</td>
+<td align="right">787.23830</td>
+</tr>
+<tr class="odd">
+<td align="left">251 ICT architects, systems analysts and test managers</td>
+<td align="right">0.0228129</td>
+<td align="right">764.55916</td>
+</tr>
+<tr class="even">
+<td align="left">241 Accountants, financial analysts and fund managers</td>
+<td align="right">0.0254541</td>
+<td align="right">453.60212</td>
+</tr>
+<tr class="odd">
+<td align="left">234 Primary- and pre-school teachers</td>
+<td align="right">0.0358089</td>
+<td align="right">365.63640</td>
+</tr>
+<tr class="even">
+<td align="left">243 Marketing and public relations professionals</td>
+<td align="right">0.0115577</td>
+<td align="right">358.10300</td>
+</tr>
+<tr class="odd">
+<td align="left">242 Organisation analysts, policy administrators and human resource specialists</td>
+<td align="right">0.0191076</td>
+<td align="right">353.48939</td>
+</tr>
+<tr class="even">
+<td align="left">125 Sales and marketing managers</td>
+<td align="right">0.0169323</td>
+<td align="right">327.94127</td>
+</tr>
+<tr class="odd">
+<td align="left">211 Physicists and chemists</td>
+<td align="right">0.0164172</td>
+<td align="right">310.29294</td>
+</tr>
+<tr class="even">
+<td align="left">411 Office assistants and other secretaries</td>
+<td align="right">0.0200413</td>
+<td align="right">252.88695</td>
+</tr>
+<tr class="odd">
+<td align="left">422 Client information clerks</td>
+<td align="right">0.0157145</td>
+<td align="right">237.76505</td>
+</tr>
+<tr class="even">
+<td align="left">311 Physical and engineering science technicians</td>
+<td align="right">0.0220773</td>
+<td align="right">237.05355</td>
+</tr>
+<tr class="odd">
+<td align="left">331 Financial and accounting associate professionals</td>
+<td align="right">0.0206948</td>
+<td align="right">230.94691</td>
+</tr>
+<tr class="even">
+<td align="left">335 Tax and related government associate professionals</td>
+<td align="right">0.0271137</td>
+<td align="right">215.91442</td>
+</tr>
+<tr class="odd">
+<td align="left">129 Administration and service managers not elsewhere classified</td>
+<td align="right">0.0205923</td>
+<td align="right">210.94494</td>
+</tr>
+<tr class="even">
+<td align="left">264 Authors, journalists and linguists</td>
+<td align="right">0.0131100</td>
+<td align="right">186.40275</td>
+</tr>
+<tr class="odd">
+<td align="left">321 Medical and pharmaceutical technicians</td>
+<td align="right">0.0271410</td>
+<td align="right">156.69476</td>
+</tr>
+<tr class="even">
+<td align="left">261 Legal professionals</td>
+<td align="right">0.0180537</td>
+<td align="right">154.45516</td>
+</tr>
+<tr class="odd">
+<td align="left">133 Research and development managers</td>
+<td align="right">0.0130577</td>
+<td align="right">142.64786</td>
+</tr>
+<tr class="even">
+<td align="left">334 Administrative and specialized secretaries</td>
+<td align="right">0.0412153</td>
+<td align="right">130.11988</td>
+</tr>
+<tr class="odd">
+<td align="left">0002 occupations unidentifiable</td>
+<td align="right">0.0083972</td>
+<td align="right">126.40010</td>
+</tr>
+<tr class="even">
+<td align="left">312 Construction and manufacturing supervisors</td>
+<td align="right">0.0340176</td>
+<td align="right">97.10246</td>
+</tr>
+<tr class="odd">
+<td align="left">342 Athletes, fitness instructors and recreational workers</td>
+<td align="right">0.0201220</td>
+<td align="right">93.20358</td>
+</tr>
+<tr class="even">
+<td align="left">343 Photographers, interior decorators and entertainers</td>
+<td align="right">0.0298648</td>
+<td align="right">91.41539</td>
+</tr>
+<tr class="odd">
+<td align="left">333 Business services agents</td>
+<td align="right">0.0245030</td>
+<td align="right">88.49860</td>
+</tr>
+<tr class="even">
+<td align="left">222 Nursing professionals</td>
+<td align="right">0.0639110</td>
+<td align="right">74.88506</td>
+</tr>
+<tr class="odd">
+<td align="left">217 Designers</td>
+<td align="right">0.0233766</td>
+<td align="right">66.62381</td>
+</tr>
+<tr class="even">
+<td align="left">122 Human resource managers</td>
+<td align="right">0.0401207</td>
+<td align="right">57.69136</td>
+</tr>
+<tr class="odd">
+<td align="left">134 Architectural and engineering managers</td>
+<td align="right">0.0257337</td>
+<td align="right">55.71991</td>
+</tr>
+<tr class="even">
+<td align="left">121 Finance managers</td>
+<td align="right">0.0271351</td>
+<td align="right">54.37309</td>
+</tr>
+<tr class="odd">
+<td align="left">131 Information and communications technology service managers</td>
+<td align="right">0.0463236</td>
+<td align="right">49.07010</td>
+</tr>
+<tr class="even">
+<td align="left">265 Creative and performing artists</td>
+<td align="right">0.0206900</td>
+<td align="right">44.93260</td>
+</tr>
+<tr class="odd">
+<td align="left">213 Biologists, pharmacologists and specialists in agriculture and forestry</td>
+<td align="right">0.0155108</td>
+<td align="right">44.80435</td>
+</tr>
+<tr class="even">
+<td align="left">179 Other services managers not elsewhere classified</td>
+<td align="right">0.0282032</td>
+<td align="right">36.01217</td>
+</tr>
+<tr class="odd">
+<td align="left">137 Production managers in manufacturing</td>
+<td align="right">0.0257706</td>
+<td align="right">35.19962</td>
+</tr>
+<tr class="even">
+<td align="left">136 Production managers in construction and mining</td>
+<td align="right">0.0320235</td>
+<td align="right">31.83733</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="ssyk-214-architects-engineers-and-related-professionals-by-region-year-2000---2018" class="section level2">
 <h2><span class="header-section-number">9.10</span> SSYK 214, Architects, engineers and related professionals by region, Year 2000 - 2018</h2>
@@ -2677,18 +2909,18 @@ Figure 9.9: SSYK 214, Architects, engineers and related professionals, Year 2014
 occupational group (SSYK) and sex. Year 2000 - 2013
 Average monthly pay (total pay), non-manual workers private sector (SLP)
 214 Engineering professionals</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0103H2_4.csv&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb70-2" title="2"><span class="st">    </span><span class="kw">filter</span>(year2 <span class="op">&gt;</span><span class="st"> </span><span class="dv">1994</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb70-3" title="3"><span class="st">    </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">occupational group (SSYK)</span><span class="st">`</span>, region, sex) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb70-4" title="4"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">grouprelsal =</span> <span class="kw">relative_dev</span> (salary))</a>
-<a class="sourceLine" id="cb70-5" title="5"></a>
-<a class="sourceLine" id="cb70-6" title="6">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary) <span class="op">~</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>region <span class="op">+</span><span class="st"> </span>sex, <span class="dt">data =</span> tb)</a>
-<a class="sourceLine" id="cb70-7" title="7">    </a>
-<a class="sourceLine" id="cb70-8" title="8"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb70-9" title="9"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb70-10" title="10"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb70-11" title="11">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb70-12" title="12">  <span class="dt">caption =</span> <span class="st">&#39;Summary from linear model fit&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb72-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0103H2_4.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb72-2" title="2"><span class="st">    </span><span class="kw">filter</span>(year2 <span class="op">&gt;</span><span class="st"> </span><span class="dv">1994</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb72-3" title="3"><span class="st">    </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">occupational group (SSYK)</span><span class="st">`</span>, region, sex) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb72-4" title="4"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">grouprelsal =</span> <span class="kw">relative_dev</span> (salary))</a>
+<a class="sourceLine" id="cb72-5" title="5"></a>
+<a class="sourceLine" id="cb72-6" title="6">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary) <span class="op">~</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>region <span class="op">+</span><span class="st"> </span>sex, <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb72-7" title="7">    </a>
+<a class="sourceLine" id="cb72-8" title="8"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb72-9" title="9"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb72-10" title="10"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb72-11" title="11">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb72-12" title="12">  <span class="dt">caption =</span> <span class="st">&#39;Summary from linear model fit&#39;</span>)</a></code></pre></div>
 <table>
 <caption>(#tab:ssyk00-13_3)Summary from linear model fit</caption>
 <thead>
@@ -2780,11 +3012,11 @@ Average monthly pay (total pay), non-manual workers private sector (SLP)
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb71-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb71-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb71-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb71-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb71-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb73-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb73-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb73-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb73-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb73-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
 <table>
 <caption>(#tab:ssyk00-13_3)Anova report from linear model fit</caption>
 <thead>
@@ -2831,18 +3063,18 @@ Average monthly pay (total pay), non-manual workers private sector (SLP)
 occupational group (SSYK 2012) and sex. Year 2014 - 2018
 Average monthly pay (total pay), non-manual workers private sector (SLP)
 214 Engineering professionals</p>
-<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb72-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;0000002T_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb72-2" title="2"><span class="st">    </span><span class="kw">filter</span>(year2 <span class="op">&gt;</span><span class="st"> </span><span class="dv">1994</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb72-3" title="3"><span class="st">    </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">occuptional  (SSYK 2012)</span><span class="st">`</span>, region, sex) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb72-4" title="4"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">grouprelsal =</span> <span class="kw">relative_dev</span> (salary))</a>
-<a class="sourceLine" id="cb72-5" title="5"></a>
-<a class="sourceLine" id="cb72-6" title="6">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary) <span class="op">~</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>region <span class="op">+</span><span class="st"> </span>sex, <span class="dt">data =</span> tb)</a>
-<a class="sourceLine" id="cb72-7" title="7">    </a>
-<a class="sourceLine" id="cb72-8" title="8"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb72-9" title="9"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb72-10" title="10"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb72-11" title="11">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb72-12" title="12">  <span class="dt">caption =</span> <span class="st">&#39;Summary from linear model fit&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb74-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;0000002T_1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb74-2" title="2"><span class="st">    </span><span class="kw">filter</span>(year2 <span class="op">&gt;</span><span class="st"> </span><span class="dv">1994</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb74-3" title="3"><span class="st">    </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">occuptional  (SSYK 2012)</span><span class="st">`</span>, region, sex) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb74-4" title="4"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">grouprelsal =</span> <span class="kw">relative_dev</span> (salary))</a>
+<a class="sourceLine" id="cb74-5" title="5"></a>
+<a class="sourceLine" id="cb74-6" title="6">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary) <span class="op">~</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>region <span class="op">+</span><span class="st"> </span>sex, <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb74-7" title="7">    </a>
+<a class="sourceLine" id="cb74-8" title="8"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb74-9" title="9"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb74-10" title="10"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb74-11" title="11">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb74-12" title="12">  <span class="dt">caption =</span> <span class="st">&#39;Summary from linear model fit&#39;</span>)</a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_3)Summary from linear model fit</caption>
 <thead>
@@ -2927,11 +3159,11 @@ Average monthly pay (total pay), non-manual workers private sector (SLP)
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb73-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb73-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb73-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb73-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb73-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb75-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb75-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb75-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb75-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb75-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_3)Anova report from linear model fit</caption>
 <thead>
@@ -2983,17 +3215,17 @@ level (SUN). Year 2014 - 2018
 Monthly salary
 5 non-manual workers private sector
 214 Engineering professionals</p>
-<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb74-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CY.csv&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb74-2" title="2"><span class="st">    </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, sex) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb74-3" title="3"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">grouprelsal =</span> <span class="kw">relative_dev</span> (salary))</a>
-<a class="sourceLine" id="cb74-4" title="4"></a>
-<a class="sourceLine" id="cb74-5" title="5">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary) <span class="op">~</span><span class="st"> `</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>year2, <span class="dt">data =</span> tb)</a>
-<a class="sourceLine" id="cb74-6" title="6">    </a>
-<a class="sourceLine" id="cb74-7" title="7"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb74-8" title="8"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb74-9" title="9"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb74-10" title="10">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb74-11" title="11">  <span class="dt">caption =</span> <span class="st">&#39;Level of education for SSYK 214&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CY.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb76-2" title="2"><span class="st">    </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, sex) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb76-3" title="3"><span class="st">    </span><span class="kw">mutate</span> (<span class="dt">grouprelsal =</span> <span class="kw">relative_dev</span> (salary))</a>
+<a class="sourceLine" id="cb76-4" title="4"></a>
+<a class="sourceLine" id="cb76-5" title="5">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary) <span class="op">~</span><span class="st"> `</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">+</span><span class="st"> </span>sex <span class="op">+</span><span class="st"> </span>year2, <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb76-6" title="6">    </a>
+<a class="sourceLine" id="cb76-7" title="7"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb76-8" title="8"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb76-9" title="9"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb76-10" title="10">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb76-11" title="11">  <span class="dt">caption =</span> <span class="st">&#39;Level of education for SSYK 214&#39;</span>)</a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_4)Level of education for SSYK 214</caption>
 <thead>
@@ -3071,11 +3303,11 @@ Monthly salary
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb75-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb75-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb75-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb75-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb75-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb77-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb77-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb77-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb77-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb77-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_4)Anova report from linear model fit</caption>
 <thead>
@@ -3129,19 +3361,19 @@ All sectors
 Number of employees
 All sectors
 214 Engineering professionals</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
-<a class="sourceLine" id="cb76-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb76-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb76-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb76-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x))))</a>
-<a class="sourceLine" id="cb76-6" title="6">  </a>
-<a class="sourceLine" id="cb76-7" title="7">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary.y) <span class="op">~</span><span class="st"> </span>year2.x <span class="op">+</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb)</a>
-<a class="sourceLine" id="cb76-8" title="8">    </a>
-<a class="sourceLine" id="cb76-9" title="9"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb76-10" title="10"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb76-11" title="11"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb76-12" title="12">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb76-13" title="13">  <span class="dt">caption =</span> <span class="st">&#39;The correlation between the proportion of engineers who are women and the salaries of engineers in the region.&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb78-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CG_10.csv&quot;</span>)</a>
+<a class="sourceLine" id="cb78-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000CD_10.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb78-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb78-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb78-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x))))</a>
+<a class="sourceLine" id="cb78-6" title="6">  </a>
+<a class="sourceLine" id="cb78-7" title="7">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary.y) <span class="op">~</span><span class="st"> </span>year2.x <span class="op">+</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb78-8" title="8">    </a>
+<a class="sourceLine" id="cb78-9" title="9"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb78-10" title="10"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb78-11" title="11"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb78-12" title="12">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb78-13" title="13">  <span class="dt">caption =</span> <span class="st">&#39;The correlation between the proportion of engineers who are women and the salaries of engineers in the region.&#39;</span>)</a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_5)The correlation between the proportion of engineers who are women and the salaries of engineers in the region.</caption>
 <thead>
@@ -3177,11 +3409,11 @@ All sectors
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb77-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb77-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb77-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb77-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb77-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb79-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb79-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb79-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb79-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb79-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_5)Anova report from linear model fit</caption>
 <thead>
@@ -3224,19 +3456,19 @@ All sectors
 Number of employees
 All sectors
 214 Engineering professionals</p>
-<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb78-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0110A2.csv&quot;</span>)</a>
-<a class="sourceLine" id="cb78-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0110A4.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb78-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb78-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb78-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x))))</a>
-<a class="sourceLine" id="cb78-6" title="6">  </a>
-<a class="sourceLine" id="cb78-7" title="7">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary.y) <span class="op">~</span><span class="st"> </span>year2.x <span class="op">+</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb)</a>
-<a class="sourceLine" id="cb78-8" title="8">    </a>
-<a class="sourceLine" id="cb78-9" title="9"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb78-10" title="10"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb78-11" title="11"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb78-12" title="12">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb78-13" title="13">  <span class="dt">caption =</span> <span class="st">&#39;The correlation between the proportion of engineers who are women and the salaries of engineers in the region.&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb80-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0110A2.csv&quot;</span>)</a>
+<a class="sourceLine" id="cb80-2" title="2">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0110A4.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb80-3" title="3"><span class="st">  </span><span class="kw">left_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb80-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb80-5" title="5"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary.x))))</a>
+<a class="sourceLine" id="cb80-6" title="6">  </a>
+<a class="sourceLine" id="cb80-7" title="7">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(salary.y) <span class="op">~</span><span class="st"> </span>year2.x <span class="op">+</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb80-8" title="8">    </a>
+<a class="sourceLine" id="cb80-9" title="9"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb80-10" title="10"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb80-11" title="11"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb80-12" title="12">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb80-13" title="13">  <span class="dt">caption =</span> <span class="st">&#39;The correlation between the proportion of engineers who are women and the salaries of engineers in the region.&#39;</span>)</a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_6)The correlation between the proportion of engineers who are women and the salaries of engineers in the region.</caption>
 <thead>
@@ -3272,11 +3504,11 @@ All sectors
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb79-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb79-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb79-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb79-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb79-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb81-1" title="1"><span class="kw">Anova</span>(model, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb81-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb81-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb81-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb81-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>) </a></code></pre></div>
 <table>
 <caption>(#tab:ssyk14-18_6)Anova report from linear model fit</caption>
 <thead>
@@ -3320,90 +3552,90 @@ Average monthly pay (total pay), non-manual workers private sector (SLP),<br />
 SEK by occuptional group (SSYK), age, sex and year 2000-2013<br />
 214 Engineering professionals<br />
 sex=total</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb80-1" title="1"><span class="kw">readfile</span>(<span class="st">&quot;AM0103A9.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb80-2" title="2"><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>]) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb80-3" title="3"><span class="st"> </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2 <span class="op">-</span><span class="st"> </span>(age2 <span class="op">+</span><span class="st"> </span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>, <span class="dt">y =</span> salary)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb80-4" title="4"><span class="st">   </span><span class="kw">geom_point</span>() <span class="op">+</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb80-5" title="5"><span class="st">   </span><span class="kw">geom_smooth</span>(<span class="dt">method =</span> lm, <span class="dt">formula =</span> y <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>), <span class="dt">se =</span> <span class="ot">FALSE</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb80-6" title="6"><span class="st">   </span><span class="kw">transition_time</span>(year2) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb80-7" title="7"><span class="st">   </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb80-8" title="8"><span class="st">    </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb80-9" title="9"><span class="st">   </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary&quot;</span>)  </a>
-<a class="sourceLine" id="cb80-10" title="10"><span class="kw">anim_save</span>(<span class="st">&quot;2000-2013.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)   </a></code></pre></div>
+<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" title="1"><span class="kw">readfile</span>(<span class="st">&quot;AM0103A9.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb82-2" title="2"><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>]) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb82-3" title="3"><span class="st"> </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2 <span class="op">-</span><span class="st"> </span>(age2 <span class="op">+</span><span class="st"> </span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>, <span class="dt">y =</span> salary)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb82-4" title="4"><span class="st">   </span><span class="kw">geom_point</span>() <span class="op">+</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb82-5" title="5"><span class="st">   </span><span class="kw">geom_smooth</span>(<span class="dt">method =</span> lm, <span class="dt">formula =</span> y <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>), <span class="dt">se =</span> <span class="ot">FALSE</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb82-6" title="6"><span class="st">   </span><span class="kw">transition_time</span>(year2) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb82-7" title="7"><span class="st">   </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb82-8" title="8"><span class="st">    </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb82-9" title="9"><span class="st">   </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary&quot;</span>)  </a>
+<a class="sourceLine" id="cb82-10" title="10"><span class="kw">anim_save</span>(<span class="st">&quot;2000-2013.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)   </a></code></pre></div>
 <p><img src="https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/2000-2013.gif" /></p>
 <p>Average monthly pay (total pay), non-manual workers private sector (SLP),<br />
 SEK by occuptional (SSYK 2012), age, sex and year 2014-2018<br />
 214 Engineering professionals<br />
 sex=total</p>
-<div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb81-1" title="1"><span class="kw">readfile</span>(<span class="st">&quot;00000031_2.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb81-2" title="2"><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>]) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb81-3" title="3"><span class="st"> </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2 <span class="op">-</span><span class="st"> </span>(age2 <span class="op">+</span><span class="st"> </span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>, <span class="dt">y =</span> salary)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb81-4" title="4"><span class="st">   </span><span class="kw">geom_point</span>() <span class="op">+</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb81-5" title="5"><span class="st">   </span><span class="kw">geom_smooth</span>(<span class="dt">method =</span> lm, <span class="dt">formula =</span> y <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>), <span class="dt">se =</span> <span class="ot">FALSE</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb81-6" title="6"><span class="st">   </span><span class="kw">transition_time</span>(year2) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb81-7" title="7"><span class="st">   </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb81-8" title="8"><span class="st">    </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb81-9" title="9"><span class="st">   </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary&quot;</span>)    </a>
-<a class="sourceLine" id="cb81-10" title="10"><span class="kw">anim_save</span>(<span class="st">&quot;2014-2018.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)    </a></code></pre></div>
+<div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb83-1" title="1"><span class="kw">readfile</span>(<span class="st">&quot;00000031_2.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb83-2" title="2"><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>]) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb83-3" title="3"><span class="st"> </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2 <span class="op">-</span><span class="st"> </span>(age2 <span class="op">+</span><span class="st"> </span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>, <span class="dt">y =</span> salary)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb83-4" title="4"><span class="st">   </span><span class="kw">geom_point</span>() <span class="op">+</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb83-5" title="5"><span class="st">   </span><span class="kw">geom_smooth</span>(<span class="dt">method =</span> lm, <span class="dt">formula =</span> y <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>), <span class="dt">se =</span> <span class="ot">FALSE</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb83-6" title="6"><span class="st">   </span><span class="kw">transition_time</span>(year2) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb83-7" title="7"><span class="st">   </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb83-8" title="8"><span class="st">    </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb83-9" title="9"><span class="st">   </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary&quot;</span>)    </a>
+<a class="sourceLine" id="cb83-10" title="10"><span class="kw">anim_save</span>(<span class="st">&quot;2014-2018.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)    </a></code></pre></div>
 <p><img src="https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/2014-2018.gif" /></p>
 <p>Average monthly pay (total pay), non-manual workers private sector (SLP),<br />
 SEK by occuptional (SSYK 2012), age, sex and year 2000-2013<br />
 214 Engineering professionals<br />
 sex=total<br />
 Growth of salaries by age group</p>
-<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" title="1">csvfile &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0103A9.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb82-2" title="2"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb82-3" title="3"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb82-4" title="4"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>])    </a>
-<a class="sourceLine" id="cb82-5" title="5">yearwise &lt;-<span class="st"> </span><span class="kw">group_split</span>(csvfile <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(year2))      </a>
-<a class="sourceLine" id="cb82-6" title="6">ageGroupGrowth =<span class="st"> </span><span class="kw">data.frame</span>()     </a>
-<a class="sourceLine" id="cb82-7" title="7"><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">13</span>){  </a>
-<a class="sourceLine" id="cb82-8" title="8">  temp &lt;-<span class="st"> </span><span class="kw">cbind</span>(<span class="dt">year =</span> <span class="dv">1999</span> <span class="op">+</span><span class="st"> </span>i, <span class="dt">age =</span> (yearwise[[i]]<span class="op">$</span>age2 <span class="op">+</span><span class="st"> </span>yearwise[[i]]<span class="op">$</span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>, <span class="dt">growth =</span> yearwise[[i<span class="op">+</span><span class="dv">1</span>]]<span class="op">$</span>relsalary <span class="op">/</span><span class="st"> </span>yearwise[[i]]<span class="op">$</span>relsalary) <span class="op">-</span><span class="st"> </span><span class="dv">1</span>  </a>
-<a class="sourceLine" id="cb82-9" title="9">  ageGroupGrowth &lt;-<span class="st"> </span><span class="kw">rbind</span>(ageGroupGrowth, temp)  </a>
-<a class="sourceLine" id="cb82-10" title="10">}     </a>
-<a class="sourceLine" id="cb82-11" title="11">ageGroupGrowth[, <span class="st">&#39;age&#39;</span>] &lt;-<span class="st"> </span><span class="kw">factor</span>(ageGroupGrowth[, <span class="st">&#39;age&#39;</span>])        </a>
-<a class="sourceLine" id="cb82-12" title="12">ageGroupGrowth <span class="op">%&gt;%</span><span class="st">    </span></a>
-<a class="sourceLine" id="cb82-13" title="13"><span class="st">  </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> age, <span class="dt">y =</span> growth)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb82-14" title="14"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb82-15" title="15"><span class="st">  </span><span class="kw">transition_time</span>(<span class="kw">as.numeric</span>(year)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb82-16" title="16"><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb82-17" title="17"><span class="st">  </span><span class="kw">scale_x_discrete</span>(<span class="dt">name =</span> <span class="st">&quot;Age group&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb82-18" title="18"><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary increase (%)&quot;</span>)    </a>
-<a class="sourceLine" id="cb82-19" title="19"><span class="kw">anim_save</span>(<span class="st">&quot;AgeGroupGrowth2000-2013.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)    </a></code></pre></div>
+<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb84-1" title="1">csvfile &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0103A9.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb84-2" title="2"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb84-3" title="3"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb84-4" title="4"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>])    </a>
+<a class="sourceLine" id="cb84-5" title="5">yearwise &lt;-<span class="st"> </span><span class="kw">group_split</span>(csvfile <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(year2))      </a>
+<a class="sourceLine" id="cb84-6" title="6">ageGroupGrowth =<span class="st"> </span><span class="kw">data.frame</span>()     </a>
+<a class="sourceLine" id="cb84-7" title="7"><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">13</span>){  </a>
+<a class="sourceLine" id="cb84-8" title="8">  temp &lt;-<span class="st"> </span><span class="kw">cbind</span>(<span class="dt">year =</span> <span class="dv">1999</span> <span class="op">+</span><span class="st"> </span>i, <span class="dt">age =</span> (yearwise[[i]]<span class="op">$</span>age2 <span class="op">+</span><span class="st"> </span>yearwise[[i]]<span class="op">$</span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>, <span class="dt">growth =</span> yearwise[[i<span class="op">+</span><span class="dv">1</span>]]<span class="op">$</span>relsalary <span class="op">/</span><span class="st"> </span>yearwise[[i]]<span class="op">$</span>relsalary) <span class="op">-</span><span class="st"> </span><span class="dv">1</span>  </a>
+<a class="sourceLine" id="cb84-9" title="9">  ageGroupGrowth &lt;-<span class="st"> </span><span class="kw">rbind</span>(ageGroupGrowth, temp)  </a>
+<a class="sourceLine" id="cb84-10" title="10">}     </a>
+<a class="sourceLine" id="cb84-11" title="11">ageGroupGrowth[, <span class="st">&#39;age&#39;</span>] &lt;-<span class="st"> </span><span class="kw">factor</span>(ageGroupGrowth[, <span class="st">&#39;age&#39;</span>])        </a>
+<a class="sourceLine" id="cb84-12" title="12">ageGroupGrowth <span class="op">%&gt;%</span><span class="st">    </span></a>
+<a class="sourceLine" id="cb84-13" title="13"><span class="st">  </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> age, <span class="dt">y =</span> growth)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb84-14" title="14"><span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">stat =</span> <span class="st">&quot;identity&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb84-15" title="15"><span class="st">  </span><span class="kw">transition_time</span>(<span class="kw">as.numeric</span>(year)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb84-16" title="16"><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb84-17" title="17"><span class="st">  </span><span class="kw">scale_x_discrete</span>(<span class="dt">name =</span> <span class="st">&quot;Age group&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb84-18" title="18"><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary increase (%)&quot;</span>)    </a>
+<a class="sourceLine" id="cb84-19" title="19"><span class="kw">anim_save</span>(<span class="st">&quot;AgeGroupGrowth2000-2013.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)    </a></code></pre></div>
 <p><img src="https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/AgeGroupGrowth2000-2013.gif" /></p>
 <p>Average monthly pay (total pay), non-manual workers private sector (SLP),<br />
 SEK by occuptional (SSYK 2012), age, sex and year 2000-2013<br />
 214 Engineering professionals<br />
 sex=total<br />
 Individual salary increase by birthyear, estimated from B-spline approximation</p>
-<div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb83-1" title="1">csvfile &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0103A9.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb83-2" title="2"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb83-3" title="3"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb83-4" title="4"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>])  </a>
-<a class="sourceLine" id="cb83-5" title="5">indGrowth =<span class="st"> </span><span class="kw">data.frame</span>()  </a>
-<a class="sourceLine" id="cb83-6" title="6"><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2000</span><span class="op">:</span><span class="dv">2012</span>){  </a>
-<a class="sourceLine" id="cb83-7" title="7">  yearfile &lt;-<span class="st"> </span><span class="kw">filter</span>(csvfile, year2 <span class="op">==</span><span class="st"> </span>i)  </a>
-<a class="sourceLine" id="cb83-8" title="8">  x =<span class="st"> </span>yearfile<span class="op">$</span>year2 <span class="op">-</span><span class="st"> </span>(yearfile<span class="op">$</span>age2 <span class="op">+</span><span class="st"> </span>yearfile<span class="op">$</span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>  </a>
-<a class="sourceLine" id="cb83-9" title="9">  model =<span class="st"> </span><span class="kw">lm</span>(yearfile<span class="op">$</span>salary <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>))  </a>
-<a class="sourceLine" id="cb83-10" title="10">  X1 =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x =</span> <span class="kw">unlist</span>(<span class="kw">map2</span>( i <span class="op">-</span><span class="st"> </span><span class="dv">62</span>, i <span class="op">-</span><span class="st"> </span><span class="dv">22</span>, seq)))  </a>
-<a class="sourceLine" id="cb83-11" title="11">  Y1 =<span class="st"> </span><span class="kw">predict</span>(model, X1)   </a>
-<a class="sourceLine" id="cb83-12" title="12">  yearfile &lt;-<span class="st"> </span><span class="kw">filter</span>(csvfile, year2 <span class="op">==</span><span class="st"> </span>i <span class="op">+</span><span class="st"> </span><span class="dv">1</span>)  </a>
-<a class="sourceLine" id="cb83-13" title="13">  x =<span class="st"> </span>yearfile<span class="op">$</span>year2 <span class="op">-</span><span class="st"> </span>(yearfile<span class="op">$</span>age2 <span class="op">+</span><span class="st"> </span>yearfile<span class="op">$</span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>  </a>
-<a class="sourceLine" id="cb83-14" title="14">  model =<span class="st"> </span><span class="kw">lm</span>(yearfile<span class="op">$</span>salary <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>))  </a>
-<a class="sourceLine" id="cb83-15" title="15">  X2 =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x =</span> <span class="kw">unlist</span>(<span class="kw">map2</span>( i <span class="op">+</span><span class="st"> </span><span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="dv">62</span>, i <span class="op">+</span><span class="st"> </span><span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="dv">22</span>, seq)))      </a>
-<a class="sourceLine" id="cb83-16" title="16">  Y2 =<span class="st"> </span><span class="kw">predict</span>(model, X2)  </a>
-<a class="sourceLine" id="cb83-17" title="17">  growth =<span class="st"> </span>Y2[<span class="dv">1</span><span class="op">:</span><span class="dv">40</span>] <span class="op">/</span><span class="st"> </span>Y1[<span class="dv">2</span><span class="op">:</span><span class="dv">41</span>]    </a>
-<a class="sourceLine" id="cb83-18" title="18">  temp &lt;-<span class="st"> </span><span class="kw">as_tibble</span>(<span class="kw">cbind</span>(<span class="dt">year =</span> i<span class="op">+</span><span class="dv">1</span>, <span class="dt">by=</span>X2[<span class="dv">1</span><span class="op">:</span><span class="dv">40</span>,<span class="dv">1</span>], <span class="dt">growth=</span>growth))  </a>
-<a class="sourceLine" id="cb83-19" title="19">  indGrowth &lt;-<span class="st"> </span><span class="kw">rbind</span>(indGrowth, temp)  </a>
-<a class="sourceLine" id="cb83-20" title="20">}   </a>
-<a class="sourceLine" id="cb83-21" title="21">indGrowth <span class="op">%&gt;%</span><span class="st">     </span></a>
-<a class="sourceLine" id="cb83-22" title="22"><span class="st">  </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> growth)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb83-23" title="23"><span class="st">  </span><span class="kw">geom_line</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb83-24" title="24"><span class="st"> </span><span class="kw">transition_time</span>(year) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb83-25" title="25"><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb83-26" title="26"><span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb83-27" title="27"><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary increase (%)&quot;</span>)   </a>
-<a class="sourceLine" id="cb83-28" title="28"><span class="kw">anim_save</span>(<span class="st">&quot;indGrowth2000-2013.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)  </a></code></pre></div>
+<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb85-1" title="1">csvfile &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0103A9.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb85-2" title="2"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb85-3" title="3"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb85-4" title="4"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>])  </a>
+<a class="sourceLine" id="cb85-5" title="5">indGrowth =<span class="st"> </span><span class="kw">data.frame</span>()  </a>
+<a class="sourceLine" id="cb85-6" title="6"><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2000</span><span class="op">:</span><span class="dv">2012</span>){  </a>
+<a class="sourceLine" id="cb85-7" title="7">  yearfile &lt;-<span class="st"> </span><span class="kw">filter</span>(csvfile, year2 <span class="op">==</span><span class="st"> </span>i)  </a>
+<a class="sourceLine" id="cb85-8" title="8">  x =<span class="st"> </span>yearfile<span class="op">$</span>year2 <span class="op">-</span><span class="st"> </span>(yearfile<span class="op">$</span>age2 <span class="op">+</span><span class="st"> </span>yearfile<span class="op">$</span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>  </a>
+<a class="sourceLine" id="cb85-9" title="9">  model =<span class="st"> </span><span class="kw">lm</span>(yearfile<span class="op">$</span>salary <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>))  </a>
+<a class="sourceLine" id="cb85-10" title="10">  X1 =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x =</span> <span class="kw">unlist</span>(<span class="kw">map2</span>( i <span class="op">-</span><span class="st"> </span><span class="dv">62</span>, i <span class="op">-</span><span class="st"> </span><span class="dv">22</span>, seq)))  </a>
+<a class="sourceLine" id="cb85-11" title="11">  Y1 =<span class="st"> </span><span class="kw">predict</span>(model, X1)   </a>
+<a class="sourceLine" id="cb85-12" title="12">  yearfile &lt;-<span class="st"> </span><span class="kw">filter</span>(csvfile, year2 <span class="op">==</span><span class="st"> </span>i <span class="op">+</span><span class="st"> </span><span class="dv">1</span>)  </a>
+<a class="sourceLine" id="cb85-13" title="13">  x =<span class="st"> </span>yearfile<span class="op">$</span>year2 <span class="op">-</span><span class="st"> </span>(yearfile<span class="op">$</span>age2 <span class="op">+</span><span class="st"> </span>yearfile<span class="op">$</span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>  </a>
+<a class="sourceLine" id="cb85-14" title="14">  model =<span class="st"> </span><span class="kw">lm</span>(yearfile<span class="op">$</span>salary <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>))  </a>
+<a class="sourceLine" id="cb85-15" title="15">  X2 =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x =</span> <span class="kw">unlist</span>(<span class="kw">map2</span>( i <span class="op">+</span><span class="st"> </span><span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="dv">62</span>, i <span class="op">+</span><span class="st"> </span><span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="dv">22</span>, seq)))      </a>
+<a class="sourceLine" id="cb85-16" title="16">  Y2 =<span class="st"> </span><span class="kw">predict</span>(model, X2)  </a>
+<a class="sourceLine" id="cb85-17" title="17">  growth =<span class="st"> </span>Y2[<span class="dv">1</span><span class="op">:</span><span class="dv">40</span>] <span class="op">/</span><span class="st"> </span>Y1[<span class="dv">2</span><span class="op">:</span><span class="dv">41</span>]    </a>
+<a class="sourceLine" id="cb85-18" title="18">  temp &lt;-<span class="st"> </span><span class="kw">as_tibble</span>(<span class="kw">cbind</span>(<span class="dt">year =</span> i<span class="op">+</span><span class="dv">1</span>, <span class="dt">by=</span>X2[<span class="dv">1</span><span class="op">:</span><span class="dv">40</span>,<span class="dv">1</span>], <span class="dt">growth=</span>growth))  </a>
+<a class="sourceLine" id="cb85-19" title="19">  indGrowth &lt;-<span class="st"> </span><span class="kw">rbind</span>(indGrowth, temp)  </a>
+<a class="sourceLine" id="cb85-20" title="20">}   </a>
+<a class="sourceLine" id="cb85-21" title="21">indGrowth <span class="op">%&gt;%</span><span class="st">     </span></a>
+<a class="sourceLine" id="cb85-22" title="22"><span class="st">  </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> by, <span class="dt">y =</span> growth)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb85-23" title="23"><span class="st">  </span><span class="kw">geom_line</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb85-24" title="24"><span class="st"> </span><span class="kw">transition_time</span>(year) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb85-25" title="25"><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb85-26" title="26"><span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb85-27" title="27"><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Salary increase (%)&quot;</span>)   </a>
+<a class="sourceLine" id="cb85-28" title="28"><span class="kw">anim_save</span>(<span class="st">&quot;indGrowth2000-2013.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)  </a></code></pre></div>
 <p><img src="https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/indGrowth2000-2013.gif" /></p>
 <p>Average monthly pay (total pay), non-manual workers private sector (SLP),<br />
 SEK by occuptional (SSYK 2012), age, sex and year 2000-2013<br />
@@ -3413,30 +3645,30 @@ Changes in the salary structure part by birthyear, salary structure part is<br /
 defined as the derivative of the age / salary function, salary structure<br />
 part defines how much the salaries needs to increase each year so that the<br />
 structure remains unchanged.</p>
-<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb84-1" title="1">csvfile &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0103A9.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb84-2" title="2"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb84-3" title="3"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb84-4" title="4"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>])    </a>
-<a class="sourceLine" id="cb84-5" title="5">salaryStructure =<span class="st"> </span><span class="kw">data.frame</span>()  </a>
-<a class="sourceLine" id="cb84-6" title="6"><span class="cf">for</span> (i <span class="cf">in</span> <span class="kw">min</span>(csvfile<span class="op">$</span>year2)<span class="op">:</span><span class="kw">max</span>(csvfile<span class="op">$</span>year2)){  </a>
-<a class="sourceLine" id="cb84-7" title="7">  yearfile &lt;-<span class="st"> </span><span class="kw">filter</span>(csvfile, year2 <span class="op">==</span><span class="st"> </span>i)  </a>
-<a class="sourceLine" id="cb84-8" title="8">  x =<span class="st"> </span>yearfile<span class="op">$</span>year2 <span class="op">-</span><span class="st"> </span>(yearfile<span class="op">$</span>age2 <span class="op">+</span><span class="st"> </span>yearfile<span class="op">$</span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>  </a>
-<a class="sourceLine" id="cb84-9" title="9">  model =<span class="st"> </span><span class="kw">lm</span>(yearfile<span class="op">$</span>salary <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>))  </a>
-<a class="sourceLine" id="cb84-10" title="10">  X =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x =</span> <span class="kw">unlist</span>(<span class="kw">map2</span>( i <span class="op">-</span><span class="st"> </span><span class="dv">62</span>, i <span class="op">-</span><span class="st"> </span><span class="dv">22</span>, seq, <span class="dt">length =</span> <span class="dv">100</span>)))  </a>
-<a class="sourceLine" id="cb84-11" title="11">  Y =<span class="st"> </span><span class="kw">predict</span>(model, X)   </a>
-<a class="sourceLine" id="cb84-12" title="12">  dX =<span class="st"> </span><span class="kw">rowMeans</span>(<span class="kw">embed</span>(X<span class="op">$</span>x, <span class="dv">2</span>))  </a>
-<a class="sourceLine" id="cb84-13" title="13">  dY =<span class="st"> </span><span class="op">-</span><span class="kw">diff</span>(Y) <span class="op">/</span><span class="st"> </span><span class="kw">diff</span>(X<span class="op">$</span>x) <span class="op">/</span><span class="st"> </span>Y  </a>
-<a class="sourceLine" id="cb84-14" title="14">  temp &lt;-<span class="st"> </span><span class="kw">as_tibble</span>(<span class="kw">cbind</span>(<span class="dt">year =</span> i, <span class="dt">dX =</span> dX, <span class="dt">dY =</span> dY))  </a>
-<a class="sourceLine" id="cb84-15" title="15">  salaryStructure &lt;-<span class="st"> </span><span class="kw">rbind</span>(salaryStructure, temp)  </a>
-<a class="sourceLine" id="cb84-16" title="16">}   </a>
-<a class="sourceLine" id="cb84-17" title="17">salaryStructure <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb84-18" title="18"><span class="st">  </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> dX, <span class="dt">y =</span> dY)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb84-19" title="19"><span class="st">  </span><span class="kw">geom_line</span>() <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb84-20" title="20"><span class="st">  </span><span class="kw">transition_time</span>(year) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb84-21" title="21"><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb84-22" title="22"><span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb84-23" title="23"><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Structural increase (%)&quot;</span>)   </a>
-<a class="sourceLine" id="cb84-24" title="24"><span class="kw">anim_save</span>(<span class="st">&quot;salaryStructure2000-2013.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)  </a></code></pre></div>
+<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb86-1" title="1">csvfile &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0103A9.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb86-2" title="2"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb86-3" title="3"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">age2 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb86-4" title="4"><span class="st">  </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">age3 =</span> <span class="kw">unlist</span>(<span class="kw">lapply</span>(<span class="kw">strsplit</span>(<span class="kw">substr</span>(age, <span class="dv">1</span>, <span class="dv">5</span>), <span class="st">&quot;-&quot;</span>), strtoi))[<span class="dv">2</span>])    </a>
+<a class="sourceLine" id="cb86-5" title="5">salaryStructure =<span class="st"> </span><span class="kw">data.frame</span>()  </a>
+<a class="sourceLine" id="cb86-6" title="6"><span class="cf">for</span> (i <span class="cf">in</span> <span class="kw">min</span>(csvfile<span class="op">$</span>year2)<span class="op">:</span><span class="kw">max</span>(csvfile<span class="op">$</span>year2)){  </a>
+<a class="sourceLine" id="cb86-7" title="7">  yearfile &lt;-<span class="st"> </span><span class="kw">filter</span>(csvfile, year2 <span class="op">==</span><span class="st"> </span>i)  </a>
+<a class="sourceLine" id="cb86-8" title="8">  x =<span class="st"> </span>yearfile<span class="op">$</span>year2 <span class="op">-</span><span class="st"> </span>(yearfile<span class="op">$</span>age2 <span class="op">+</span><span class="st"> </span>yearfile<span class="op">$</span>age3) <span class="op">/</span><span class="st"> </span><span class="dv">2</span>  </a>
+<a class="sourceLine" id="cb86-9" title="9">  model =<span class="st"> </span><span class="kw">lm</span>(yearfile<span class="op">$</span>salary <span class="op">~</span><span class="st"> </span>splines<span class="op">::</span><span class="kw">bs</span>(x, <span class="dv">8</span>))  </a>
+<a class="sourceLine" id="cb86-10" title="10">  X =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x =</span> <span class="kw">unlist</span>(<span class="kw">map2</span>( i <span class="op">-</span><span class="st"> </span><span class="dv">62</span>, i <span class="op">-</span><span class="st"> </span><span class="dv">22</span>, seq, <span class="dt">length =</span> <span class="dv">100</span>)))  </a>
+<a class="sourceLine" id="cb86-11" title="11">  Y =<span class="st"> </span><span class="kw">predict</span>(model, X)   </a>
+<a class="sourceLine" id="cb86-12" title="12">  dX =<span class="st"> </span><span class="kw">rowMeans</span>(<span class="kw">embed</span>(X<span class="op">$</span>x, <span class="dv">2</span>))  </a>
+<a class="sourceLine" id="cb86-13" title="13">  dY =<span class="st"> </span><span class="op">-</span><span class="kw">diff</span>(Y) <span class="op">/</span><span class="st"> </span><span class="kw">diff</span>(X<span class="op">$</span>x) <span class="op">/</span><span class="st"> </span>Y  </a>
+<a class="sourceLine" id="cb86-14" title="14">  temp &lt;-<span class="st"> </span><span class="kw">as_tibble</span>(<span class="kw">cbind</span>(<span class="dt">year =</span> i, <span class="dt">dX =</span> dX, <span class="dt">dY =</span> dY))  </a>
+<a class="sourceLine" id="cb86-15" title="15">  salaryStructure &lt;-<span class="st"> </span><span class="kw">rbind</span>(salaryStructure, temp)  </a>
+<a class="sourceLine" id="cb86-16" title="16">}   </a>
+<a class="sourceLine" id="cb86-17" title="17">salaryStructure <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb86-18" title="18"><span class="st">  </span><span class="kw">ggplot</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> dX, <span class="dt">y =</span> dY)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb86-19" title="19"><span class="st">  </span><span class="kw">geom_line</span>() <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb86-20" title="20"><span class="st">  </span><span class="kw">transition_time</span>(year) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb86-21" title="21"><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Year: {frame_time}&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb86-22" title="22"><span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Year of birth&quot;</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb86-23" title="23"><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">&quot;Structural increase (%)&quot;</span>)   </a>
+<a class="sourceLine" id="cb86-24" title="24"><span class="kw">anim_save</span>(<span class="st">&quot;salaryStructure2000-2013.gif&quot;</span>, <span class="dt">width =</span> <span class="dv">1000</span>, <span class="dt">height =</span> <span class="dv">1000</span>)  </a></code></pre></div>
 <p><img src="https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/SCB-Engineers-Jonkoping_files/figure-html/salaryStructure2000-2013.gif" /></p>
 
 </div>

@@ -272,8 +272,35 @@ Anova(model, type=2) %>%
   tidy() %>% 
   knitr::kable( 
   booktabs = TRUE,
-  caption = 'Anova report from linear model fit')  
+  caption = 'Anova report from linear model fit') 
+
+summary_table = 0
+anova_table = 0
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 50){
+    model <- lm (log(salary) ~ year2 + sex + poly(age4, 3), data = temp)
+    summary_table <- rbind (summary_table, mutate (mutate (tidy (summary (model)), ssyk = i), spannvidd = max (filter (temp, year2 == 2018)$salary) / min (filter (temp, year2 == 2018)$salary)))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}
+
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
+  filter (term.y == "poly(age4, 3)") %>% 
+  filter (term.x == "year2") %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = estimate, y = statistic.y))
+	
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
+  filter (term.y == "poly(age4, 3)") %>% 
+  filter (term.x == "year2") %>%
+  select (ssyk, estimate, statistic.y) %>%
+  arrange (desc (statistic.y)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Correlation for F-value (age) and yearly increase in salaries')  
 ```  
+  
   
 ## SSYK 214, Architects, engineers and related professionals by region, Year 2000 - 2018  
 
