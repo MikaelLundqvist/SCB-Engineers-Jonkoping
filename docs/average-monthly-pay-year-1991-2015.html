@@ -152,9 +152,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="9.13" data-path="ssyk-214.html"><a href="ssyk-214.html#the-correlation-between-the-proportion-of-engineers-who-are-women-and-the-salaries-of-engineers-in-the-region.-year-2003---2013"><i class="fa fa-check"></i><b>9.13</b> The correlation between the proportion of engineers who are women and the salaries of engineers in the region. Year 2003 - 2013</a></li>
 <li class="chapter" data-level="9.14" data-path="ssyk-214.html"><a href="ssyk-214.html#f-value-for-age-compared-to-yearly-increase-in-salary-cleaned-for-the-effect-of-age-year-2004---2013"><i class="fa fa-check"></i><b>9.14</b> F-value for age compared to yearly increase in salary cleaned for the effect of age, Year 2004 - 2013</a></li>
 <li class="chapter" data-level="9.15" data-path="ssyk-214.html"><a href="ssyk-214.html#f-value-for-age-compared-to-yearly-increase-in-salary-cleaned-for-the-effect-of-age-year-2014---2018"><i class="fa fa-check"></i><b>9.15</b> F-value for age compared to yearly increase in salary cleaned for the effect of age, Year 2014 - 2018</a></li>
-<li class="chapter" data-level="9.16" data-path="ssyk-214.html"><a href="ssyk-214.html#womens-urbanization-comparison-between-the-ssyk-year-2003---2013"><i class="fa fa-check"></i><b>9.16</b> Women’s urbanization, comparison between the SSYK, Year 2003 - 2013</a></li>
-<li class="chapter" data-level="9.17" data-path="ssyk-214.html"><a href="ssyk-214.html#womens-urbanization-comparison-between-the-ssyk-year-2014---2018"><i class="fa fa-check"></i><b>9.17</b> Women’s urbanization, comparison between the SSYK, Year 2014 - 2018</a></li>
-<li class="chapter" data-level="9.18" data-path="ssyk-214.html"><a href="ssyk-214.html#animations-ssyk-214-architects-engineers-and-related-professionals"><i class="fa fa-check"></i><b>9.18</b> Animations , SSYK 214, Architects, engineers and related professionals</a></li>
+<li class="chapter" data-level="9.16" data-path="ssyk-214.html"><a href="ssyk-214.html#womens-urbanization-comparison-between-the-ssyk-population-dependence-year-2003---2013"><i class="fa fa-check"></i><b>9.16</b> Women’s urbanization, comparison between the SSYK, population dependence, Year 2003 - 2013</a></li>
+<li class="chapter" data-level="9.17" data-path="ssyk-214.html"><a href="ssyk-214.html#womens-urbanization-comparison-between-the-ssyk-population-dependence-year-2014---2018"><i class="fa fa-check"></i><b>9.17</b> Women’s urbanization, comparison between the SSYK, population dependence, Year 2014 - 2018</a></li>
+<li class="chapter" data-level="9.18" data-path="ssyk-214.html"><a href="ssyk-214.html#womens-urbanization-comparison-between-the-ssyk-salary-dependence-year-2003---2013"><i class="fa fa-check"></i><b>9.18</b> Women’s urbanization, comparison between the SSYK, salary dependence, Year 2003 - 2013</a></li>
+<li class="chapter" data-level="9.19" data-path="ssyk-214.html"><a href="ssyk-214.html#womens-urbanization-comparison-between-the-ssyk-salary-dependence-year-2014---2018"><i class="fa fa-check"></i><b>9.19</b> Women’s urbanization, comparison between the SSYK, salary dependence, Year 2014 - 2018</a></li>
+<li class="chapter" data-level="9.20" data-path="ssyk-214.html"><a href="ssyk-214.html#animations-ssyk-214-architects-engineers-and-related-professionals"><i class="fa fa-check"></i><b>9.20</b> Animations , SSYK 214, Architects, engineers and related professionals</a></li>
 </ul></li>
 <li class="chapter" data-level="10" data-path="ssyk-311.html"><a href="ssyk-311.html"><i class="fa fa-check"></i><b>10</b> SSYK 311</a><ul>
 <li class="chapter" data-level="10.1" data-path="ssyk-311.html"><a href="ssyk-311.html#average-monthly-salary-sek-by-region-1"><i class="fa fa-check"></i><b>10.1</b> Average monthly salary, SEK by region</a></li>
@@ -214,58 +216,58 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 utbildningsnivå SUN 2000 och kön. År 1991 - 2015<br />
 Genomsnittlig lön, kr
 Only available at the Swedish SCB site</p>
-<div class="sourceCode" id="cb131"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb131-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0112C1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb131-2" title="2"><span class="st">  </span><span class="kw">filter</span>(year2 <span class="op">&gt;</span><span class="st"> </span><span class="dv">1994</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb131-3" title="3"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, kön) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb131-4" title="4"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">grouprelsal =</span> <span class="kw">relative_dev</span> (salary))</a>
-<a class="sourceLine" id="cb131-5" title="5"></a>
-<a class="sourceLine" id="cb131-6" title="6">tb <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb131-7" title="7"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb131-8" title="8"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> grouprelsal, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))  </a></code></pre></div>
+<div class="sourceCode" id="cb137"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb137-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;AM0112C1.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb137-2" title="2"><span class="st">  </span><span class="kw">filter</span>(year2 <span class="op">&gt;</span><span class="st"> </span><span class="dv">1994</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb137-3" title="3"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, kön) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb137-4" title="4"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">grouprelsal =</span> <span class="kw">relative_dev</span> (salary))</a>
+<a class="sourceLine" id="cb137-5" title="5"></a>
+<a class="sourceLine" id="cb137-6" title="6">tb <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb137-7" title="7"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb137-8" title="8"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> grouprelsal, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))  </a></code></pre></div>
 <p><img src="SCB-Engineers-Jonkoping_files/figure-html/monthlypaysun2000-1.png" width="672" /></p>
-<div class="sourceCode" id="cb132"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb132-1" title="1">tb <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb132-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb132-3" title="3"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> <span class="kw">log</span>(grouprelsal), <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
+<div class="sourceCode" id="cb138"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb138-1" title="1">tb <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb138-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb138-3" title="3"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> <span class="kw">log</span>(grouprelsal), <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
 <p><img src="SCB-Engineers-Jonkoping_files/figure-html/monthlypaysun2000-2.png" width="672" /></p>
-<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb133-1" title="1">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(grouprelsal) <span class="op">~</span><span class="st"> `</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span> <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>kön, <span class="dt">data =</span> tb)</a>
-<a class="sourceLine" id="cb133-2" title="2"></a>
-<a class="sourceLine" id="cb133-3" title="3">tb &lt;-<span class="st"> </span><span class="kw">bind_cols</span>(tb, <span class="kw">as_tibble</span>(<span class="kw">exp</span>(<span class="kw">predict</span>(model, tb, <span class="dt">interval =</span> <span class="st">&quot;confidence&quot;</span>)))) </a>
-<a class="sourceLine" id="cb133-4" title="4"></a>
-<a class="sourceLine" id="cb133-5" title="5">tb <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb133-6" title="6"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb133-7" title="7"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> <span class="kw">log</span>(fit), <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
+<div class="sourceCode" id="cb139"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb139-1" title="1">model &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(grouprelsal) <span class="op">~</span><span class="st"> `</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span> <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span>kön, <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb139-2" title="2"></a>
+<a class="sourceLine" id="cb139-3" title="3">tb &lt;-<span class="st"> </span><span class="kw">bind_cols</span>(tb, <span class="kw">as_tibble</span>(<span class="kw">exp</span>(<span class="kw">predict</span>(model, tb, <span class="dt">interval =</span> <span class="st">&quot;confidence&quot;</span>)))) </a>
+<a class="sourceLine" id="cb139-4" title="4"></a>
+<a class="sourceLine" id="cb139-5" title="5">tb <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb139-6" title="6"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb139-7" title="7"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> <span class="kw">log</span>(fit), <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
 <p><img src="SCB-Engineers-Jonkoping_files/figure-html/monthlypaysun2000-3.png" width="672" /></p>
-<div class="sourceCode" id="cb134"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb134-1" title="1">model1 &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(grouprelsal) <span class="op">~</span><span class="st"> `</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span> <span class="op">*</span><span class="st"> </span>year2 <span class="op">*</span><span class="st"> </span>kön, <span class="dt">data =</span> tb)  </a>
-<a class="sourceLine" id="cb134-2" title="2"></a>
-<a class="sourceLine" id="cb134-3" title="3">tb &lt;-<span class="st"> </span><span class="kw">bind_cols</span>(tb, <span class="kw">as_tibble</span>(<span class="kw">exp</span>(<span class="kw">predict</span>(model1, tb, <span class="dt">interval =</span> <span class="st">&quot;confidence&quot;</span>))))</a>
-<a class="sourceLine" id="cb134-4" title="4"></a>
-<a class="sourceLine" id="cb134-5" title="5">tb <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb134-6" title="6"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb134-7" title="7"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> <span class="kw">log</span>(fit1), <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
+<div class="sourceCode" id="cb140"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb140-1" title="1">model1 &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(grouprelsal) <span class="op">~</span><span class="st"> `</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span> <span class="op">*</span><span class="st"> </span>year2 <span class="op">*</span><span class="st"> </span>kön, <span class="dt">data =</span> tb)  </a>
+<a class="sourceLine" id="cb140-2" title="2"></a>
+<a class="sourceLine" id="cb140-3" title="3">tb &lt;-<span class="st"> </span><span class="kw">bind_cols</span>(tb, <span class="kw">as_tibble</span>(<span class="kw">exp</span>(<span class="kw">predict</span>(model1, tb, <span class="dt">interval =</span> <span class="st">&quot;confidence&quot;</span>))))</a>
+<a class="sourceLine" id="cb140-4" title="4"></a>
+<a class="sourceLine" id="cb140-5" title="5">tb <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb140-6" title="6"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb140-7" title="7"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> <span class="kw">log</span>(fit1), <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
 <p><img src="SCB-Engineers-Jonkoping_files/figure-html/monthlypaysun2000-4.png" width="672" /></p>
-<div class="sourceCode" id="cb135"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb135-1" title="1">model2 &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(grouprelsal) <span class="op">~</span><span class="st"> `</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span> <span class="op">*</span><span class="st"> </span><span class="kw">poly</span>(year2, <span class="dv">2</span>) <span class="op">*</span><span class="st"> </span>kön, <span class="dt">data =</span> tb)  </a>
-<a class="sourceLine" id="cb135-2" title="2"></a>
-<a class="sourceLine" id="cb135-3" title="3">tb &lt;-<span class="st"> </span><span class="kw">bind_cols</span>(tb, <span class="kw">as_tibble</span>(<span class="kw">exp</span>(<span class="kw">predict</span>(model2, tb, <span class="dt">interval =</span> <span class="st">&quot;confidence&quot;</span>))))</a>
-<a class="sourceLine" id="cb135-4" title="4"></a>
-<a class="sourceLine" id="cb135-5" title="5">tb <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb135-6" title="6"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb135-7" title="7"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> <span class="kw">log</span>(fit2), <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
+<div class="sourceCode" id="cb141"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb141-1" title="1">model2 &lt;-<span class="st"> </span><span class="kw">lm</span> (<span class="kw">log</span>(grouprelsal) <span class="op">~</span><span class="st"> `</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span> <span class="op">*</span><span class="st"> </span><span class="kw">poly</span>(year2, <span class="dv">2</span>) <span class="op">*</span><span class="st"> </span>kön, <span class="dt">data =</span> tb)  </a>
+<a class="sourceLine" id="cb141-2" title="2"></a>
+<a class="sourceLine" id="cb141-3" title="3">tb &lt;-<span class="st"> </span><span class="kw">bind_cols</span>(tb, <span class="kw">as_tibble</span>(<span class="kw">exp</span>(<span class="kw">predict</span>(model2, tb, <span class="dt">interval =</span> <span class="st">&quot;confidence&quot;</span>))))</a>
+<a class="sourceLine" id="cb141-4" title="4"></a>
+<a class="sourceLine" id="cb141-5" title="5">tb <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb141-6" title="6"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb141-7" title="7"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> <span class="kw">log</span>(fit2), <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
 <p><img src="SCB-Engineers-Jonkoping_files/figure-html/monthlypaysun2000-5.png" width="672" /></p>
-<div class="sourceCode" id="cb136"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb136-1" title="1">tb <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb136-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb136-3" title="3"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> fit2, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))  </a></code></pre></div>
+<div class="sourceCode" id="cb142"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb142-1" title="1">tb <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb142-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb142-3" title="3"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> fit2, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))  </a></code></pre></div>
 <p><img src="SCB-Engineers-Jonkoping_files/figure-html/monthlypaysun2000-6.png" width="672" /></p>
-<div class="sourceCode" id="cb137"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb137-1" title="1">tb &lt;-<span class="st"> </span>tb <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">diffpolylin =</span> fit2 <span class="op">-</span><span class="st"> </span>fit1)</a>
-<a class="sourceLine" id="cb137-2" title="2"></a>
-<a class="sourceLine" id="cb137-3" title="3">tb <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb137-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb137-5" title="5"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> diffpolylin, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
+<div class="sourceCode" id="cb143"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb143-1" title="1">tb &lt;-<span class="st"> </span>tb <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">diffpolylin =</span> fit2 <span class="op">-</span><span class="st"> </span>fit1)</a>
+<a class="sourceLine" id="cb143-2" title="2"></a>
+<a class="sourceLine" id="cb143-3" title="3">tb <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb143-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb143-5" title="5"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2,<span class="dt">y =</span> diffpolylin, <span class="dt">colour =</span> <span class="st">`</span><span class="dt">Utbildningsnivå SUN 2000</span><span class="st">`</span>, <span class="dt">shape=</span>kön))</a></code></pre></div>
 <p><img src="SCB-Engineers-Jonkoping_files/figure-html/monthlypaysun2000-7.png" width="672" /></p>
-<div class="sourceCode" id="cb138"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb138-1" title="1"><span class="kw">summary</span> (model2) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb138-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb138-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb138-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb138-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Summary from linear model fit&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb144"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb144-1" title="1"><span class="kw">summary</span> (model2) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb144-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb144-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb144-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb144-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Summary from linear model fit&#39;</span>)</a></code></pre></div>
 <table>
 <caption><span id="tab:monthlypaysun2000">Table 11.1: </span>Summary from linear model fit</caption>
 <thead>
@@ -532,11 +534,11 @@ Only available at the Swedish SCB site</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb139"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb139-1" title="1"><span class="kw">Anova</span>(model2, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb139-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb139-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb139-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb139-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>)  </a></code></pre></div>
+<div class="sourceCode" id="cb145"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb145-1" title="1"><span class="kw">Anova</span>(model2, <span class="dt">type=</span><span class="dv">2</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb145-2" title="2"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb145-3" title="3"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb145-4" title="4">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb145-5" title="5">  <span class="dt">caption =</span> <span class="st">&#39;Anova report from linear model fit&#39;</span>)  </a></code></pre></div>
 <table>
 <caption><span id="tab:monthlypaysun2000">Table 11.1: </span>Anova report from linear model fit</caption>
 <thead>
