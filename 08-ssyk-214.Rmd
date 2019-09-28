@@ -684,6 +684,104 @@ merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
   caption = 'Womens urbanization, comparison between the SSYK, Year 2014 - 2018') 	
 ```
 
+## Salary correlation with population in region, comparison between the SSYK, Year 2003 - 2013
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK) and sex. Year 2003 - 2013
+Number of employees
+All sectors
+
+Monthly salary
+All sectors
+
+```{r ssyk14-18_13, echo = TRUE, fig.cap = 'Salary correlation with population in region, comparison between the SSYK, Year 2003 - 2013, positive x = regions with higher population have higher salaries, negative x = regions with higher population have lower salaries'}	
+tb <- readfile("AM0110A4_2.csv")
+
+summary_table = 0
+anova_table = 0
+tb <- tb %>%
+  group_by (`region`, year, `occupational group (SSYK)`) %>%
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary)))) %>%
+  group_by(region, year) %>%
+  mutate(sum_pop = sum(salary))
+tb <- readfile("AM0110A2_2.csv") %>% 
+  inner_join(tb, by = c("region", "year", "sex", "occupational group (SSYK)"))  
+for (i in unique(tb$`occupational group (SSYK)`)){
+  temp <- filter(tb, `occupational group (SSYK)` == i)
+  if (dim(temp)[1] > 50){
+    model <- lm(log(salary.x) ~ sum_pop + year2.x + sex, data = temp)
+    summary_table <- rbind (summary_table, mutate (mutate (tidy (summary (model)), ssyk = i)))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}  
+ 
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
+  filter (term.y == "sum_pop") %>% 
+  filter (term.x == "sum_pop") %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = estimate, y = statistic.y)) +
+    labs(
+      x = "estimate",
+      y = "F value for SSYK"
+    )	
+	
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
+  filter (term.y == "sum_pop") %>% 
+  filter (term.x == "sum_pop") %>%
+  select (ssyk, estimate, statistic.y) %>%
+  arrange (desc (statistic.y)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Salary correlation with population in region, comparison between the SSYK, Year 2003 - 2013') 	
+```
+
+## Salary correlation with population in region, comparison between the SSYK, Year 2014 - 2018
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2014 - 2018
+Number of employees
+All sectors
+
+Monthly salary
+All sectors
+
+```{r ssyk14-18_14, echo = TRUE, fig.cap = 'Salary correlation with population in region, comparison between the SSYK, Year 2014 - 2018, positive x = regions with higher population have higher salaries, negative x = regions with higher population have lower salaries'}	
+tb <- readfile("000000CD_13.csv")
+
+summary_table = 0
+anova_table = 0
+tb <- tb %>%
+  group_by (`region`, year, `occuptional  (SSYK 2012)`) %>%
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary)))) %>%
+  group_by(region, year) %>%
+  mutate(sum_pop = sum(salary))
+tb <- readfile("000000CG_3.csv") %>% 
+  inner_join(tb, by = c("region", "year", "sex", "occuptional  (SSYK 2012)"))  
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 50){
+    model <- lm(log(salary.x) ~ sum_pop + year2.x + sex, data = temp)
+    summary_table <- rbind (summary_table, mutate (mutate (tidy (summary (model)), ssyk = i)))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}  
+ 
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
+  filter (term.y == "sum_pop") %>% 
+  filter (term.x == "sum_pop") %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = estimate, y = statistic.y)) +
+    labs(
+      x = "estimate",
+      y = "F value for SSYK"
+    )	
+	
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
+  filter (term.y == "sum_pop") %>% 
+  filter (term.x == "sum_pop") %>%
+  select (ssyk, estimate, statistic.y) %>%
+  arrange (desc (statistic.y)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Salary correlation with population in region, comparison between the SSYK, Year 2014 - 2018') 	
+```
+
 ## Animations , SSYK 214, Architects, engineers and related professionals
 
 Approximaton with B-spline  		
