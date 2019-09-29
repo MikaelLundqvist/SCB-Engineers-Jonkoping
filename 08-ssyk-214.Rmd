@@ -706,7 +706,7 @@ tb <- readfile("AM0110A2_2.csv") %>%
   inner_join(tb, by = c("region", "year", "sex", "occupational group (SSYK)"))  
 for (i in unique(tb$`occupational group (SSYK)`)){
   temp <- filter(tb, `occupational group (SSYK)` == i)
-  if (dim(temp)[1] > 50){
+  if (dim(temp)[1] > 25){
     model <- lm(log(salary.x) ~ sum_pop + year2.x + sex, data = temp)
     summary_table <- rbind (summary_table, mutate (mutate (tidy (summary (model)), ssyk = i)))
     anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
@@ -780,6 +780,72 @@ merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
   knitr::kable( 
   booktabs = TRUE,
   caption = 'Salary correlation with population in region, comparison between the SSYK, Year 2014 - 2018') 	
+```
+
+## Women with higher paid jobs migrate to regions with larger population, women with lower paid jobs migrate to regions with less population
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012) , sex and age. Year 2014 - 2018
+Monthly salary
+All sectors
+
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2014 - 2018
+Number of employees
+All sectors
+
+```{r ssyk14-18_15, echo = TRUE, fig.cap = 'Women with higher paid jobs migrate to regions with larger population, women with lower paid jobs migrate to regions with less population, positive x = tendency for women within SSYK to migrate to regions with higher salaries, positive y = SSYK with higher salaries than average for all SSYK'}
+tb <- readfile("000000D2_1.csv") %>%
+    rowwise() %>%
+    mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
+    rowwise() %>%
+    mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+    mutate(age4 = (age3 + age2) / 2)
+
+model <- lm (log(salary) ~ `occuptional  (SSYK 2012)` + year2 + sex + poly(age4, 3), data = tb)
+
+salary_table <- tidy (summary (model)) %>% 
+  mutate (ssyk = gsub("`occuptional  \\(SSYK 2012\\)`", "", term))
+
+tb <- readfile("000000CD_13.csv")
+
+summary_table = 0
+anova_table = 0
+tb <- tb %>%
+    group_by (`region`, year, `occuptional  (SSYK 2012)`) %>%
+    mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary)))) %>%
+    group_by(region, year) %>%
+    mutate(sum_pop = sum(salary))
+tb <- readfile("000000CG_3.csv") %>%
+    inner_join(tb, by = c("region", "year", "sex", "occuptional  (SSYK 2012)"))  
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+    temp <- filter(tb, `occuptional  (SSYK 2012)` == i)
+    if (dim(temp)[1] > 50){
+        model <- lm(perc_women ~ log(salary.x) + year2.x + sex, data = temp)
+        summary_table <- rbind (summary_table, mutate (mutate (tidy (summary (model)), ssyk = i)))
+        anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+    }
+}	
+
+sumtab <- merge(salary_table, anova_table, by = "ssyk", all = TRUE)
+merge(summary_table, sumtab, by = "ssyk", all = TRUE) %>%
+  filter (term.y == "log(salary.x)") %>%
+  filter (term == "log(salary.x)") %>%
+  filter (statistic.y > 15)  %>%  # Filter noice with low relevance
+  ggscatter(x = "estimate.x", y = "estimate.y",
+  add = "reg.line", conf.int = TRUE,
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "estimate fow women urbanization",
+    y = "estimate for SSYK salaries"
+  )  
+  
+merge(summary_table, sumtab, by = "ssyk", all = TRUE) %>% 
+  filter (term.y == "log(salary.x)") %>% 
+  filter (term == "log(salary.x)") %>%
+  filter (statistic.y > 15)  %>%  # Filter noice with low relevance
+  select (ssyk, estimate.x, estimate.y) %>%
+  arrange (desc (estimate.x)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Women with higher paid jobs migrate to regions with larger population, women with lower paid jobs migrate to regions with less population')   
 ```
 
 ## Animations , SSYK 214, Architects, engineers and related professionals
