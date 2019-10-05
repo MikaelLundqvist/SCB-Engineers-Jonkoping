@@ -542,7 +542,7 @@ Figure 12.7: The correlation between the number of engineers and the number of t
 <a class="sourceLine" id="cb176-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb176-17" title="17"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>)</a>
 <a class="sourceLine" id="cb176-18" title="18">  </a>
-<a class="sourceLine" id="cb176-19" title="19">model &lt;-<span class="st"> </span><span class="kw">lm</span>(sum_edu <span class="op">~</span><span class="st"> </span>sum_pop <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y) <span class="op">+</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb)</a>
+<a class="sourceLine" id="cb176-19" title="19">model &lt;-<span class="st"> </span><span class="kw">lm</span>(sum_edu <span class="op">~</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y) <span class="op">*</span><span class="st"> </span>sum_pop, <span class="dt">data =</span> tb)</a>
 <a class="sourceLine" id="cb176-20" title="20"></a>
 <a class="sourceLine" id="cb176-21" title="21"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
 <a class="sourceLine" id="cb176-22" title="22"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
@@ -563,38 +563,38 @@ Figure 12.7: The correlation between the number of engineers and the number of t
 <tbody>
 <tr class="odd">
 <td align="left">(Intercept)</td>
-<td align="right">6.868374e+06</td>
-<td align="right">6.208239e+06</td>
-<td align="right">1.106332</td>
-<td align="right">0.2723173</td>
+<td align="right">5.129274e+06</td>
+<td align="right">5.118336e+06</td>
+<td align="right">1.0021372</td>
+<td align="right">0.3195877</td>
+</tr>
+<tr class="even">
+<td align="left">year2</td>
+<td align="right">1.213056e+02</td>
+<td align="right">2.669735e+03</td>
+<td align="right">0.0454373</td>
+<td align="right">0.9638828</td>
+</tr>
+<tr class="odd">
+<td align="left">log(salary.y)</td>
+<td align="right">-5.089895e+05</td>
+<td align="right">1.206615e+05</td>
+<td align="right">-4.2183249</td>
+<td align="right">0.0000698</td>
 </tr>
 <tr class="even">
 <td align="left">sum_pop</td>
-<td align="right">1.881103e-01</td>
-<td align="right">1.715110e-02</td>
-<td align="right">10.967839</td>
+<td align="right">-7.867544e+00</td>
+<td align="right">1.172156e+00</td>
+<td align="right">-6.7120268</td>
 <td align="right">0.0000000</td>
 </tr>
 <tr class="odd">
-<td align="left">year2</td>
-<td align="right">-4.459663e+03</td>
-<td align="right">3.301904e+03</td>
-<td align="right">-1.350633</td>
-<td align="right">0.1811021</td>
-</tr>
-<tr class="even">
-<td align="left">log(salary.y)</td>
-<td align="right">1.789696e+05</td>
-<td align="right">8.703467e+04</td>
-<td align="right">2.056302</td>
-<td align="right">0.0434304</td>
-</tr>
-<tr class="odd">
-<td align="left">perc_women</td>
-<td align="right">1.160185e+04</td>
-<td align="right">2.520454e+03</td>
-<td align="right">4.603078</td>
-<td align="right">0.0000178</td>
+<td align="left">log(salary.y):sum_pop</td>
+<td align="right">7.616666e-01</td>
+<td align="right">1.099515e-01</td>
+<td align="right">6.9272996</td>
+<td align="right">0.0000000</td>
 </tr>
 </tbody>
 </table>
@@ -616,37 +616,37 @@ Figure 12.7: The correlation between the number of engineers and the number of t
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">sum_pop</td>
-<td align="right">111793842754</td>
+<td align="left">year2</td>
+<td align="right">1490425</td>
 <td align="right">1</td>
-<td align="right">120.293488</td>
+<td align="right">0.0020646</td>
+<td align="right">0.9638828</td>
+</tr>
+<tr class="even">
+<td align="left">log(salary.y)</td>
+<td align="right">2556263146</td>
+<td align="right">1</td>
+<td align="right">3.5409595</td>
+<td align="right">0.0638575</td>
+</tr>
+<tr class="odd">
+<td align="left">sum_pop</td>
+<td align="right">567943896187</td>
+<td align="right">1</td>
+<td align="right">786.7211812</td>
 <td align="right">0.0000000</td>
 </tr>
 <tr class="even">
-<td align="left">year2</td>
-<td align="right">1695316390</td>
+<td align="left">log(salary.y):sum_pop</td>
+<td align="right">34642763902</td>
 <td align="right">1</td>
-<td align="right">1.824211</td>
-<td align="right">0.1811021</td>
-</tr>
-<tr class="odd">
-<td align="left">log(salary.y)</td>
-<td align="right">3929610704</td>
-<td align="right">1</td>
-<td align="right">4.228378</td>
-<td align="right">0.0434304</td>
-</tr>
-<tr class="even">
-<td align="left">perc_women</td>
-<td align="right">19691208116</td>
-<td align="right">1</td>
-<td align="right">21.188323</td>
-<td align="right">0.0000178</td>
+<td align="right">47.9874796</td>
+<td align="right">0.0000000</td>
 </tr>
 <tr class="odd">
 <td align="left">Residuals</td>
-<td align="right">65983312675</td>
-<td align="right">71</td>
+<td align="right">52699616348</td>
+<td align="right">73</td>
 <td align="right">NA</td>
 <td align="right">NA</td>
 </tr>
@@ -737,7 +737,7 @@ Figure 12.9: The correlation between the number of engineers and the proportion 
 <a class="sourceLine" id="cb184-16" title="16"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_eng =</span> sum_ing <span class="op">/</span><span class="st"> </span>sum_edu) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb184-17" title="17"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) </a>
 <a class="sourceLine" id="cb184-18" title="18">  </a>
-<a class="sourceLine" id="cb184-19" title="19">model &lt;-<span class="st"> </span><span class="kw">lm</span>(sum_ing <span class="op">~</span><span class="st"> </span>sum_edu <span class="op">+</span><span class="st"> </span>perc_women <span class="op">+</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y), <span class="dt">data =</span> tb) </a>
+<a class="sourceLine" id="cb184-19" title="19">model &lt;-<span class="st"> </span><span class="kw">lm</span>(sum_ing <span class="op">~</span><span class="st"> </span>year2 <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(salary.y) <span class="op">*</span><span class="st"> </span>sum_pop <span class="op">*</span><span class="st"> </span>perc_women, <span class="dt">data =</span> tb) </a>
 <a class="sourceLine" id="cb184-20" title="20"></a>
 <a class="sourceLine" id="cb184-21" title="21"><span class="kw">summary</span>(model) <span class="op">%&gt;%</span><span class="st">  </span></a>
 <a class="sourceLine" id="cb184-22" title="22"><span class="st">  </span><span class="kw">tidy</span>() <span class="op">%&gt;%</span></a>
@@ -758,38 +758,66 @@ Figure 12.9: The correlation between the number of engineers and the proportion 
 <tbody>
 <tr class="odd">
 <td align="left">(Intercept)</td>
-<td align="right">-2.204967e+05</td>
-<td align="right">5.361110e+05</td>
-<td align="right">-0.4112893</td>
-<td align="right">0.6820993</td>
-</tr>
-<tr class="even">
-<td align="left">sum_edu</td>
-<td align="right">6.828150e-02</td>
-<td align="right">6.309400e-03</td>
-<td align="right">10.8222540</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="odd">
-<td align="left">perc_women</td>
-<td align="right">8.321495e+01</td>
-<td align="right">2.503449e+02</td>
-<td align="right">0.3324013</td>
-<td align="right">0.7405657</td>
+<td align="right">-6.222017e+05</td>
+<td align="right">9.146425e+05</td>
+<td align="right">-0.6802676</td>
+<td align="right">0.4986790</td>
 </tr>
 <tr class="even">
 <td align="left">year2</td>
-<td align="right">1.185970e+02</td>
-<td align="right">2.864389e+02</td>
-<td align="right">0.4140393</td>
-<td align="right">0.6800934</td>
+<td align="right">2.658654e+02</td>
+<td align="right">2.012575e+02</td>
+<td align="right">1.3210214</td>
+<td align="right">0.1909883</td>
 </tr>
 <tr class="odd">
 <td align="left">log(salary.y)</td>
-<td align="right">-2.051953e+03</td>
-<td align="right">7.787832e+03</td>
-<td align="right">-0.2634820</td>
-<td align="right">0.7929423</td>
+<td align="right">1.026812e+04</td>
+<td align="right">8.434278e+04</td>
+<td align="right">0.1217428</td>
+<td align="right">0.9034671</td>
+</tr>
+<tr class="even">
+<td align="left">sum_pop</td>
+<td align="right">-1.893141e+00</td>
+<td align="right">7.269538e-01</td>
+<td align="right">-2.6042114</td>
+<td align="right">0.0113315</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women</td>
+<td align="right">2.644795e+04</td>
+<td align="right">4.740960e+04</td>
+<td align="right">0.5578605</td>
+<td align="right">0.5787989</td>
+</tr>
+<tr class="even">
+<td align="left">log(salary.y):sum_pop</td>
+<td align="right">1.761138e-01</td>
+<td align="right">6.822090e-02</td>
+<td align="right">2.5815235</td>
+<td align="right">0.0120301</td>
+</tr>
+<tr class="odd">
+<td align="left">log(salary.y):perc_women</td>
+<td align="right">-2.623465e+03</td>
+<td align="right">4.465157e+03</td>
+<td align="right">-0.5875415</td>
+<td align="right">0.5588151</td>
+</tr>
+<tr class="even">
+<td align="left">sum_<a href="pop:perc_women" class="uri">pop:perc_women</a></td>
+<td align="right">6.696160e-02</td>
+<td align="right">3.382790e-02</td>
+<td align="right">1.9794780</td>
+<td align="right">0.0518730</td>
+</tr>
+<tr class="odd">
+<td align="left">log(salary.y):sum_<a href="pop:perc_women" class="uri">pop:perc_women</a></td>
+<td align="right">-6.122800e-03</td>
+<td align="right">3.174900e-03</td>
+<td align="right">-1.9284725</td>
+<td align="right">0.0580350</td>
 </tr>
 </tbody>
 </table>
@@ -811,37 +839,65 @@ Figure 12.9: The correlation between the number of engineers and the proportion 
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">sum_edu</td>
-<td align="right">828862843.2</td>
+<td align="left">year2</td>
+<td align="right">5867011</td>
 <td align="right">1</td>
-<td align="right">117.1211811</td>
+<td align="right">1.7450974</td>
+<td align="right">0.1909883</td>
+</tr>
+<tr class="even">
+<td align="left">log(salary.y)</td>
+<td align="right">5235904</td>
+<td align="right">2</td>
+<td align="right">0.7786898</td>
+<td align="right">0.4631161</td>
+</tr>
+<tr class="odd">
+<td align="left">sum_pop</td>
+<td align="right">846906168</td>
+<td align="right">1</td>
+<td align="right">251.9057602</td>
 <td align="right">0.0000000</td>
 </tr>
 <tr class="even">
 <td align="left">perc_women</td>
-<td align="right">781938.6</td>
-<td align="right">1</td>
-<td align="right">0.1104906</td>
-<td align="right">0.7405657</td>
+<td align="right">156863189</td>
+<td align="right">2</td>
+<td align="right">23.3288777</td>
+<td align="right">0.0000000</td>
 </tr>
 <tr class="odd">
-<td align="left">year2</td>
-<td align="right">1213194.5</td>
+<td align="left">log(salary.y):sum_pop</td>
+<td align="right">29562096</td>
 <td align="right">1</td>
-<td align="right">0.1714286</td>
-<td align="right">0.6800934</td>
+<td align="right">8.7930192</td>
+<td align="right">0.0041862</td>
 </tr>
 <tr class="even">
-<td align="left">log(salary.y)</td>
-<td align="right">491302.6</td>
+<td align="left">log(salary.y):perc_women</td>
+<td align="right">47669941</td>
 <td align="right">1</td>
-<td align="right">0.0694228</td>
-<td align="right">0.7929423</td>
+<td align="right">14.1790593</td>
+<td align="right">0.0003527</td>
+</tr>
+<tr class="odd">
+<td align="left">sum_<a href="pop:perc_women" class="uri">pop:perc_women</a></td>
+<td align="right">199596081</td>
+<td align="right">1</td>
+<td align="right">59.3683271</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">log(salary.y):sum_<a href="pop:perc_women" class="uri">pop:perc_women</a></td>
+<td align="right">12503284</td>
+<td align="right">1</td>
+<td align="right">3.7190063</td>
+<td align="right">0.0580350</td>
 </tr>
 <tr class="odd">
 <td align="left">Residuals</td>
-<td align="right">502464723.3</td>
-<td align="right">71</td>
+<td align="right">225253735</td>
+<td align="right">67</td>
 <td align="right">NA</td>
 <td align="right">NA</td>
 </tr>

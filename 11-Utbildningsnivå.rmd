@@ -222,7 +222,7 @@ tb <- readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
   
-model <- lm(sum_edu ~ sum_pop + year2 + log(salary.y) + perc_women, data = tb)
+model <- lm(sum_edu ~ year2 + log(salary.y) * sum_pop, data = tb)
 
 summary(model) %>%	
   tidy() %>%
@@ -312,7 +312,7 @@ tb <- readfile("UF0506A1_1.csv") %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") 
   
-model <- lm(sum_ing ~ sum_edu + perc_women + year2 + log(salary.y), data = tb) 
+model <- lm(sum_ing ~ year2 + log(salary.y) * sum_pop * perc_women, data = tb) 
 
 summary(model) %>%	
   tidy() %>%
