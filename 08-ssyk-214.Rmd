@@ -782,7 +782,74 @@ merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
   caption = 'Salary correlation with population in region, comparison between the SSYK, Year 2014 - 2018') 	
 ```
 
-## Women with higher paid jobs migrate to regions with larger population, women with lower paid jobs migrate to regions with less population
+## Women with higher paid jobs migrate to regions with higher salaries, women with lower paid jobs migrate to regions with lower salaries, Year 2004 - 2013
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK) , sex and age. Year 2004 - 2013
+Monthly salary
+All sectors
+
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK) and sex. Year 2003 - 2013
+Number of employees
+All sectors
+
+```{r ssyk14-18_15, echo = TRUE, fig.cap = 'Women with higher paid jobs migrate to regions with higher salaries, women with lower paid jobs migrate to regions with lower salaries, positive x = tendency for women within SSYK to migrate to regions with higher salaries, positive y = SSYK with higher salaries than average for all SSYK'}
+tb <- readfile("AM0110E2.csv") %>%
+    rowwise() %>%
+    mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>% 
+    rowwise() %>%
+    mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+    mutate(age4 = (age3 + age2) / 2)
+
+model <- lm (log(salary) ~ `occupational group (SSYK)` + year2 + sex + poly(age4, 3), data = tb)
+
+salary_table <- tidy (summary (model)) %>%
+  mutate (ssyk = gsub("`occupational group \\(SSYK\\)`", "", term)) 
+ 
+tb <- readfile("AM0110A4_2.csv")
+
+summary_table = 0
+anova_table = 0
+tb <- tb %>%
+    group_by (`region`, year, `occupational group (SSYK)`) %>%
+    mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary)))) %>%
+    group_by(region, year) %>%
+    mutate(sum_pop = sum(salary))
+tb <- readfile("AM0110A2_2.csv") %>%
+    inner_join(tb, by = c("region", "year", "sex", "occupational group (SSYK)")) 
+for (i in unique(tb$`occupational group (SSYK)`)){
+    temp <- filter(tb, `occupational group (SSYK)` == i)
+    if (dim(temp)[1] > 50){
+        model <- lm(perc_women ~ log(salary.x) + year2.x + sex, data = temp)
+        summary_table <- rbind (summary_table, mutate (mutate (tidy (summary (model)), ssyk = i)))
+        anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+    }
+}  
+
+sumtab <- merge(salary_table, anova_table, by = "ssyk", all = TRUE)
+merge(summary_table, sumtab, by = "ssyk", all = TRUE) %>%
+  filter (term.y == "log(salary.x)") %>%
+  filter (term == "log(salary.x)") %>%
+  filter (statistic.y > 35)  %>%  # Filter noice with low relevance
+  ggscatter(x = "estimate.x", y = "estimate.y",
+  add = "reg.line", conf.int = TRUE,
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "estimate for women urbanization",
+    y = "estimate for SSYK salaries"
+  ) 
+ 
+merge(summary_table, sumtab, by = "ssyk", all = TRUE) %>% 
+  filter (term.y == "log(salary.x)") %>% 
+  filter (term == "log(salary.x)") %>%
+  filter (statistic.y > 35)  %>%  # Filter noice with low relevance
+  select (ssyk, estimate.x, estimate.y) %>%
+  arrange (desc (estimate.x)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Women with higher paid jobs migrate to regions with higher salaries, women with lower paid jobs migrate to regions with lower salaries')   
+```
+
+
+## Women with higher paid jobs migrate to regions with higher salaries, women with lower paid jobs migrate to regions with lower salaries, Year 2014 - 2018
 Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012) , sex and age. Year 2014 - 2018
 Monthly salary
 All sectors
@@ -791,7 +858,7 @@ Average basic salary, monthly salary and women´s salary as a percentage of men�
 Number of employees
 All sectors
 
-```{r ssyk14-18_15, echo = TRUE, fig.cap = 'Women with higher paid jobs migrate to regions with larger population, women with lower paid jobs migrate to regions with less population, positive x = tendency for women within SSYK to migrate to regions with higher salaries, positive y = SSYK with higher salaries than average for all SSYK'}
+```{r ssyk14-18_16, echo = TRUE, fig.cap = 'Women with higher paid jobs migrate to regions with higher salaries, women with lower paid jobs migrate to regions with lower salaries, positive x = tendency for women within SSYK to migrate to regions with higher salaries, positive y = SSYK with higher salaries than average for all SSYK'}
 tb <- readfile("000000D2_1.csv") %>%
     rowwise() %>%
     mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%  
@@ -833,7 +900,7 @@ merge(summary_table, sumtab, by = "ssyk", all = TRUE) %>%
   add = "reg.line", conf.int = TRUE,
   cor.coef = TRUE, cor.method = "pearson") +
   labs(
-    x = "estimate fow women urbanization",
+    x = "estimate for women urbanization",
     y = "estimate for SSYK salaries"
   )  
   
@@ -845,7 +912,114 @@ merge(summary_table, sumtab, by = "ssyk", all = TRUE) %>%
   arrange (desc (estimate.x)) %>%
   knitr::kable( 
   booktabs = TRUE,
-  caption = 'Women with higher paid jobs migrate to regions with larger population, women with lower paid jobs migrate to regions with less population')   
+  caption = 'Women with higher paid jobs migrate to regions with higher salaries, women with lower paid jobs migrate to regions with lower salaries')   
+```
+
+## The correlation between salary level and the F-value for age, Year 2004 - 2013
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK) , sex and age. Year 2004 - 2013
+Monthly salary
+All sectors
+
+```{r ssyk14-18_17, echo = TRUE, fig.cap = 'The correlation between salary level and the F-value for age'}
+tb <- readfile("AM0110E2.csv") %>%
+    rowwise() %>%
+    mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>% 
+    rowwise() %>%
+    mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+    mutate(age4 = (age3 + age2) / 2)
+model <- lm (log(salary) ~ `occupational group (SSYK)` + year2 + sex + poly(age4, 3), data = tb)
+salary_table <- tidy (summary (model)) %>%
+  mutate (ssyk = gsub("`occupational group \\(SSYK\\)`", "", term))
+  
+summary_table = 0
+anova_table = 0
+for (i in unique(tb$`occupational group (SSYK)`)){
+  temp <- filter(tb, `occupational group (SSYK)` == i)
+  if (dim(temp)[1] > 50){
+    model <- lm (log(salary) ~ year2 + sex + poly(age4, 3), data = temp)
+    summary_table <- rbind (summary_table, mutate (mutate (tidy (summary (model)), ssyk = i), spannvidd = max (filter (temp, year2 == 2013)$salary) / min (filter (temp, year2 == 2013)$salary)))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}
+
+sumtab <- merge(salary_table, anova_table, by = "ssyk", all = TRUE)
+sumtab <- merge(summary_table, sumtab, by = "ssyk", all = TRUE)
+sumtab %>%
+  filter (term.y == "poly(age4, 3)") %>%
+  filter (term == "year2") %>% 
+  ggscatter(x = "estimate.y", y = "statistic.y",
+  add = "reg.line", conf.int = TRUE,
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Salary level",
+    y = "F-value for age"
+  ) 
+
+sumtab %>%
+  filter (term.y == "poly(age4, 3)") %>%
+  filter (term == "year2") %>% 
+  select (ssyk, estimate.y, statistic.y) %>%
+  arrange (desc (statistic.y)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'The correlation between salary level and the F-value for age')    
+```
+
+## The correlation between salary level and the F-value for age, Year 2014 - 2018
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012) , sex and age. Year 2014 - 2018
+Monthly salary
+All sectors
+
+```{r ssyk14-18_18, echo = TRUE, fig.cap = 'The correlation between salary level and the F-value for age'}
+tb <- readfile("000000D2_1.csv") %>%
+    rowwise() %>%
+    mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>% 
+    rowwise() %>%
+    mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+    mutate(age4 = (age3 + age2) / 2)
+model <- lm (log(salary) ~ `occuptional  (SSYK 2012)` + year2 + sex + poly(age4, 3), data = tb)
+salary_table <- tidy (summary (model)) %>%
+  mutate (ssyk = gsub("`occuptional  \\(SSYK 2012\\)`", "", term))
+  
+tb <- readfile("000000D2_1.csv") %>%
+  rowwise() %>%
+  mutate(age2 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>% 
+  rowwise() %>%
+  mutate(age3 = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age4 = (age3 + age2) / 2)
+ 
+summary_table = 0
+anova_table = 0
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 50){
+    model <- lm (log(salary) ~ year2 + sex + poly(age4, 3), data = temp)
+    summary_table <- rbind (summary_table, mutate (mutate (tidy (summary (model)), ssyk = i), spannvidd = max (filter (temp, year2 == 2018)$salary) / min (filter (temp, year2 == 2018)$salary)))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}
+
+sumtab <- merge(salary_table, anova_table, by = "ssyk", all = TRUE)
+sumtab <- merge(summary_table, sumtab, by = "ssyk", all = TRUE)
+sumtab %>%
+  filter (term.y == "poly(age4, 3)") %>%
+  filter (term == "year2") %>% 
+  ggscatter(x = "estimate.y", y = "statistic.y",
+  add = "reg.line", conf.int = TRUE,
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Salary level",
+    y = "F-value for age"
+  )   
+  
+sumtab %>%
+  filter (term.y == "poly(age4, 3)") %>%
+  filter (term == "year2") %>% 
+  select (ssyk, estimate.y, statistic.y) %>%
+  arrange (desc (statistic.y)) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'The correlation between salary level and the F-value for age')   
 ```
 
 ## Animations , SSYK 214, Architects, engineers and related professionals
