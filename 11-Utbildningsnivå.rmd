@@ -401,8 +401,19 @@ tb <- readfile("UF0506A1_1.csv") %>%
   right_join(tb, by = c("region", "year", "sex")) %>%
   mutate (perc_eng = sum_ing / sum_edu) %>%
   filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
+ 
+tb1 <- tb %>% 
+  ungroup() %>% 
+  select(utbregno, year2, perc_edu, sum_pop, sum_edu, perc_women, perc_salary, sum_ing, perc_eng, salary.y) %>% 
+  na.omit()
+
+set.seed(1)
+
+cmodel <- cubist(tb1[, -10], tb1$salary.y)
   
-model <- lm(log(salary.y) ~ sum_edu + year2 + perc_women, data = tb) 
+summary(cmodel)  
+  
+model <- lm(log(salary.y) ~ year2 + perc_edu + sum_edu + sum_ing + perc_eng, data = tb)
 
 summary(model) %>%	
   tidy() %>%

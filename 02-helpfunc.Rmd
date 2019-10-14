@@ -3,10 +3,11 @@
 ```{r helpfunc, echo = TRUE}
 library (tidyverse) 
 library (broom) 
-library(gganimate)  
-library(car)
-library(swemaps) # devtools::install_github('reinholdsson/swemaps')
-library(ggpubr)
+library (gganimate)  
+library (car)
+library (swemaps) # devtools::install_github('reinholdsson/swemaps')
+library (ggpubr)
+library (Cubist)
 
 nuts <- read_csv ("nuts.csv", col_types = cols(), locale = readr::locale (encoding = "UTF-8"), na = c("..", "NA"))
 
