@@ -457,6 +457,385 @@ readfile("UF0506A1_1.csv") %>%
   )
 ```
 
+## The correlation between the proportion of engineers who are women and the number of the population who have 3 years or more post-secondary education in the region. Year 2003 - 2013
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2003 - 2013
+Monthly salaty
+All sectors
+214 Engineering professionals
+
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2003 - 2013
+Number of employees
+All sectors
+214 Engineering professionals
+
+Population 16-74 years of age by region, highest level of education, age and sex. The year 1985 - 2018.
+total 16-74 years
+
+```{r utbildningsniva30, echo = TRUE, fig.cap = 'The correlation between the proportion of engineers who are women and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), 2003 - 2013.'} 	
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  ggplot(aes(x = sum_edu, y = perc_women, colour = region, size = year2)) +
+  geom_point() +
+  theme(legend.position="bottom") +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Per cent of engineers who are women"
+  )
+```
+
+```{r utbildningsniva31, echo = TRUE, fig.cap = 'The correlation between the proportion of engineers who are women and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2003 - 2013.'} 	
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  ggscatter(x = "sum_edu", y = "perc_women", 
+  add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Per cent of engineers who are women"
+  )
+```
+
+```{r utbildningsniva32, echo = TRUE}
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
+  
+model <- lm(perc_women ~ sum_edu + year2 + log(salary.y), data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Women engineers and population with 3 years or more post-secondary education')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+```
+
+## The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education in the regions, Year 2003 - 2013.
+
+```{r utbildningsniva33, echo = TRUE, fig.cap = 'The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2003 - 2013.'} 	
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  ggplot(aes(x = sum_edu, y = sum_ing, colour = region, size = year2)) +
+  geom_point() +
+  theme(legend.position="bottom") +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Number of the population who are engineers"
+  )
+```
+
+```{r utbildningsniva34, echo = TRUE, fig.cap = 'The correlation between the number of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2003 - 2013.'} 	
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  ggscatter(x = "sum_edu", y = "sum_ing", 
+  add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Number of the population who are engineers"
+  )
+```
+
+```{r utbildningsniva451, echo = TRUE}
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
+  
+model <- lm(sum_edu ~ year2 + log(salary.y) * sum_pop, data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Population with 3 years or more post-secondary education and number of population')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+```
+
+## The correlation between the number of engineers and the proportion of engineers who are women in the regions, Year 2003 - 2013
+
+```{r utbildningsniva35, echo = TRUE, fig.cap = 'The correlation between the number of engineers and the proportion of engineers who are women in the regions (NUTS2), Year 2003 - 2013.'} 	
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  ggplot(aes(x = perc_women, y = sum_ing, colour = region, size = year2)) +
+  geom_point() +
+  theme(legend.position="bottom") +
+  labs(
+    x = "Per cent of engineers who are women",
+    y = "Number of the population who are engineers"
+  )
+```
+
+```{r utbildningsniva36, echo = TRUE, fig.cap = 'The correlation between the number of engineers and the proportion of engineers who are women in the regions (NUTS2), Year 2003 - 2013.'} 	
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  ggscatter(x = "perc_women", y = "sum_ing", 
+  add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.method = "pearson") +
+  labs(
+    x = "Per cent of engineers who are women",
+    y = "Number of the population who are engineers"
+  )
+```
+
+```{r utbildningsniva431, echo = TRUE}
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") 
+  
+model <- lm(sum_ing ~ year2 + log(salary.y) * sum_pop * perc_women, data = tb) 
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Engineers and per cent of engineers who are women')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+```
+
+## The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education in the regions, Year 2003 - 2013
+
+```{r utbildningsniva37, echo = TRUE, fig.cap = 'The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2003 - 2013.'} 	
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  ggplot(aes(x = sum_edu, y = salary.y, colour = region, size = year2)) +
+  geom_point() +
+  theme(legend.position="bottom") +
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Salary of engineers"
+  )
+```
+
+```{r utbildningsniva38, echo = TRUE, fig.cap = 'The correlation between the salary of engineers and the number of the population who have 3 years or more post-secondary education, but not postgraduate education in the regions (NUTS2), Year 2003 - 2013.'} 	
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)") %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  ggscatter(x = "sum_edu", y = "salary.y", 
+  add = "reg.line", conf.int = TRUE, 
+  cor.coef = TRUE, cor.method = "pearson") +
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Number of the population with 3 years or more post-secondary education",
+    y = "Salary of engineers"
+  )
+```
+
+```{r utbildningsniva441, echo = TRUE}
+tb <- readfile("AM0110A2_3.csv")
+tb <- readfile("AM0110A4_3.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex")) %>%
+  group_by (`region`, year) %>%   
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary.x)))) %>%
+  mutate (perc_salary = as.numeric (sub ("%", "", perc_sal (salary.y)))) %>%
+  mutate (sum_ing = sum(salary.x))  
+tb <- readfile("UF0506A1_1.csv") %>%
+  group_by(`level of education`, region, year, sex) %>%
+  mutate(utbregno = sum(salary)) %>%
+  group_by(region, year, sex) %>% mutate(perc_edu = utbregno / sum(utbregno)) %>%
+  group_by(region, year) %>% mutate(sum_pop = sum(utbregno)) %>%
+  group_by(`level of education`, region, year) %>%
+  mutate (sum_edu = sum(utbregno)) %>%
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  mutate (perc_eng = sum_ing / sum_edu) %>%
+  filter (`level of education` == "post-secondary education 3 years or more (ISCED97 5A)")
+ 
+tb1 <- tb %>% 
+  ungroup() %>% 
+  select(utbregno, year2, perc_edu, sum_pop, sum_edu, perc_women, perc_salary, sum_ing, perc_eng, salary.y) %>% 
+  na.omit()
+
+set.seed(1)
+
+cmodel <- cubist(tb1[, -10], tb1$salary.y)
+  
+summary(cmodel)  
+  
+model <- lm(log(salary.y) ~ year2 + perc_edu + sum_edu + sum_ing + perc_eng, data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Salary of engineers and population with 3 years or more post-secondary education')
+
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit') 
+```
+
 # The correlation between the proportion of Physical and engineering science technicians who are women and the number of the population in the region. Year 2014 - 2018
 Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex . Year 2014 - 2018
 Monthly salaty
