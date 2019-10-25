@@ -8,6 +8,9 @@ library (car)
 library (swemaps) # devtools::install_github('reinholdsson/swemaps')
 library (ggpubr)
 library (Cubist)
+library(PerformanceAnalytics)
+library(factoextra)
+library(clValid)
 
 nuts <- read_csv ("nuts.csv", col_types = cols(), locale = readr::locale (encoding = "UTF-8"), na = c("..", "NA"))
 
