@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-10-23" />
+<meta name="date" content="2019-10-27" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -197,8 +197,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="13.3" data-path="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html"><a href="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html#the-correlation-between-the-salary-of-physical-and-engineering-science-technicians-and-the-number-of-the-population-in-the-regions-year-2014---2018"><i class="fa fa-check"></i><b>13.3</b> The correlation between the salary of Physical and engineering science technicians and the number of the population in the regions, Year 2014 - 2018</a></li>
 <li class="chapter" data-level="13.4" data-path="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html"><a href="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html#the-correlation-between-the-salary-of-physical-and-engineering-science-technicians-and-the-number-of-physical-and-engineering-science-technicians-in-the-regions-year-2014---2018"><i class="fa fa-check"></i><b>13.4</b> The correlation between the salary of Physical and engineering science technicians and the number of Physical and engineering science technicians in the regions, Year 2014 - 2018</a></li>
 </ul></li>
-<li class="chapter" data-level="14" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>14</b> Appendix A</a></li>
-<li class="chapter" data-level="15" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>15</b> Appendix B</a></li>
+<li class="chapter" data-level="14" data-path="rd-expenditures.html"><a href="rd-expenditures.html"><i class="fa fa-check"></i><b>14</b> R&amp;D expenditures</a><ul>
+<li class="chapter" data-level="14.1" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-rd-person-years-performed-by-employees-of-a-higher-education-institution-by-region-and-per-cent-of-engineers-who-are-women"><i class="fa fa-check"></i><b>14.1</b> Correlation between R&amp;D person years performed by employees of a higher education institution by region and per cent of engineers who are women</a></li>
+<li class="chapter" data-level="14.2" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-total-rd-person-years-performed-by-employees-of-a-higher-education-institution-by-region-and-number-of-the-population-who-are-engineers"><i class="fa fa-check"></i><b>14.2</b> Correlation between total R&amp;D person years performed by employees of a higher education institution by region and number of the population who are engineers</a></li>
+<li class="chapter" data-level="14.3" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-regional-distribution-of-enterprises-rd-and-number-of-the-population-who-are-engineers"><i class="fa fa-check"></i><b>14.3</b> Correlation between regional distribution of enterprises R&amp;D and number of the population who are engineers</a></li>
+</ul></li>
+<li class="chapter" data-level="15" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>15</b> Appendix A</a></li>
+<li class="chapter" data-level="16" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>16</b> Appendix B</a></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
 <li class="divider"></li>
 <li><a href="https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping" target="blank">Github</a></li>
@@ -225,15 +230,15 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Employees 16-64 years by region of work, occupation (3-digit SSYK 2012) and sex. Year 2014 - 2017
 214 Engineering professionals<br />
 Year 2017</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" title="1"><span class="kw">options</span>(<span class="dt">tibble.print_max =</span> <span class="ot">Inf</span>)</a>
-<a class="sourceLine" id="cb28-2" title="2">         </a>
-<a class="sourceLine" id="cb28-3" title="3"><span class="kw">readfile</span> (<span class="st">&quot;000000NL_3.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb28-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb28-5" title="5"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb28-6" title="6"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (perc_women)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb28-7" title="7"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb28-8" title="8">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb28-9" title="9">  <span class="dt">caption =</span> <span class="st">&#39;Percent women in the countys, 214 Engineering professionals&#39;</span>)   </a></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb47-1" title="1"><span class="kw">options</span>(<span class="dt">tibble.print_max =</span> <span class="ot">Inf</span>)</a>
+<a class="sourceLine" id="cb47-2" title="2">         </a>
+<a class="sourceLine" id="cb47-3" title="3"><span class="kw">readfile</span> (<span class="st">&quot;000000NL_3.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb47-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb47-5" title="5"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb47-6" title="6"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (perc_women)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb47-7" title="7"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb47-8" title="8">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb47-9" title="9">  <span class="dt">caption =</span> <span class="st">&#39;Percent women in the countys, 214 Engineering professionals&#39;</span>)   </a></code></pre></div>
 <table>
 <caption><span id="tab:womencountys">Table 6.1: </span>Percent women in the countys, 214 Engineering professionals</caption>
 <thead>
@@ -356,15 +361,15 @@ Year 2017</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000NL_3.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb29-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb29-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb29-4" title="4"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">perc_women_n =</span> <span class="kw">as.numeric</span>(<span class="kw">sub</span>(<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, perc_women))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb29-5" title="5"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lnkod_n =</span> <span class="kw">as.numeric</span>(<span class="kw">substr</span>(region, <span class="dv">1</span>,<span class="dv">2</span>))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb29-6" title="6"><span class="st">  </span><span class="kw">right_join</span>(map_ln_n, <span class="dt">by =</span> <span class="st">&quot;lnkod_n&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb29-7" title="7"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb29-8" title="8"><span class="st">    </span><span class="kw">geom_polygon</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> ggplot_long, <span class="dt">y =</span> ggplot_lat, <span class="dt">group =</span> lnkod, <span class="dt">fill =</span> perc_women_n)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb29-9" title="9"><span class="st">    </span><span class="kw">coord_equal</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb48-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000NL_3.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb48-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb48-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb48-4" title="4"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">perc_women_n =</span> <span class="kw">as.numeric</span>(<span class="kw">sub</span>(<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, perc_women))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb48-5" title="5"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lnkod_n =</span> <span class="kw">as.numeric</span>(<span class="kw">substr</span>(region, <span class="dv">1</span>,<span class="dv">2</span>))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb48-6" title="6"><span class="st">  </span><span class="kw">right_join</span>(map_ln_n, <span class="dt">by =</span> <span class="st">&quot;lnkod_n&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb48-7" title="7"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb48-8" title="8"><span class="st">    </span><span class="kw">geom_polygon</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> ggplot_long, <span class="dt">y =</span> ggplot_lat, <span class="dt">group =</span> lnkod, <span class="dt">fill =</span> perc_women_n)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb48-9" title="9"><span class="st">    </span><span class="kw">coord_equal</span>()</a></code></pre></div>
 <div class="figure"><span id="fig:womencountys2"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/womencountys2-1.png" alt="Percent women in the countys, 214 Engineering professionals" width="672" />
 <p class="caption">
@@ -374,15 +379,15 @@ Figure 6.1: Percent women in the countys, 214 Engineering professionals
 <p>Employees 16-64 years by region of work, occupation (3-digit SSYK 2012) and sex. Year 2014 - 2017
 311 Physical and engineering science technicians
 Year 2017</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" title="1"><span class="kw">options</span>(<span class="dt">tibble.print_max =</span> <span class="ot">Inf</span>)</a>
-<a class="sourceLine" id="cb30-2" title="2">         </a>
-<a class="sourceLine" id="cb30-3" title="3"><span class="kw">readfile</span> (<span class="st">&quot;000000NL_4.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb30-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb30-5" title="5"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb30-6" title="6"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (perc_women)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb30-7" title="7"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
-<a class="sourceLine" id="cb30-8" title="8">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb30-9" title="9">  <span class="dt">caption =</span> <span class="st">&#39;Percent women in the countys, 311 Physical and engineering science technicians&#39;</span>)   </a></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb49-1" title="1"><span class="kw">options</span>(<span class="dt">tibble.print_max =</span> <span class="ot">Inf</span>)</a>
+<a class="sourceLine" id="cb49-2" title="2">         </a>
+<a class="sourceLine" id="cb49-3" title="3"><span class="kw">readfile</span> (<span class="st">&quot;000000NL_4.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb49-4" title="4"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb49-5" title="5"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb49-6" title="6"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (perc_women)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb49-7" title="7"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb49-8" title="8">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb49-9" title="9">  <span class="dt">caption =</span> <span class="st">&#39;Percent women in the countys, 311 Physical and engineering science technicians&#39;</span>)   </a></code></pre></div>
 <table>
 <caption><span id="tab:311womencountys">Table 6.2: </span>Percent women in the countys, 311 Physical and engineering science technicians</caption>
 <thead>
@@ -505,15 +510,15 @@ Year 2017</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000NL_4.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb31-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb31-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb31-4" title="4"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">perc_women_n =</span> <span class="kw">as.numeric</span>(<span class="kw">sub</span>(<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, perc_women))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb31-5" title="5"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lnkod_n =</span> <span class="kw">as.numeric</span>(<span class="kw">substr</span>(region, <span class="dv">1</span>,<span class="dv">2</span>))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb31-6" title="6"><span class="st">  </span><span class="kw">right_join</span>(map_ln_n, <span class="dt">by =</span> <span class="st">&quot;lnkod_n&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb31-7" title="7"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb31-8" title="8"><span class="st">    </span><span class="kw">geom_polygon</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> ggplot_long, <span class="dt">y =</span> ggplot_lat, <span class="dt">group =</span> lnkod, <span class="dt">fill =</span> perc_women_n)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb31-9" title="9"><span class="st">    </span><span class="kw">coord_equal</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb50-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000NL_4.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb50-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb50-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb50-4" title="4"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">perc_women_n =</span> <span class="kw">as.numeric</span>(<span class="kw">sub</span>(<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, perc_women))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb50-5" title="5"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lnkod_n =</span> <span class="kw">as.numeric</span>(<span class="kw">substr</span>(region, <span class="dv">1</span>,<span class="dv">2</span>))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb50-6" title="6"><span class="st">  </span><span class="kw">right_join</span>(map_ln_n, <span class="dt">by =</span> <span class="st">&quot;lnkod_n&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb50-7" title="7"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb50-8" title="8"><span class="st">    </span><span class="kw">geom_polygon</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> ggplot_long, <span class="dt">y =</span> ggplot_lat, <span class="dt">group =</span> lnkod, <span class="dt">fill =</span> perc_women_n)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb50-9" title="9"><span class="st">    </span><span class="kw">coord_equal</span>()</a></code></pre></div>
 <div class="figure"><span id="fig:311womencountys2"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/311womencountys2-1.png" alt="Percent women in the countys, 311 Physical and engineering science technicians" width="672" />
 <p class="caption">
@@ -523,13 +528,13 @@ Figure 6.2: Percent women in the countys, 311 Physical and engineering science t
 <p>Percent women in the countys<br />
 214 Engineering professionals<br />
 Joint-stock corporations not controlled by the government sector</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000RM.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb32-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb32-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span><span class="st">    </span></a>
-<a class="sourceLine" id="cb32-4" title="4"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (perc_women)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb32-5" title="5"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>(  </a>
-<a class="sourceLine" id="cb32-6" title="6">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb32-7" title="7">  <span class="dt">caption =</span> <span class="st">&#39;Percent women in the countys, 214 Engineering professionals, Joint-stock corporations not controlled by the government sector&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb51-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000RM.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb51-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb51-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span><span class="st">    </span></a>
+<a class="sourceLine" id="cb51-4" title="4"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (perc_women)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb51-5" title="5"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>(  </a>
+<a class="sourceLine" id="cb51-6" title="6">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb51-7" title="7">  <span class="dt">caption =</span> <span class="st">&#39;Percent women in the countys, 214 Engineering professionals, Joint-stock corporations not controlled by the government sector&#39;</span>)</a></code></pre></div>
 <table>
 <caption><span id="tab:womencountys3">Table 6.3: </span>Percent women in the countys, 214 Engineering professionals, Joint-stock corporations not controlled by the government sector</caption>
 <thead>
@@ -652,15 +657,15 @@ Joint-stock corporations not controlled by the government sector</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000RM.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb33-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb33-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb33-4" title="4"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">perc_women_n =</span> <span class="kw">as.numeric</span>(<span class="kw">sub</span>(<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, perc_women))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb33-5" title="5"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lnkod_n =</span> <span class="kw">as.numeric</span>(<span class="kw">substr</span>(region, <span class="dv">1</span>,<span class="dv">2</span>))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb33-6" title="6"><span class="st">  </span><span class="kw">right_join</span>(map_ln_n, <span class="dt">by =</span> <span class="st">&quot;lnkod_n&quot;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb33-7" title="7"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb33-8" title="8"><span class="st">    </span><span class="kw">geom_polygon</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> ggplot_long, <span class="dt">y =</span> ggplot_lat, <span class="dt">group =</span> lnkod, <span class="dt">fill =</span> perc_women_n)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb33-9" title="9"><span class="st">    </span><span class="kw">coord_equal</span>()   </a></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb52-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000RM.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb52-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb52-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">perc_women =</span> <span class="kw">perc_women</span> (salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb52-4" title="4"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">perc_women_n =</span> <span class="kw">as.numeric</span>(<span class="kw">sub</span>(<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, perc_women))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb52-5" title="5"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lnkod_n =</span> <span class="kw">as.numeric</span>(<span class="kw">substr</span>(region, <span class="dv">1</span>,<span class="dv">2</span>))) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb52-6" title="6"><span class="st">  </span><span class="kw">right_join</span>(map_ln_n, <span class="dt">by =</span> <span class="st">&quot;lnkod_n&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb52-7" title="7"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb52-8" title="8"><span class="st">    </span><span class="kw">geom_polygon</span>(<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> ggplot_long, <span class="dt">y =</span> ggplot_lat, <span class="dt">group =</span> lnkod, <span class="dt">fill =</span> perc_women_n)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb52-9" title="9"><span class="st">    </span><span class="kw">coord_equal</span>()   </a></code></pre></div>
 <div class="figure"><span id="fig:womencountys4"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/womencountys4-1.png" alt="Percent women in the countys, 214 Engineering professionals, Joint-stock corporations not controlled by the government sector" width="672" />
 <p class="caption">

@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-10-23" />
+<meta name="date" content="2019-10-27" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -197,8 +197,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="13.3" data-path="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html"><a href="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html#the-correlation-between-the-salary-of-physical-and-engineering-science-technicians-and-the-number-of-the-population-in-the-regions-year-2014---2018"><i class="fa fa-check"></i><b>13.3</b> The correlation between the salary of Physical and engineering science technicians and the number of the population in the regions, Year 2014 - 2018</a></li>
 <li class="chapter" data-level="13.4" data-path="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html"><a href="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html#the-correlation-between-the-salary-of-physical-and-engineering-science-technicians-and-the-number-of-physical-and-engineering-science-technicians-in-the-regions-year-2014---2018"><i class="fa fa-check"></i><b>13.4</b> The correlation between the salary of Physical and engineering science technicians and the number of Physical and engineering science technicians in the regions, Year 2014 - 2018</a></li>
 </ul></li>
-<li class="chapter" data-level="14" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>14</b> Appendix A</a></li>
-<li class="chapter" data-level="15" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>15</b> Appendix B</a></li>
+<li class="chapter" data-level="14" data-path="rd-expenditures.html"><a href="rd-expenditures.html"><i class="fa fa-check"></i><b>14</b> R&amp;D expenditures</a><ul>
+<li class="chapter" data-level="14.1" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-rd-person-years-performed-by-employees-of-a-higher-education-institution-by-region-and-per-cent-of-engineers-who-are-women"><i class="fa fa-check"></i><b>14.1</b> Correlation between R&amp;D person years performed by employees of a higher education institution by region and per cent of engineers who are women</a></li>
+<li class="chapter" data-level="14.2" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-total-rd-person-years-performed-by-employees-of-a-higher-education-institution-by-region-and-number-of-the-population-who-are-engineers"><i class="fa fa-check"></i><b>14.2</b> Correlation between total R&amp;D person years performed by employees of a higher education institution by region and number of the population who are engineers</a></li>
+<li class="chapter" data-level="14.3" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-regional-distribution-of-enterprises-rd-and-number-of-the-population-who-are-engineers"><i class="fa fa-check"></i><b>14.3</b> Correlation between regional distribution of enterprises R&amp;D and number of the population who are engineers</a></li>
+</ul></li>
+<li class="chapter" data-level="15" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>15</b> Appendix A</a></li>
+<li class="chapter" data-level="16" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>16</b> Appendix B</a></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
 <li class="divider"></li>
 <li><a href="https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping" target="blank">Github</a></li>
@@ -225,24 +230,24 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Employees 16-64 years by region of work, occupation (3-digit SSYK 2012) and sex. Year 2001 - 2017<br />
 Jönköping county, occupation=311 Physical and engineering science technicians, men and women<br />
 In 2014 SCB changed from SSYK96 to SSYK2012</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0208B6.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb26-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (year2) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb26-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">total =</span> <span class="kw">sum</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb26-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> ()<span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb26-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span> (<span class="dt">x =</span> year2, <span class="dt">y =</span> total)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb26-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)  </a></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb45-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0208B6.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb45-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (year2) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb45-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">total =</span> <span class="kw">sum</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb45-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> ()<span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb45-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span> (<span class="dt">x =</span> year2, <span class="dt">y =</span> total)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb45-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)  </a></code></pre></div>
 <div class="figure"><span id="fig:techniciansjkpg1"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/techniciansjkpg-1.png" alt="Technicians in Jönköping" width="672" />
 <p class="caption">
 Figure 5.1: Technicians in Jönköping
 </p>
 </div>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000NL.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb27-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (year2) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb27-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">total =</span> <span class="kw">sum</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb27-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb27-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span> (<span class="dt">x =</span> year2, <span class="dt">y =</span> total)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb27-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)   </a></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb46-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;000000NL.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb46-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (year2) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb46-3" title="3"><span class="st">  </span><span class="kw">summarise</span> (<span class="dt">total =</span> <span class="kw">sum</span> (salary)) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb46-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb46-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span> (<span class="dt">x =</span> year2, <span class="dt">y =</span> total)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb46-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)   </a></code></pre></div>
 <div class="figure"><span id="fig:techniciansjkpg2"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/techniciansjkpg-2.png" alt="Technicians in Jönköping" width="672" />
 <p class="caption">

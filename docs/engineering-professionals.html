@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-10-23" />
+<meta name="date" content="2019-10-27" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -197,8 +197,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="13.3" data-path="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html"><a href="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html#the-correlation-between-the-salary-of-physical-and-engineering-science-technicians-and-the-number-of-the-population-in-the-regions-year-2014---2018"><i class="fa fa-check"></i><b>13.3</b> The correlation between the salary of Physical and engineering science technicians and the number of the population in the regions, Year 2014 - 2018</a></li>
 <li class="chapter" data-level="13.4" data-path="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html"><a href="the-correlation-between-the-proportion-of-physical-and-engineering-science-technicians-who-are-women-and-the-number-of-the-population-in-the-region-year-2014-2018.html#the-correlation-between-the-salary-of-physical-and-engineering-science-technicians-and-the-number-of-physical-and-engineering-science-technicians-in-the-regions-year-2014---2018"><i class="fa fa-check"></i><b>13.4</b> The correlation between the salary of Physical and engineering science technicians and the number of Physical and engineering science technicians in the regions, Year 2014 - 2018</a></li>
 </ul></li>
-<li class="chapter" data-level="14" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>14</b> Appendix A</a></li>
-<li class="chapter" data-level="15" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>15</b> Appendix B</a></li>
+<li class="chapter" data-level="14" data-path="rd-expenditures.html"><a href="rd-expenditures.html"><i class="fa fa-check"></i><b>14</b> R&amp;D expenditures</a><ul>
+<li class="chapter" data-level="14.1" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-rd-person-years-performed-by-employees-of-a-higher-education-institution-by-region-and-per-cent-of-engineers-who-are-women"><i class="fa fa-check"></i><b>14.1</b> Correlation between R&amp;D person years performed by employees of a higher education institution by region and per cent of engineers who are women</a></li>
+<li class="chapter" data-level="14.2" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-total-rd-person-years-performed-by-employees-of-a-higher-education-institution-by-region-and-number-of-the-population-who-are-engineers"><i class="fa fa-check"></i><b>14.2</b> Correlation between total R&amp;D person years performed by employees of a higher education institution by region and number of the population who are engineers</a></li>
+<li class="chapter" data-level="14.3" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-regional-distribution-of-enterprises-rd-and-number-of-the-population-who-are-engineers"><i class="fa fa-check"></i><b>14.3</b> Correlation between regional distribution of enterprises R&amp;D and number of the population who are engineers</a></li>
+</ul></li>
+<li class="chapter" data-level="15" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>15</b> Appendix A</a></li>
+<li class="chapter" data-level="16" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>16</b> Appendix B</a></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
 <li class="divider"></li>
 <li><a href="https://github.com/MikaelLundqvist/SCB-Engineers-Jonkoping" target="blank">Github</a></li>
@@ -226,22 +231,22 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK<br />
 214 Engineering professionals<br />
 men and women</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb34-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103H2.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb34-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb34-3" title="3"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span> (<span class="dt">x =</span> year2, <span class="dt">y =</span> salary, <span class="dt">colour =</span> region)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb34-4" title="4"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)  </a></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb53-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103H2.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb53-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb53-3" title="3"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span> (<span class="dt">x =</span> year2, <span class="dt">y =</span> salary, <span class="dt">colour =</span> region)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb53-4" title="4"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)  </a></code></pre></div>
 <div class="figure"><span id="fig:Engineeringpro00-131"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/Engineeringpro00-13-1.png" alt="Engineering professionals, Year 2000 - 2013" width="672" />
 <p class="caption">
 Figure 7.1: Engineering professionals, Year 2000 - 2013
 </p>
 </div>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103H2.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb35-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (region) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb35-3" title="3"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">growth =</span> <span class="kw">c</span> (<span class="ot">NA</span>, <span class="kw">diff</span>(salary)) <span class="op">/</span><span class="st"> </span>salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb35-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">    </span></a>
-<a class="sourceLine" id="cb35-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2, <span class="dt">y =</span> growth, <span class="dt">colour =</span> region)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb35-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)    </a></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb54-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;AM0103H2.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb54-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (region) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb54-3" title="3"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">growth =</span> <span class="kw">c</span> (<span class="ot">NA</span>, <span class="kw">diff</span>(salary)) <span class="op">/</span><span class="st"> </span>salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb54-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">    </span></a>
+<a class="sourceLine" id="cb54-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2, <span class="dt">y =</span> growth, <span class="dt">colour =</span> region)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb54-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)    </a></code></pre></div>
 <pre><code>## Warning: Removed 2 rows containing missing values (geom_path).</code></pre>
 <div class="figure"><span id="fig:Engineeringpro00-132"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/Engineeringpro00-13-2.png" alt="Engineering professionals, Year 2000 - 2013" width="672" />
@@ -253,22 +258,22 @@ Figure 7.2: Engineering professionals, Year 2000 - 2013
 Average monthly pay (total pay), non-manual workers private sector (SLP), SEK<br />
 214 Engineering professionals<br />
 men and women</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb37-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;0000002T.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb37-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb37-3" title="3"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span> (<span class="dt">x =</span> year2, <span class="dt">y =</span> salary, <span class="dt">colour =</span> region)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb37-4" title="4"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)  </a></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;0000002T.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb56-2" title="2"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb56-3" title="3"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span> (<span class="dt">x =</span> year2, <span class="dt">y =</span> salary, <span class="dt">colour =</span> region)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb56-4" title="4"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)  </a></code></pre></div>
 <div class="figure"><span id="fig:Engineeringpro14-181"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/Engineeringpro14-18-1.png" alt="Engineering professionals, Year 2014 - 2018" width="672" />
 <p class="caption">
 Figure 7.3: Engineering professionals, Year 2014 - 2018
 </p>
 </div>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb38-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;0000002T.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
-<a class="sourceLine" id="cb38-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (region) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb38-3" title="3"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">growth =</span> <span class="kw">c</span> (<span class="ot">NA</span>, <span class="kw">diff</span>(salary)) <span class="op">/</span><span class="st"> </span>salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb38-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">    </span></a>
-<a class="sourceLine" id="cb38-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2, <span class="dt">y =</span> growth, <span class="dt">colour =</span> region)) <span class="op">+</span><span class="st">  </span></a>
-<a class="sourceLine" id="cb38-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)  </a></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" title="1"><span class="kw">readfile</span> (<span class="st">&quot;0000002T.csv&quot;</span>) <span class="op">%&gt;%</span><span class="st">   </span></a>
+<a class="sourceLine" id="cb57-2" title="2"><span class="st">  </span><span class="kw">group_by</span> (region) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb57-3" title="3"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">growth =</span> <span class="kw">c</span> (<span class="ot">NA</span>, <span class="kw">diff</span>(salary)) <span class="op">/</span><span class="st"> </span>salary) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb57-4" title="4"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span><span class="st">    </span></a>
+<a class="sourceLine" id="cb57-5" title="5"><span class="st">    </span><span class="kw">geom_line</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> year2, <span class="dt">y =</span> growth, <span class="dt">colour =</span> region)) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb57-6" title="6"><span class="st">    </span><span class="kw">theme</span> (<span class="dt">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)  </a></code></pre></div>
 <pre><code>## Warning: Removed 2 rows containing missing values (geom_path).</code></pre>
 <div class="figure"><span id="fig:Engineeringpro14-182"></span>
 <img src="SCB-Engineers-Jonkoping_files/figure-html/Engineeringpro14-18-2.png" alt="Engineering professionals, Year 2014 - 2018" width="672" />
