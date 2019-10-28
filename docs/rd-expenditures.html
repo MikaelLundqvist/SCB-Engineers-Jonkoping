@@ -24,7 +24,7 @@
 <meta name="author" content="Mikael Lundqvist" />
 
 
-<meta name="date" content="2019-10-27" />
+<meta name="date" content="2019-10-28" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -201,6 +201,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="14.1" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-rd-person-years-performed-by-employees-of-a-higher-education-institution-by-region-and-per-cent-of-engineers-who-are-women"><i class="fa fa-check"></i><b>14.1</b> Correlation between R&amp;D person years performed by employees of a higher education institution by region and per cent of engineers who are women</a></li>
 <li class="chapter" data-level="14.2" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-total-rd-person-years-performed-by-employees-of-a-higher-education-institution-by-region-and-number-of-the-population-who-are-engineers"><i class="fa fa-check"></i><b>14.2</b> Correlation between total R&amp;D person years performed by employees of a higher education institution by region and number of the population who are engineers</a></li>
 <li class="chapter" data-level="14.3" data-path="rd-expenditures.html"><a href="rd-expenditures.html#correlation-between-regional-distribution-of-enterprises-rd-and-number-of-the-population-who-are-engineers"><i class="fa fa-check"></i><b>14.3</b> Correlation between regional distribution of enterprises R&amp;D and number of the population who are engineers</a></li>
+<li class="chapter" data-level="14.4" data-path="rd-expenditures.html"><a href="rd-expenditures.html#f-value-for-regional-distribution-of-enterprises-rd-compared-to-the-level-of-regional-distribution-of-enterprises-rd"><i class="fa fa-check"></i><b>14.4</b> F-value for Regional distribution of enterprises R&amp;D compared to the level of Regional distribution of enterprises R&amp;D</a></li>
 </ul></li>
 <li class="chapter" data-level="15" data-path="appendix-a.html"><a href="appendix-a.html"><i class="fa fa-check"></i><b>15</b> Appendix A</a></li>
 <li class="chapter" data-level="16" data-path="appendix-b.html"><a href="appendix-b.html"><i class="fa fa-check"></i><b>16</b> Appendix B</a></li>
@@ -1469,6 +1470,814 @@ Figure 14.5: Correlation between total R&amp;D person years performed by employe
 Figure 14.6: Correlation between regional distribution of enterprises R&amp;D and number of the population who are engineers
 </p>
 </div>
+</div>
+<div id="f-value-for-regional-distribution-of-enterprises-rd-compared-to-the-level-of-regional-distribution-of-enterprises-rd" class="section level2">
+<h2><span class="header-section-number">14.4</span> F-value for Regional distribution of enterprises R&amp;D compared to the level of Regional distribution of enterprises R&amp;D</h2>
+<div class="sourceCode" id="cb292"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb292-1" title="1">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000000NL_10.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-2" title="2"><span class="st">  </span><span class="kw">filter</span>(salary <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-3" title="3"><span class="st">  </span><span class="kw">group_by</span> (<span class="st">`</span><span class="dt">region</span><span class="st">`</span>, year, <span class="st">`</span><span class="dt">occupation (SSYK 2012)</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb292-4" title="4"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">perc_women =</span> <span class="kw">as.numeric</span> (<span class="kw">sub</span> (<span class="st">&quot;%&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="kw">perc_women</span> (salary))))</a>
+<a class="sourceLine" id="cb292-5" title="5">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;UF0506A1_2.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-6" title="6"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year, sex) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-7" title="7"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">utbregno =</span> <span class="kw">sum</span>(salary)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-8" title="8"><span class="st">  </span><span class="kw">group_by</span>(region, year, sex) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">perc_edu =</span> utbregno <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-9" title="9"><span class="st">  </span><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span>, region, year) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-10" title="10"><span class="st">  </span><span class="kw">mutate</span> (<span class="dt">sum_edu =</span> <span class="kw">sum</span>(utbregno)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-11" title="11"><span class="st">  </span><span class="kw">filter</span> (<span class="st">`</span><span class="dt">level of education</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;post-secondary education 3 years or more (ISCED97 5A)&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-12" title="12"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;sex&quot;</span>))</a>
+<a class="sourceLine" id="cb292-13" title="13">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000002O5.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-14" title="14"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>))</a>
+<a class="sourceLine" id="cb292-15" title="15">tb &lt;-<span class="st"> </span><span class="kw">readfile</span>(<span class="st">&quot;000002LR.csv&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-16" title="16"><span class="st">  </span><span class="kw">right_join</span>(tb, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&quot;region&quot;</span>, <span class="st">&quot;year&quot;</span>))</a>
+<a class="sourceLine" id="cb292-17" title="17">  </a>
+<a class="sourceLine" id="cb292-18" title="18">summary_table =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb292-19" title="19">anova_table =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb292-20" title="20"> </a>
+<a class="sourceLine" id="cb292-21" title="21"><span class="cf">for</span> (i <span class="cf">in</span> <span class="kw">unique</span>(tb<span class="op">$</span><span class="st">`</span><span class="dt">occupation (SSYK 2012)</span><span class="st">`</span>)){</a>
+<a class="sourceLine" id="cb292-22" title="22">  temp &lt;-<span class="st"> </span><span class="kw">filter</span>(tb, <span class="st">`</span><span class="dt">occupation (SSYK 2012)</span><span class="st">`</span> <span class="op">==</span><span class="st"> </span>i)</a>
+<a class="sourceLine" id="cb292-23" title="23">  <span class="cf">if</span> (<span class="kw">dim</span>(temp)[<span class="dv">1</span>] <span class="op">&gt;</span><span class="st"> </span><span class="dv">50</span>){</a>
+<a class="sourceLine" id="cb292-24" title="24">    model &lt;-<span class="st"> </span><span class="kw">lm</span>(perc_women <span class="op">~</span><span class="st"> </span>salary.x.x <span class="op">+</span><span class="st"> </span>year2.x, <span class="dt">data =</span> temp)</a>
+<a class="sourceLine" id="cb292-25" title="25">    summary_table &lt;-<span class="st"> </span><span class="kw">rbind</span> (summary_table, <span class="kw">mutate</span> (<span class="kw">tidy</span> (<span class="kw">summary</span> (model)), <span class="dt">ssyk =</span> i))</a>
+<a class="sourceLine" id="cb292-26" title="26">    anova_table &lt;-<span class="st"> </span><span class="kw">rbind</span> (anova_table, <span class="kw">mutate</span> (<span class="kw">tidy</span> (<span class="kw">Anova</span> (model, <span class="dt">type =</span> <span class="dv">2</span>)), <span class="dt">ssyk =</span> i))</a>
+<a class="sourceLine" id="cb292-27" title="27">  }</a>
+<a class="sourceLine" id="cb292-28" title="28">}  </a>
+<a class="sourceLine" id="cb292-29" title="29"></a>
+<a class="sourceLine" id="cb292-30" title="30"><span class="kw">merge</span>(summary_table, anova_table, <span class="dt">by =</span> <span class="st">&quot;ssyk&quot;</span>, <span class="dt">all =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-31" title="31"><span class="st">  </span><span class="kw">filter</span> (term.y <span class="op">==</span><span class="st"> &quot;salary.x.x&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-32" title="32"><span class="st">  </span><span class="kw">filter</span> (term.x <span class="op">==</span><span class="st"> &quot;salary.x.x&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb292-33" title="33"><span class="st">  </span><span class="kw">ggplot</span> () <span class="op">+</span></a>
+<a class="sourceLine" id="cb292-34" title="34"><span class="st">    </span><span class="kw">geom_point</span> (<span class="dt">mapping =</span> <span class="kw">aes</span>(<span class="dt">x =</span> estimate, <span class="dt">y =</span> statistic.y))</a></code></pre></div>
+<div class="figure"><span id="fig:rndexpenditures8"></span>
+<img src="SCB-Engineers-Jonkoping_files/figure-html/rndexpenditures8-1.png" alt="F-value for Regional distribution of enterprises R&amp;D compared to the level of Regional distribution of enterprises R&amp;D" width="672" />
+<p class="caption">
+Figure 14.7: F-value for Regional distribution of enterprises R&amp;D compared to the level of Regional distribution of enterprises R&amp;D
+</p>
+</div>
+<div class="sourceCode" id="cb293"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb293-1" title="1"><span class="kw">merge</span>(summary_table, anova_table, <span class="dt">by =</span> <span class="st">&quot;ssyk&quot;</span>, <span class="dt">all =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb293-2" title="2"><span class="st">  </span><span class="kw">filter</span> (term.y <span class="op">==</span><span class="st"> &quot;salary.x.x&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb293-3" title="3"><span class="st">  </span><span class="kw">filter</span> (term.x <span class="op">==</span><span class="st"> &quot;salary.x.x&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb293-4" title="4"><span class="st">  </span><span class="kw">select</span> (ssyk, estimate, statistic.y) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb293-5" title="5"><span class="st">  </span><span class="kw">arrange</span> (<span class="kw">desc</span> (statistic.y)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb293-6" title="6"><span class="st">  </span>knitr<span class="op">::</span><span class="kw">kable</span>( </a>
+<a class="sourceLine" id="cb293-7" title="7">  <span class="dt">booktabs =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb293-8" title="8">  <span class="dt">caption =</span> <span class="st">&#39;Correlation F-value for Regional distribution of enterprises R&amp;D compared to the level of Regional distribution of enterprises R&amp;D&#39;</span>) </a></code></pre></div>
+<table>
+<caption><span id="tab:rndexpenditures8">Table 14.5: </span>Correlation F-value for Regional distribution of enterprises R&amp;D compared to the level of Regional distribution of enterprises R&amp;D</caption>
+<thead>
+<tr class="header">
+<th align="left">ssyk</th>
+<th align="right">estimate</th>
+<th align="right">statistic.y</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">911 Cleaners and helpers</td>
+<td align="right">-0.0030996</td>
+<td align="right">182.2383184</td>
+</tr>
+<tr class="even">
+<td align="left">221 Medical doctors</td>
+<td align="right">0.0011671</td>
+<td align="right">122.5231685</td>
+</tr>
+<tr class="odd">
+<td align="left">941 Fast-food workers, food preparation assistants</td>
+<td align="right">-0.0024852</td>
+<td align="right">104.3717811</td>
+</tr>
+<tr class="even">
+<td align="left">232 Vocational education teachers</td>
+<td align="right">0.0026742</td>
+<td align="right">87.0970487</td>
+</tr>
+<tr class="odd">
+<td align="left">311 Physical and engineering science technicians</td>
+<td align="right">0.0009277</td>
+<td align="right">72.9055322</td>
+</tr>
+<tr class="even">
+<td align="left">512 Cooks and cold-buffet managers</td>
+<td align="right">-0.0032370</td>
+<td align="right">66.5884816</td>
+</tr>
+<tr class="odd">
+<td align="left">137 Production managers in manufacturing</td>
+<td align="right">0.0015297</td>
+<td align="right">62.8338593</td>
+</tr>
+<tr class="even">
+<td align="left">134 Architectural and engineering managers</td>
+<td align="right">0.0021929</td>
+<td align="right">61.1692588</td>
+</tr>
+<tr class="odd">
+<td align="left">513 Waiters and bartenders</td>
+<td align="right">-0.0020032</td>
+<td align="right">58.0257962</td>
+</tr>
+<tr class="even">
+<td align="left">832 Car, van and motorcycle drivers</td>
+<td align="right">-0.0013658</td>
+<td align="right">55.9610864</td>
+</tr>
+<tr class="odd">
+<td align="left">831 Train operators and related workers</td>
+<td align="right">0.0024045</td>
+<td align="right">53.9025509</td>
+</tr>
+<tr class="even">
+<td align="left">213 Biologists, pharmacologists and specialists in agriculture and forestry</td>
+<td align="right">0.0047037</td>
+<td align="right">51.6416883</td>
+</tr>
+<tr class="odd">
+<td align="left">532 Personal care workers in health services</td>
+<td align="right">-0.0008095</td>
+<td align="right">50.9190498</td>
+</tr>
+<tr class="even">
+<td align="left">514 Hairdressers, beauty and body therapists</td>
+<td align="right">-0.0014734</td>
+<td align="right">50.6911754</td>
+</tr>
+<tr class="odd">
+<td align="left">345 Culinary associate professionals</td>
+<td align="right">-0.0036857</td>
+<td align="right">47.9421863</td>
+</tr>
+<tr class="even">
+<td align="left">962 Newspaper distributors, janitors and other service workers</td>
+<td align="right">-0.0014001</td>
+<td align="right">46.7552071</td>
+</tr>
+<tr class="odd">
+<td align="left">214 Engineering professionals</td>
+<td align="right">0.0016934</td>
+<td align="right">42.6919074</td>
+</tr>
+<tr class="even">
+<td align="left">612 Animal breeders and keepers</td>
+<td align="right">0.0041226</td>
+<td align="right">40.8091027</td>
+</tr>
+<tr class="odd">
+<td align="left">331 Financial and accounting associate professionals</td>
+<td align="right">-0.0010927</td>
+<td align="right">38.5049439</td>
+</tr>
+<tr class="even">
+<td align="left">411 Office assistants and other secretaries</td>
+<td align="right">-0.0005466</td>
+<td align="right">35.3593101</td>
+</tr>
+<tr class="odd">
+<td align="left">442 Postmen and postal facility workers</td>
+<td align="right">-0.0018570</td>
+<td align="right">34.9533005</td>
+</tr>
+<tr class="even">
+<td align="left">122 Human resource managers</td>
+<td align="right">0.0022329</td>
+<td align="right">33.1443604</td>
+</tr>
+<tr class="odd">
+<td align="left">138 Forestry and agricultural production managers</td>
+<td align="right">0.0035502</td>
+<td align="right">32.2061328</td>
+</tr>
+<tr class="even">
+<td align="left">136 Production managers in construction and mining</td>
+<td align="right">0.0007508</td>
+<td align="right">31.3124199</td>
+</tr>
+<tr class="odd">
+<td align="left">441 Library and filing clerks</td>
+<td align="right">-0.0023673</td>
+<td align="right">30.4650658</td>
+</tr>
+<tr class="even">
+<td align="left">125 Sales and marketing managers</td>
+<td align="right">0.0014675</td>
+<td align="right">27.7781933</td>
+</tr>
+<tr class="odd">
+<td align="left">132 Supply, logistics and transport managers</td>
+<td align="right">0.0012752</td>
+<td align="right">23.7529612</td>
+</tr>
+<tr class="even">
+<td align="left">242 Organisation analysts, policy administrators and human resource specialists</td>
+<td align="right">-0.0007277</td>
+<td align="right">22.7969692</td>
+</tr>
+<tr class="odd">
+<td align="left">817 Wood processing and papermaking plant operators</td>
+<td align="right">0.0012658</td>
+<td align="right">22.4301002</td>
+</tr>
+<tr class="even">
+<td align="left">141 Primary and secondary schools and adult education managers</td>
+<td align="right">0.0012615</td>
+<td align="right">21.8622482</td>
+</tr>
+<tr class="odd">
+<td align="left">133 Research and development managers</td>
+<td align="right">0.0025322</td>
+<td align="right">20.3768786</td>
+</tr>
+<tr class="even">
+<td align="left">819 Process control technicians</td>
+<td align="right">0.0011769</td>
+<td align="right">20.0741880</td>
+</tr>
+<tr class="odd">
+<td align="left">0002 occupations unidentifiable</td>
+<td align="right">0.0005205</td>
+<td align="right">18.8624174</td>
+</tr>
+<tr class="even">
+<td align="left">711 Carpenters, bricklayers and construction workers</td>
+<td align="right">-0.0001930</td>
+<td align="right">18.0597988</td>
+</tr>
+<tr class="odd">
+<td align="left">613 Mixed crop and animal breeders</td>
+<td align="right">0.0016658</td>
+<td align="right">17.2620922</td>
+</tr>
+<tr class="even">
+<td align="left">952 Street and market vendors</td>
+<td align="right">-0.0046963</td>
+<td align="right">16.0411516</td>
+</tr>
+<tr class="odd">
+<td align="left">534 Attendants, personal assistants and related workers</td>
+<td align="right">-0.0008334</td>
+<td align="right">15.9973139</td>
+</tr>
+<tr class="even">
+<td align="left">533 Health care assistants</td>
+<td align="right">-0.0009220</td>
+<td align="right">15.3757533</td>
+</tr>
+<tr class="odd">
+<td align="left">234 Primary- and pre-school teachers</td>
+<td align="right">-0.0004133</td>
+<td align="right">15.2368418</td>
+</tr>
+<tr class="even">
+<td align="left">129 Administration and service managers not elsewhere classified</td>
+<td align="right">0.0009603</td>
+<td align="right">14.9740988</td>
+</tr>
+<tr class="odd">
+<td align="left">516 Other service related workers</td>
+<td align="right">0.0019281</td>
+<td align="right">14.9655338</td>
+</tr>
+<tr class="even">
+<td align="left">312 Construction and manufacturing supervisors</td>
+<td align="right">0.0005142</td>
+<td align="right">14.7842494</td>
+</tr>
+<tr class="odd">
+<td align="left">241 Accountants, financial analysts and fund managers</td>
+<td align="right">-0.0010991</td>
+<td align="right">13.8078711</td>
+</tr>
+<tr class="even">
+<td align="left">179 Other services managers not elsewhere classified</td>
+<td align="right">0.0012453</td>
+<td align="right">13.7755966</td>
+</tr>
+<tr class="odd">
+<td align="left">522 Shop staff</td>
+<td align="right">-0.0005233</td>
+<td align="right">13.4411826</td>
+</tr>
+<tr class="even">
+<td align="left">933 Dockers and ground personnel</td>
+<td align="right">-0.0012789</td>
+<td align="right">13.0784229</td>
+</tr>
+<tr class="odd">
+<td align="left">351 ICT operations and user support technicians</td>
+<td align="right">0.0006981</td>
+<td align="right">13.0560672</td>
+</tr>
+<tr class="even">
+<td align="left">262 Museum curators and librarians and related professionals</td>
+<td align="right">-0.0011223</td>
+<td align="right">12.2777588</td>
+</tr>
+<tr class="odd">
+<td align="left">761 Butchers, bakers and food processors</td>
+<td align="right">-0.0026786</td>
+<td align="right">12.1783273</td>
+</tr>
+<tr class="even">
+<td align="left">121 Finance managers</td>
+<td align="right">-0.0010096</td>
+<td align="right">12.0177082</td>
+</tr>
+<tr class="odd">
+<td align="left">266 Social work and counselling professionals</td>
+<td align="right">-0.0005584</td>
+<td align="right">11.9755481</td>
+</tr>
+<tr class="even">
+<td align="left">713 Painters, Lacquerers, Chimney-sweepers and related trades workers</td>
+<td align="right">-0.0006715</td>
+<td align="right">10.7393561</td>
+</tr>
+<tr class="odd">
+<td align="left">135 Real estate and head of administration manager</td>
+<td align="right">0.0012192</td>
+<td align="right">10.5601787</td>
+</tr>
+<tr class="even">
+<td align="left">721 Sheet and structural metal workers, moulders and welders, and related workers</td>
+<td align="right">-0.0002850</td>
+<td align="right">10.3858424</td>
+</tr>
+<tr class="odd">
+<td align="left">332 Insurance advisers, sales and purchasing agents</td>
+<td align="right">0.0007277</td>
+<td align="right">9.8611424</td>
+</tr>
+<tr class="even">
+<td align="left">216 Architects and surveyors</td>
+<td align="right">0.0010543</td>
+<td align="right">8.5326492</td>
+</tr>
+<tr class="odd">
+<td align="left">815 Machine operators, textile, fur and leather products</td>
+<td align="right">-0.0020888</td>
+<td align="right">8.1456890</td>
+</tr>
+<tr class="even">
+<td align="left">523 Cashiers and related clerks</td>
+<td align="right">-0.0009472</td>
+<td align="right">7.8879684</td>
+</tr>
+<tr class="odd">
+<td align="left">265 Creative and performing artists</td>
+<td align="right">-0.0012359</td>
+<td align="right">7.7239943</td>
+</tr>
+<tr class="even">
+<td align="left">816 Machine operators, food and related products</td>
+<td align="right">-0.0014418</td>
+<td align="right">6.6018433</td>
+</tr>
+<tr class="odd">
+<td align="left">223 Nursing professionals (cont.)</td>
+<td align="right">-0.0003366</td>
+<td align="right">6.5061862</td>
+</tr>
+<tr class="even">
+<td align="left">151 Health care managers</td>
+<td align="right">-0.0005436</td>
+<td align="right">6.3475749</td>
+</tr>
+<tr class="odd">
+<td align="left">264 Authors, journalists and linguists</td>
+<td align="right">0.0007703</td>
+<td align="right">6.2738005</td>
+</tr>
+<tr class="even">
+<td align="left">834 Mobile plant operators</td>
+<td align="right">0.0004162</td>
+<td align="right">5.8211196</td>
+</tr>
+<tr class="odd">
+<td align="left">235 Teaching professionals not elsewhere classified</td>
+<td align="right">0.0005917</td>
+<td align="right">5.6025008</td>
+</tr>
+<tr class="even">
+<td align="left">174 Sports, leisure and wellness managers</td>
+<td align="right">0.0019824</td>
+<td align="right">5.4125857</td>
+</tr>
+<tr class="odd">
+<td align="left">021 Non-commissioned armed forces officers</td>
+<td align="right">-0.0014815</td>
+<td align="right">5.3387915</td>
+</tr>
+<tr class="even">
+<td align="left">535 Dental nurses</td>
+<td align="right">-0.0001425</td>
+<td align="right">5.3242471</td>
+</tr>
+<tr class="odd">
+<td align="left">212 Mathematicians, actuaries and statisticians</td>
+<td align="right">-0.0024328</td>
+<td align="right">5.1766496</td>
+</tr>
+<tr class="even">
+<td align="left">172 Restaurant managers</td>
+<td align="right">-0.0006944</td>
+<td align="right">4.6592000</td>
+</tr>
+<tr class="odd">
+<td align="left">173 Retail and wholesale trade managers</td>
+<td align="right">0.0005362</td>
+<td align="right">4.2604295</td>
+</tr>
+<tr class="even">
+<td align="left">742 Electronics and telecommunications installers and repairers</td>
+<td align="right">0.0002631</td>
+<td align="right">4.1515159</td>
+</tr>
+<tr class="odd">
+<td align="left">741 Electrical equipment installers and repairers</td>
+<td align="right">0.0000985</td>
+<td align="right">4.1380495</td>
+</tr>
+<tr class="even">
+<td align="left">344 Driving instructors and other instructors</td>
+<td align="right">0.0007466</td>
+<td align="right">4.0426757</td>
+</tr>
+<tr class="odd">
+<td align="left">912 Washers, window cleaners and other cleaning workers</td>
+<td align="right">-0.0011824</td>
+<td align="right">4.0388717</td>
+</tr>
+<tr class="even">
+<td align="left">159 Other social services managers</td>
+<td align="right">0.0005640</td>
+<td align="right">3.8322867</td>
+</tr>
+<tr class="odd">
+<td align="left">511 Cabin crew, guides and related workers</td>
+<td align="right">-0.0010675</td>
+<td align="right">3.8092027</td>
+</tr>
+<tr class="even">
+<td align="left">931 Construction labourers</td>
+<td align="right">-0.0003903</td>
+<td align="right">3.7495964</td>
+</tr>
+<tr class="odd">
+<td align="left">321 Medical and pharmaceutical technicians</td>
+<td align="right">0.0007264</td>
+<td align="right">3.7423088</td>
+</tr>
+<tr class="even">
+<td align="left">226 Dentists</td>
+<td align="right">0.0005561</td>
+<td align="right">3.5781833</td>
+</tr>
+<tr class="odd">
+<td align="left">323 Complementary medicine therapists and associate professionals</td>
+<td align="right">0.0016120</td>
+<td align="right">3.5630309</td>
+</tr>
+<tr class="even">
+<td align="left">325 Dental hygienists</td>
+<td align="right">-0.0002400</td>
+<td align="right">3.4556858</td>
+</tr>
+<tr class="odd">
+<td align="left">732 Printing trades workers</td>
+<td align="right">-0.0007322</td>
+<td align="right">3.3387800</td>
+</tr>
+<tr class="even">
+<td align="left">421 Croupiers, debt collectors and related workers</td>
+<td align="right">-0.0017245</td>
+<td align="right">3.3166418</td>
+</tr>
+<tr class="odd">
+<td align="left">131 Information and communications technology service managers</td>
+<td align="right">0.0005547</td>
+<td align="right">3.2281010</td>
+</tr>
+<tr class="even">
+<td align="left">149 Education managers not elsewhere classified</td>
+<td align="right">0.0013691</td>
+<td align="right">2.8201834</td>
+</tr>
+<tr class="odd">
+<td align="left">224 Psychologists and psychotherapists</td>
+<td align="right">0.0003523</td>
+<td align="right">2.7719052</td>
+</tr>
+<tr class="even">
+<td align="left">752 Wood treaters, cabinet-makers and related trades workers</td>
+<td align="right">-0.0004144</td>
+<td align="right">2.7489510</td>
+</tr>
+<tr class="odd">
+<td align="left">336 Police officers</td>
+<td align="right">0.0002912</td>
+<td align="right">2.6853439</td>
+</tr>
+<tr class="even">
+<td align="left">112 Managing directors and chief executives</td>
+<td align="right">0.0004770</td>
+<td align="right">2.6272481</td>
+</tr>
+<tr class="odd">
+<td align="left">123 Administration and planning managers</td>
+<td align="right">0.0009542</td>
+<td align="right">2.5931760</td>
+</tr>
+<tr class="even">
+<td align="left">813 Machine operators, chemical and pharmaceutical products</td>
+<td align="right">0.0015989</td>
+<td align="right">2.5770693</td>
+</tr>
+<tr class="odd">
+<td align="left">541 Other surveillance and security workers</td>
+<td align="right">-0.0004414</td>
+<td align="right">2.3015605</td>
+</tr>
+<tr class="even">
+<td align="left">443 Elected representatives</td>
+<td align="right">0.0014827</td>
+<td align="right">2.2531501</td>
+</tr>
+<tr class="odd">
+<td align="left">228 Specialists in health care not elsewhere classified</td>
+<td align="right">-0.0002941</td>
+<td align="right">2.0996543</td>
+</tr>
+<tr class="even">
+<td align="left">812 Metal processing and finishing plant operators</td>
+<td align="right">-0.0003770</td>
+<td align="right">2.0290928</td>
+</tr>
+<tr class="odd">
+<td align="left">731 Precision-instrument makers and handicraft workers</td>
+<td align="right">-0.0010310</td>
+<td align="right">1.9894240</td>
+</tr>
+<tr class="even">
+<td align="left">218 Specialists within environmental and health protection</td>
+<td align="right">0.0004343</td>
+<td align="right">1.9890362</td>
+</tr>
+<tr class="odd">
+<td align="left">921 Berry pickers and planters</td>
+<td align="right">0.0010203</td>
+<td align="right">1.9250652</td>
+</tr>
+<tr class="even">
+<td align="left">334 Administrative and specialized secretaries</td>
+<td align="right">0.0005837</td>
+<td align="right">1.9073946</td>
+</tr>
+<tr class="odd">
+<td align="left">524 Event seller and telemarketers</td>
+<td align="right">-0.0007815</td>
+<td align="right">1.8993126</td>
+</tr>
+<tr class="even">
+<td align="left">152 Managers in social and curative care</td>
+<td align="right">0.0005667</td>
+<td align="right">1.7933247</td>
+</tr>
+<tr class="odd">
+<td align="left">153 Elderly care managers</td>
+<td align="right">-0.0002735</td>
+<td align="right">1.7135293</td>
+</tr>
+<tr class="even">
+<td align="left">818 Other stationary plant and machine operators</td>
+<td align="right">-0.0008982</td>
+<td align="right">1.6778246</td>
+</tr>
+<tr class="odd">
+<td align="left">111 Legislators and senior officials</td>
+<td align="right">0.0005527</td>
+<td align="right">1.6102363</td>
+</tr>
+<tr class="even">
+<td align="left">154 Managers and leaders within religious bodies</td>
+<td align="right">0.0010633</td>
+<td align="right">1.4201370</td>
+</tr>
+<tr class="odd">
+<td align="left">225 Veterinarians</td>
+<td align="right">0.0004125</td>
+<td align="right">1.3545138</td>
+</tr>
+<tr class="even">
+<td align="left">333 Business services agents</td>
+<td align="right">-0.0002360</td>
+<td align="right">1.2612291</td>
+</tr>
+<tr class="odd">
+<td align="left">217 Designers</td>
+<td align="right">-0.0005639</td>
+<td align="right">1.1260004</td>
+</tr>
+<tr class="even">
+<td align="left">231 University and higher education teachers</td>
+<td align="right">-0.0004262</td>
+<td align="right">1.1018661</td>
+</tr>
+<tr class="odd">
+<td align="left">233 Secondary education teachers</td>
+<td align="right">-0.0001749</td>
+<td align="right">1.0323567</td>
+</tr>
+<tr class="even">
+<td align="left">814 Machine operators, rubber, plastic and paper products</td>
+<td align="right">-0.0005303</td>
+<td align="right">0.8203157</td>
+</tr>
+<tr class="odd">
+<td align="left">124 Information, communication and public relations managers</td>
+<td align="right">0.0004612</td>
+<td align="right">0.8178175</td>
+</tr>
+<tr class="even">
+<td align="left">227 Naprapaths, physiotherapists, occupational therapists</td>
+<td align="right">-0.0001312</td>
+<td align="right">0.7864043</td>
+</tr>
+<tr class="odd">
+<td align="left">211 Physicists and chemists</td>
+<td align="right">0.0006338</td>
+<td align="right">0.7193156</td>
+</tr>
+<tr class="even">
+<td align="left">622 Aquaculture and fishery workers</td>
+<td align="right">-0.0008068</td>
+<td align="right">0.7039453</td>
+</tr>
+<tr class="odd">
+<td align="left">011 Commissioned armed forces officers</td>
+<td align="right">0.0002307</td>
+<td align="right">0.6772185</td>
+</tr>
+<tr class="even">
+<td align="left">251 ICT architects, systems analysts and test managers</td>
+<td align="right">-0.0001260</td>
+<td align="right">0.6656660</td>
+</tr>
+<tr class="odd">
+<td align="left">833 Heavy truck and bus drivers</td>
+<td align="right">0.0000787</td>
+<td align="right">0.6401266</td>
+</tr>
+<tr class="even">
+<td align="left">267 Religious professionals and deacons</td>
+<td align="right">0.0002932</td>
+<td align="right">0.5786666</td>
+</tr>
+<tr class="odd">
+<td align="left">811 Mining and mineral processing plant operators</td>
+<td align="right">-0.0001851</td>
+<td align="right">0.5550635</td>
+</tr>
+<tr class="even">
+<td align="left">821 Assemblers</td>
+<td align="right">-0.0002720</td>
+<td align="right">0.5443326</td>
+</tr>
+<tr class="odd">
+<td align="left">352 Broadcasting and audio-visual technicians</td>
+<td align="right">-0.0004866</td>
+<td align="right">0.4993140</td>
+</tr>
+<tr class="even">
+<td align="left">611 Market gardeners and crop growers</td>
+<td align="right">-0.0001863</td>
+<td align="right">0.4709511</td>
+</tr>
+<tr class="odd">
+<td align="left">342 Athletes, fitness instructors and recreational workers</td>
+<td align="right">-0.0001664</td>
+<td align="right">0.3152640</td>
+</tr>
+<tr class="even">
+<td align="left">621 Forestry and related workers</td>
+<td align="right">0.0002310</td>
+<td align="right">0.2997644</td>
+</tr>
+<tr class="odd">
+<td align="left">031 Armed forces occupations, other ranks</td>
+<td align="right">-0.0001374</td>
+<td align="right">0.2907770</td>
+</tr>
+<tr class="even">
+<td align="left">723 Machinery mechanics and fitters</td>
+<td align="right">0.0000882</td>
+<td align="right">0.2798201</td>
+</tr>
+<tr class="odd">
+<td align="left">341 Social work and religious associate professionals</td>
+<td align="right">-0.0001656</td>
+<td align="right">0.2547258</td>
+</tr>
+<tr class="even">
+<td align="left">243 Marketing and public relations professionals</td>
+<td align="right">0.0001437</td>
+<td align="right">0.2438027</td>
+</tr>
+<tr class="odd">
+<td align="left">712 Roofers, floor layers, plumbers and pipefitters</td>
+<td align="right">0.0000232</td>
+<td align="right">0.2127881</td>
+</tr>
+<tr class="even">
+<td align="left">422 Client information clerks</td>
+<td align="right">0.0001878</td>
+<td align="right">0.1498584</td>
+</tr>
+<tr class="odd">
+<td align="left">161 Financial and insurance managers</td>
+<td align="right">-0.0001440</td>
+<td align="right">0.1480319</td>
+</tr>
+<tr class="even">
+<td align="left">171 Hotel and conference managers</td>
+<td align="right">-0.0002032</td>
+<td align="right">0.1276805</td>
+</tr>
+<tr class="odd">
+<td align="left">142 Preschool managers</td>
+<td align="right">-0.0000713</td>
+<td align="right">0.1227402</td>
+</tr>
+<tr class="even">
+<td align="left">835 Ships deck crews and related workers</td>
+<td align="right">0.0002358</td>
+<td align="right">0.1223260</td>
+</tr>
+<tr class="odd">
+<td align="left">335 Tax and related government associate professionals</td>
+<td align="right">0.0000722</td>
+<td align="right">0.1218028</td>
+</tr>
+<tr class="even">
+<td align="left">222 Nursing professionals</td>
+<td align="right">-0.0000272</td>
+<td align="right">0.0765304</td>
+</tr>
+<tr class="odd">
+<td align="left">261 Legal professionals</td>
+<td align="right">-0.0000507</td>
+<td align="right">0.0310529</td>
+</tr>
+<tr class="even">
+<td align="left">515 Building caretakers and related workers</td>
+<td align="right">0.0000439</td>
+<td align="right">0.0291504</td>
+</tr>
+<tr class="odd">
+<td align="left">932 Manufacturing labourers</td>
+<td align="right">0.0000717</td>
+<td align="right">0.0250665</td>
+</tr>
+<tr class="even">
+<td align="left">432 Stores and transport clerks</td>
+<td align="right">-0.0000307</td>
+<td align="right">0.0199936</td>
+</tr>
+<tr class="odd">
+<td align="left">531 Child care workers and teachers aides</td>
+<td align="right">-0.0000088</td>
+<td align="right">0.0042005</td>
+</tr>
+<tr class="even">
+<td align="left">324 Veterinary assistants</td>
+<td align="right">-0.0000259</td>
+<td align="right">0.0036212</td>
+</tr>
+<tr class="odd">
+<td align="left">343 Photographers, interior decorators and entertainers</td>
+<td align="right">0.0000203</td>
+<td align="right">0.0017386</td>
+</tr>
+<tr class="even">
+<td align="left">722 Blacksmiths, toolmakers and related trades workers</td>
+<td align="right">-0.0000076</td>
+<td align="right">0.0007481</td>
+</tr>
+<tr class="odd">
+<td align="left">961 Recycling collectors</td>
+<td align="right">0.0000043</td>
+<td align="right">0.0003329</td>
+</tr>
+<tr class="even">
+<td align="left">315 Ship and aircraft controllers and technicians</td>
+<td align="right">-0.0000033</td>
+<td align="right">0.0000489</td>
+</tr>
+<tr class="odd">
+<td align="left">753 Tailors, upholsterers and leather craftsmen</td>
+<td align="right">0.0000048</td>
+<td align="right">0.0000291</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 </div>
