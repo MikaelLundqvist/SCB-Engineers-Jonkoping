@@ -421,7 +421,8 @@ tb %>% mutate(grp) %>%
 tb <- readfile("000000NL_10.csv") %>%
   filter(salary > 0) %>%
   group_by (`region`, year, `occupation (SSYK 2012)`) %>%  
-  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary))))
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary)))) %>%
+  mutate (sum_pop = sum(salary))
 tb <- readfile("UF0506A1_2.csv") %>%
   group_by(`level of education`, region, year, sex) %>%
   mutate(utbregno = sum(salary)) %>%
@@ -434,14 +435,25 @@ tb <- readfile("000002O5.csv") %>%
   right_join(tb, by = c("region", "year"))
 tb <- readfile("000002LR.csv") %>%
   right_join(tb, by = c("region", "year"))
-  
+ 
 summary_table = 0
 anova_table = 0
  
 for (i in unique(tb$`occupation (SSYK 2012)`)){
   temp <- filter(tb, `occupation (SSYK 2012)` == i)
   if (dim(temp)[1] > 50){
-    model <- lm(perc_women ~ salary.x.x + year2.x, data = temp)
+    temp1 <- temp %>% select(
+      salary.x.x, 
+      salary.y, 
+      salary.x, 
+      year2.x, 
+      utbregno, 
+      perc_edu, 
+      sum_edu, 
+      salary.y.y, 
+      perc_women, 
+      sum_pop) 
+    model <- lm(perc_women ~ ., data = temp1)
     summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
     anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
   }
@@ -456,7 +468,7 @@ merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
 merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
   filter (term.y == "salary.x.x") %>%
   filter (term.x == "salary.x.x") %>%
-  select (ssyk, estimate, statistic.y) %>%
+  select (ssyk, estimate, statistic.y, p.value.x) %>%
   arrange (desc (statistic.y)) %>%
   knitr::kable( 
   booktabs = TRUE,
@@ -469,7 +481,8 @@ merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
 tb <- readfile("000000NL_10.csv") %>%
   filter(salary > 0) %>%
   group_by (`region`, year, `occupation (SSYK 2012)`) %>%  
-  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary))))
+  mutate (perc_women = as.numeric (sub ("%", "", perc_women (salary)))) %>%
+  mutate (sum_pop = sum(salary))
 tb <- readfile("UF0506A1_2.csv") %>%
   group_by(`level of education`, region, year, sex) %>%
   mutate(utbregno = sum(salary)) %>%
@@ -489,7 +502,18 @@ anova_table = 0
 for (i in unique(tb$`occupation (SSYK 2012)`)){
   temp <- filter(tb, `occupation (SSYK 2012)` == i)
   if (dim(temp)[1] > 50){
-    model <- lm(perc_women ~ salary.y + year2.x, data = temp)
+    temp1 <- temp %>% select(
+      salary.x.x, 
+      salary.y, 
+      salary.x, 
+      year2.x, 
+      utbregno, 
+      perc_edu, 
+      sum_edu, 
+      salary.y.y, 
+      perc_women, 
+      sum_pop) 
+    model <- lm(perc_women ~ ., data = temp1)
     summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
     anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
   }
@@ -504,7 +528,7 @@ merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
 merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
   filter (term.y == "salary.y") %>%
   filter (term.x == "salary.y") %>%
-  select (ssyk, estimate, statistic.y) %>%
+  select (ssyk, estimate, statistic.y, p.value.x) %>%
   arrange (desc (statistic.y)) %>%
   knitr::kable( 
   booktabs = TRUE,
@@ -538,7 +562,18 @@ anova_table = 0
 for (i in unique(tb$`occupation (SSYK 2012)`)){
   temp <- filter(tb, `occupation (SSYK 2012)` == i)
   if (dim(temp)[1] > 50){
-    model <- lm(sum_pop ~ salary.x.x + year2.x, data = temp)
+    temp1 <- temp %>% select(
+      salary.x.x, 
+      salary.y, 
+      salary.x, 
+      year2.x, 
+      utbregno, 
+      perc_edu, 
+      sum_edu, 
+      salary.y.y, 
+      perc_women, 
+      sum_pop) 
+    model <- lm(sum_pop ~ ., data = temp1)
     summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
     anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
   }
@@ -553,7 +588,7 @@ merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
 merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
   filter (term.y == "salary.x.x") %>%
   filter (term.x == "salary.x.x") %>%
-  select (ssyk, estimate, statistic.y) %>%
+  select (ssyk, estimate, statistic.y, p.value.x) %>%
   arrange (desc (statistic.y)) %>%
   knitr::kable( 
   booktabs = TRUE,
@@ -587,7 +622,18 @@ anova_table = 0
 for (i in unique(tb$`occupation (SSYK 2012)`)){
   temp <- filter(tb, `occupation (SSYK 2012)` == i)
   if (dim(temp)[1] > 50){
-    model <- lm(sum_pop ~ salary.y + year2.x, data = temp)
+    temp1 <- temp %>% select(
+      salary.x.x, 
+      salary.y, 
+      salary.x, 
+      year2.x, 
+      utbregno, 
+      perc_edu, 
+      sum_edu, 
+      salary.y.y, 
+      perc_women, 
+      sum_pop) 
+    model <- lm(sum_pop ~ ., data = temp1)  
     summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
     anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
   }
@@ -602,7 +648,7 @@ merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
 merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>% 
   filter (term.y == "salary.y") %>%
   filter (term.x == "salary.y") %>%
-  select (ssyk, estimate, statistic.y) %>%
+  select (ssyk, estimate, statistic.y, p.value.x) %>%
   arrange (desc (statistic.y)) %>%
   knitr::kable( 
   booktabs = TRUE,
