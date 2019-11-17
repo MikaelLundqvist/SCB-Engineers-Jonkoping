@@ -109,35 +109,39 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins
     sidebarLayout(
         sidebarPanel(
-    selectInput(
+          selectInput(
             "select",
             label = h3("SSYK"),
             choices = list(SSYK = tb$`occuptional  (SSYK 2012)`)
-          )
+          ),
+		  p("For more information please visit:"),
+		  a(href = "https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/", "https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/")
         ),
         # Show a plot of the generated distribution
         mainPanel(
-              plotOutput("distPlot5"),  
-              plotOutput("distPlot"),
-     tableOutput('table1'),
-     tableOutput('table2'),
-              plotOutput("distPlot6"),    
-              plotOutput("distPlot2"),
-     tableOutput('table3'),
-     tableOutput('table4'), 
-              plotOutput("distPlot7"),    
-              plotOutput("distPlot3"),
-     tableOutput('table5'),
-     tableOutput('table6'),  
-              plotOutput("distPlot8"),	 
-              plotOutput("distPlot4"),    
-     tableOutput('table7'),
-     tableOutput('table8'),
-              plotOutput("distPlot9"),	 
-              plotOutput("distPlot10"),
-              plotOutput("distPlot11"),
-              plotOutput("distPlot12"),
-              plotOutput("distPlot13")				  
+          plotOutput("distPlot5"),  
+          plotOutput("distPlot"),
+          tableOutput('table1'),
+          tableOutput('table2'),
+          plotOutput("distPlot6"),    
+          plotOutput("distPlot2"),
+          tableOutput('table3'),
+          tableOutput('table4'), 
+          plotOutput("distPlot7"),    
+          plotOutput("distPlot3"),
+          tableOutput('table5'),
+          tableOutput('table6'),  
+          plotOutput("distPlot8"),	 
+          plotOutput("distPlot4"),    
+          tableOutput('table7'),
+          tableOutput('table8'),
+          plotOutput("distPlot9"),	 
+          plotOutput("distPlot10"),
+          plotOutput("distPlot11"),
+          plotOutput("distPlot12"),
+          plotOutput("distPlot13"),
+	      p("For more information please visit:"),
+		  a(href = "https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/", "https://mikaellundqvist.github.io/SCB-Engineers-Jonkoping/")			  
         )
   
   
