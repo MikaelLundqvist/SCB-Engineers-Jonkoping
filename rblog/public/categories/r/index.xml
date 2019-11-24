@@ -6,20 +6,22 @@
     <description>Recent content in R on A Hugo website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 23 Jul 2015 21:13:14 -0500</lastBuildDate>
+    <lastBuildDate>Fri, 22 Nov 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/categories/r/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Hello R Markdown</title>
-      <link>/2015/07/23/hello-r-markdown/</link>
-      <pubDate>Thu, 23 Jul 2015 21:13:14 -0500</pubDate>
+      <title>The significance of experience on the salary of engineers in Sweden</title>
+      <link>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</link>
+      <pubDate>Fri, 22 Nov 2019 00:00:00 +0000</pubDate>
       
-      <guid>/2015/07/23/hello-r-markdown/</guid>
-      <description>R MarkdownThis is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see http://rmarkdown.rstudio.com.
-You can embed an R code chunk like this:
-summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 26.00 ## Median :15.0 Median : 36.00 ## Mean :15.4 Mean : 42.98 ## 3rd Qu.</description>
+      <guid>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</guid>
+      <description>R MarkdownWhat causes the salary to change during the working life of engineers in Sweden?
+I will examine data from Statistics Sweden to see what information you can read from it.
+Statistics Sweden is the Swedish government agency responsible for producing official statistics regarding Sweden, https://www.scb.se/en/.
+“Everybody should have the opportunity to find facts and break the myths with our statistics!” Statistics Sweden twitter account, sverigeisiffror.
+Salaries are reported for every occupational group SSYK (Standard for Swedish occupational classification).</description>
     </item>
     
   </channel>

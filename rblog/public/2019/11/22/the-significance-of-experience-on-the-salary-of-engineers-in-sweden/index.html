@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.59.1" />
+
+
+<title>The significance of experience on the salary of engineers in Sweden - A Hugo website</title>
+<meta property="og:title" content="The significance of experience on the salary of engineers in Sweden - A Hugo website">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rstudio/blogdown">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/rstudio">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">5 min read</span>
+    
+
+    <h1 class="article-title">The significance of experience on the salary of engineers in Sweden</h1>
+
+    
+    <span class="article-date">2019-11-22</span>
+    
+
+    <div class="article-content">
+      
+
+
+<div id="r-markdown" class="section level1">
+<h1>R Markdown</h1>
+<p>What causes the salary to change during the working life of engineers in Sweden?</p>
+<p>I will examine data from Statistics Sweden to see what information you can read from it.</p>
+<p>Statistics Sweden is the Swedish government agency responsible for producing official statistics regarding Sweden, <a href="https://www.scb.se/en/" class="uri">https://www.scb.se/en/</a>.</p>
+<p>“Everybody should have the opportunity to find facts and break the myths with our statistics!” Statistics Sweden twitter account, sverigeisiffror.</p>
+<p>Salaries are reported for every occupational group SSYK (Standard for Swedish occupational classification). I will examine SSYK 214, architects, engineers and related professionals.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse) 
+## -- Attaching packages -------------------------------------------- tidyverse 1.2.1 --
+## v ggplot2 3.2.0     v purrr   0.3.2
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   0.8.3     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0
+## -- Conflicts ----------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+library (broom) 
+library (car)
+## Loading required package: carData
+## 
+## Attaching package: &#39;car&#39;
+## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode
+## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some
+
+readfile &lt;- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%  
+    gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = salary) %&gt;%  
+    drop_na() %&gt;%  
+    mutate (year_n = parse_number (year))
+}</code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 00000031.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>The table: Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occupational group (SSYK), age, sex and year. Year 2014 - 2018</p>
+<p>The average age within each age group is used as a numeric value for graphical presentation and the linear model.</p>
+<p>As the salary increases exponentially each year, I have used the logarithm for years in my model.</p>
+<p>As a proxy for experience years since graduation can be used. I will simplify by using age as a proxy for experience. A polynomial can be used to approximate the increase in salary over age. I will use a polynomial of degree two.</p>
+<p>We expect that both years and age are important factors on the salary. As a null hypothesis, we assume that years and age is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.</p>
+<pre class="r"><code>tb &lt;- readfile(&quot;00000031.csv&quot;) %&gt;% 
+  rowwise() %&gt;% 
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[1]) %&gt;%
+  rowwise() %&gt;% 
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[2]) %&gt;%
+  mutate(age_n = (age_l + age_h) / 2) 
+   
+tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age, shape=sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-2"></span>
+<img src="/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 1: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>    
+model &lt;- lm (log(salary) ~ year_n + sex + poly(age_n, 2), data = tb)
+
+tb &lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &quot;confidence&quot;))))</code></pre>
+<p>From the summary table of the linear model, we can see that the wages have increased by 1,92 % +/- 0,41 % per year with 95 % confidence, holding age as constant. The Anova value for years is 86, sufficient for rejecting the hypothesis that years has no effect on the salary. Interpreting the coefficients on the age parameter is not that straight forward. What we can see from the model is that the p values are small (&lt; 2e-16) and that the Anova value for age is 1124, sufficient for rejecting the hypothesis that experience has no effect on the salary.</p>
+<pre class="r"><code>tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-3"></span>
+<img src="/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 2: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>    
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-3">Table 1: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-28.0178962</td>
+<td align="right">4.1725677</td>
+<td align="right">-6.714785</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0191872</td>
+<td align="right">0.0020697</td>
+<td align="right">9.270469</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0355067</td>
+<td align="right">0.0059096</td>
+<td align="right">-6.008289</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">poly(age_n, 2)1</td>
+<td align="right">1.5018220</td>
+<td align="right">0.0285207</td>
+<td align="right">52.657209</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">poly(age_n, 2)2</td>
+<td align="right">-0.7322161</td>
+<td align="right">0.0285534</td>
+<td align="right">-25.643702</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>
+Anova(model, type=2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-3">Table 1: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0695478</td>
+<td align="right">1</td>
+<td align="right">85.94159</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="right">0.0292134</td>
+<td align="right">1</td>
+<td align="right">36.09954</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">poly(age_n, 2)</td>
+<td align="right">2.7896373</td>
+<td align="right">2</td>
+<td align="right">1723.60457</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Residuals</td>
+<td align="right">0.0720228</td>
+<td align="right">89</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<p>I will not try to analyse the coefficient of the age parameters for the polynomial of degree three. At the time of this writing, I am not confident enough to perform this analysis. Instead, I will simplify the model without a polynomial and see what coefficients this will give me. From the summary table of the linear model, we can see that the wages have increased by 1,14 % +/- 0,1 % per year with 95 % confidence, holding year as constant.</p>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n + sex + age_n, data = tb)
+
+tb &lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &quot;confidence&quot;))))
+
+tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-4"></span>
+<img src="/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 3: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>    
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 2: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-26.9662545</td>
+<td align="right">12.0162970</td>
+<td align="right">-2.244140</td>
+<td align="right">0.0272756</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0184205</td>
+<td align="right">0.0059605</td>
+<td align="right">3.090402</td>
+<td align="right">0.0026599</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0226437</td>
+<td align="right">0.0169595</td>
+<td align="right">-1.335167</td>
+<td align="right">0.1851890</td>
+</tr>
+<tr class="even">
+<td align="left">age_n</td>
+<td align="right">0.0113726</td>
+<td align="right">0.0006202</td>
+<td align="right">18.337880</td>
+<td align="right">0.0000000</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>
+Anova(model, type=2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 2: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0641143</td>
+<td align="right">1</td>
+<td align="right">9.550582</td>
+<td align="right">0.0026599</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="right">0.0119673</td>
+<td align="right">1</td>
+<td align="right">1.782671</td>
+<td align="right">0.1851890</td>
+</tr>
+<tr class="odd">
+<td align="left">age_n</td>
+<td align="right">2.2574781</td>
+<td align="right">1</td>
+<td align="right">336.277857</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Residuals</td>
+<td align="right">0.6041820</td>
+<td align="right">90</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<p>Wage statistics The Mediation Institute is responsible for Sweden’s official salary statistics. This applies to three types of statistics: cyclical wage statistics, wage structure statistics and statistics supplied to the European statistical body Eurostat, <a href="https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/" class="uri">https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/</a>. The statistics are collected and processed by Statistics Sweden. It is reported both on Statistics Sweden’s website and the Mediation Institute’s website.</p>
+<p><a href="https://www.r-bloggers.com/" class="uri">https://www.r-bloggers.com/</a></p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+
+    
+  </body>
+</html>
+
