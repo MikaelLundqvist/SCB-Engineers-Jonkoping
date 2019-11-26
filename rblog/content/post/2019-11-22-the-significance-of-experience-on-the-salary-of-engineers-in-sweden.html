@@ -12,10 +12,8 @@ categories: R
 
 
 
-<div id="r-markdown" class="section level1">
-<h1>R Markdown</h1>
 <p>What causes the salary to change during the working life of engineers in Sweden?</p>
-<p>I will examine data from Statistics Sweden to see what information you can read from it.</p>
+<p>I will examine data from Statistics Sweden to see what information you can interpret from it.</p>
 <p>Statistics Sweden is the Swedish government agency responsible for producing official statistics regarding Sweden, <a href="https://www.scb.se/en/" class="uri">https://www.scb.se/en/</a>.</p>
 <p>“Everybody should have the opportunity to find facts and break the myths with our statistics!” Statistics Sweden twitter account, sverigeisiffror.</p>
 <p>Salaries are reported for every occupational group SSYK (Standard for Swedish occupational classification). I will examine SSYK 214, architects, engineers and related professionals.</p>
@@ -40,6 +38,7 @@ library (car)
 ## The following object is masked from &#39;package:purrr&#39;:
 ## 
 ##     some
+library (polynom)
 
 readfile &lt;- function (file1){  
   read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%  
@@ -53,6 +52,7 @@ readfile &lt;- function (file1){
 <p>As the salary increases exponentially each year, I have used the logarithm for years in my model.</p>
 <p>As a proxy for experience years since graduation can be used. I will simplify by using age as a proxy for experience. A polynomial can be used to approximate the increase in salary over age. I will use a polynomial of degree two.</p>
 <p>We expect that both years and age are important factors on the salary. As a null hypothesis, we assume that years and age is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.</p>
+<p>Every year the annual salary negotiation will increase the salaries. As age increases, we acquire more skill at work.</p>
 <pre class="r"><code>tb &lt;- readfile(&quot;00000031.csv&quot;) %&gt;% 
   rowwise() %&gt;% 
   mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[1]) %&gt;%
@@ -74,13 +74,17 @@ Figure 1: SSYK 214, Architects, engineers and related professionals, Year 2014 -
 </p>
 </div>
 <pre class="r"><code>    
-model &lt;- lm (log(salary) ~ year_n + sex + poly(age_n, 2), data = tb)
+model &lt;- lm (log(salary) ~ year_n + sex + poly(age_n, 2, raw = T), data = tb)
 
 tb &lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &quot;confidence&quot;))))</code></pre>
-<p>From the summary table of the linear model, we can see that the wages have increased by 1,92 % +/- 0,41 % per year with 95 % confidence, holding age as constant. The Anova value for years is 86, sufficient for rejecting the hypothesis that years has no effect on the salary. Interpreting the coefficients on the age parameter is not that straight forward. What we can see from the model is that the p values are small (&lt; 2e-16) and that the Anova value for age is 1124, sufficient for rejecting the hypothesis that experience has no effect on the salary.</p>
+<p>From the summary table of the linear model, we can see that the wages have increased by 1,92 % +/- 0,41 % per year with 95 % confidence, holding age as constant. The Anova value for years is 86, sufficient for rejecting the null hypothesis that years has no effect on the salary. Holding year as constant, the p values for age are small (&lt; 2e-16) and the Anova value for age is 1124, sufficient for rejecting the null hypothesis that experience has no effect on the salary. The adjusted R-squared value is 0,978 implying a good fit of the model.</p>
 <pre class="r"><code>tb %&gt;%
   ggplot () +  
-    geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex))</code></pre>
+    geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
 <div class="figure"><span id="fig:unnamed-chunk-3"></span>
 <img src="/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
 <p class="caption">
@@ -107,9 +111,9 @@ summary(model) %&gt;%
 <tbody>
 <tr class="odd">
 <td align="left">(Intercept)</td>
-<td align="right">-28.0178962</td>
-<td align="right">4.1725677</td>
-<td align="right">-6.714785</td>
+<td align="right">-29.2385001</td>
+<td align="right">4.1729771</td>
+<td align="right">-7.006628</td>
 <td align="right">0</td>
 </tr>
 <tr class="even">
@@ -127,16 +131,16 @@ summary(model) %&gt;%
 <td align="right">0</td>
 </tr>
 <tr class="even">
-<td align="left">poly(age_n, 2)1</td>
-<td align="right">1.5018220</td>
-<td align="right">0.0285207</td>
-<td align="right">52.657209</td>
+<td align="left">poly(age_n, 2, raw = T)1</td>
+<td align="right">0.0496844</td>
+<td align="right">0.0015094</td>
+<td align="right">32.915771</td>
 <td align="right">0</td>
 </tr>
 <tr class="odd">
-<td align="left">poly(age_n, 2)2</td>
-<td align="right">-0.7322161</td>
-<td align="right">0.0285534</td>
+<td align="left">poly(age_n, 2, raw = T)2</td>
+<td align="right">-0.0004493</td>
+<td align="right">0.0000175</td>
 <td align="right">-25.643702</td>
 <td align="right">0</td>
 </tr>
@@ -175,7 +179,7 @@ Anova(model, type=2) %&gt;%
 <td align="right">0</td>
 </tr>
 <tr class="odd">
-<td align="left">poly(age_n, 2)</td>
+<td align="left">poly(age_n, 2, raw = T)</td>
 <td align="right">2.7896373</td>
 <td align="right">2</td>
 <td align="right">1723.60457</td>
@@ -190,116 +194,38 @@ Anova(model, type=2) %&gt;%
 </tr>
 </tbody>
 </table>
-<p>I will not try to analyse the coefficient of the age parameters for the polynomial of degree three. At the time of this writing, I am not confident enough to perform this analysis. Instead, I will simplify the model without a polynomial and see what coefficients this will give me. From the summary table of the linear model, we can see that the wages have increased by 1,14 % +/- 0,1 % per year with 95 % confidence, holding year as constant.</p>
-<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n + sex + age_n, data = tb)
-
-tb &lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &quot;confidence&quot;))))
+<p>Let’s have a look at the coefficients from the linear fit for the age polynomial. To get coefficients that are easily interpreted we have to use raw instead of the default orthogonal polynomials.</p>
+<pre class="r"><code>
+summod &lt;- tidy(summary (model))
+tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = age_n,y = summod$estimate[4] * age_n + summod$estimate[5] * age_n ^ 2)) + 
+  labs(
+    x = &quot;Age&quot;,
+    y = &quot;Salary&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-4"></span>
+<img src="/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png" alt="Model fit, SSYK 214, Correlation between age and salary" width="672" />
+<p class="caption">
+Figure 3: Model fit, SSYK 214, Correlation between age and salary
+</p>
+</div>
+<p>The derivative of the polynomial function for age is equal to the annual salary raise that comes from experience. I also add the salary raise that comes from the annual salary negotiation resulting in the total salary increase distributed over age.</p>
+<pre class="r"><code>
+pdx &lt;- deriv(as.polynomial(c(0, summod$estimate[4], summod$estimate[5])))
 
 tb %&gt;%
   ggplot () +  
-    geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex))</code></pre>
-<div class="figure"><span id="fig:unnamed-chunk-4"></span>
-<img src="/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+    geom_point (mapping = aes(x = age_n,y = summod$estimate[2] + pdx[1] + pdx[2] * age_n)) + 
+  labs(
+    x = &quot;Age&quot;,
+    y = &quot;Salary raise (%)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-5"></span>
+<img src="/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-5-1.png" alt="Model fit, SSYK 214, The derivative for age" width="672" />
 <p class="caption">
-Figure 3: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+Figure 4: Model fit, SSYK 214, The derivative for age
 </p>
 </div>
-<pre class="r"><code>    
-summary(model) %&gt;%  
-  tidy() %&gt;%
-  knitr::kable( 
-  booktabs = TRUE,
-  caption = &#39;Summary from linear model fit&#39;)</code></pre>
-<table>
-<caption><span id="tab:unnamed-chunk-4">Table 2: </span>Summary from linear model fit</caption>
-<thead>
-<tr class="header">
-<th align="left">term</th>
-<th align="right">estimate</th>
-<th align="right">std.error</th>
-<th align="right">statistic</th>
-<th align="right">p.value</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">(Intercept)</td>
-<td align="right">-26.9662545</td>
-<td align="right">12.0162970</td>
-<td align="right">-2.244140</td>
-<td align="right">0.0272756</td>
-</tr>
-<tr class="even">
-<td align="left">year_n</td>
-<td align="right">0.0184205</td>
-<td align="right">0.0059605</td>
-<td align="right">3.090402</td>
-<td align="right">0.0026599</td>
-</tr>
-<tr class="odd">
-<td align="left">sexwomen</td>
-<td align="right">-0.0226437</td>
-<td align="right">0.0169595</td>
-<td align="right">-1.335167</td>
-<td align="right">0.1851890</td>
-</tr>
-<tr class="even">
-<td align="left">age_n</td>
-<td align="right">0.0113726</td>
-<td align="right">0.0006202</td>
-<td align="right">18.337880</td>
-<td align="right">0.0000000</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>
-Anova(model, type=2) %&gt;% 
-  tidy() %&gt;% 
-  knitr::kable( 
-  booktabs = TRUE,
-  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
-<table>
-<caption><span id="tab:unnamed-chunk-4">Table 2: </span>Anova report from linear model fit</caption>
-<thead>
-<tr class="header">
-<th align="left">term</th>
-<th align="right">sumsq</th>
-<th align="right">df</th>
-<th align="right">statistic</th>
-<th align="right">p.value</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">year_n</td>
-<td align="right">0.0641143</td>
-<td align="right">1</td>
-<td align="right">9.550582</td>
-<td align="right">0.0026599</td>
-</tr>
-<tr class="even">
-<td align="left">sex</td>
-<td align="right">0.0119673</td>
-<td align="right">1</td>
-<td align="right">1.782671</td>
-<td align="right">0.1851890</td>
-</tr>
-<tr class="odd">
-<td align="left">age_n</td>
-<td align="right">2.2574781</td>
-<td align="right">1</td>
-<td align="right">336.277857</td>
-<td align="right">0.0000000</td>
-</tr>
-<tr class="even">
-<td align="left">Residuals</td>
-<td align="right">0.6041820</td>
-<td align="right">90</td>
-<td align="right">NA</td>
-<td align="right">NA</td>
-</tr>
-</tbody>
-</table>
 <p>Wage statistics The Mediation Institute is responsible for Sweden’s official salary statistics. This applies to three types of statistics: cyclical wage statistics, wage structure statistics and statistics supplied to the European statistical body Eurostat, <a href="https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/" class="uri">https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/</a>. The statistics are collected and processed by Statistics Sweden. It is reported both on Statistics Sweden’s website and the Mediation Institute’s website.</p>
 <p><a href="https://www.r-bloggers.com/" class="uri">https://www.r-bloggers.com/</a></p>
-</div>

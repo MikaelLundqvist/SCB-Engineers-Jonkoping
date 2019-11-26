@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>A Hugo website</title>
@@ -8,20 +8,16 @@
     <language>en-us</language>
     <lastBuildDate>Fri, 22 Nov 2019 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+        <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>The significance of experience on the salary of engineers in Sweden</title>
-      <link>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</link>
+      <title>Posts</title>
+      <link>/post/</link>
       <pubDate>Fri, 22 Nov 2019 00:00:00 +0000</pubDate>
       
-      <guid>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</guid>
-      <description>R MarkdownWhat causes the salary to change during the working life of engineers in Sweden?
-I will examine data from Statistics Sweden to see what information you can read from it.
-Statistics Sweden is the Swedish government agency responsible for producing official statistics regarding Sweden, https://www.scb.se/en/.
-“Everybody should have the opportunity to find facts and break the myths with our statistics!” Statistics Sweden twitter account, sverigeisiffror.
-Salaries are reported for every occupational group SSYK (Standard for Swedish occupational classification).</description>
+      <guid>/post/</guid>
+      <description>``</description>
     </item>
     
     <item>
@@ -30,7 +26,8 @@ Salaries are reported for every occupational group SSYK (Standard for Swedish oc
       <pubDate>Thu, 05 May 2016 21:48:51 -0700</pubDate>
       
       <guid>/about/</guid>
-      <description>This is a &amp;ldquo;hello world&amp;rdquo; example website for the blogdown package. The theme was forked from @jrutheiser/hugo-lithium-theme and modified by Yihui Xie.</description>
+      <description>`&lt;p&gt;This is a &amp;ldquo;hello world&amp;rdquo; example website for the &lt;a href=&#34;https://github.com/rstudio/blogdown&#34;&gt;&lt;strong&gt;blogdown&lt;/strong&gt;&lt;/a&gt; package. The theme was forked from &lt;a href=&#34;https://github.com/jrutheiser/hugo-lithium-theme&#34;&gt;@jrutheiser/hugo-lithium-theme&lt;/a&gt; and modified by &lt;a href=&#34;https://github.com/yihui/hugo-lithium&#34;&gt;Yihui Xie&lt;/a&gt;.&lt;/p&gt;
+`</description>
     </item>
     
   </channel>
