@@ -4,7 +4,7 @@
     
     A Hugo website
     </title>
-    <link>/</link>
+    <link>http://mikaellundqvist.rbind.io/</link>
     <description>Recent content 
     on A Hugo website
     </description>
@@ -15,15 +15,15 @@
     <lastBuildDate>Fri, 22 Nov 2019 00:00:00 +0000</lastBuildDate>
     
     
-        <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+        <atom:link href="http://mikaellundqvist.rbind.io/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Posts</title>
-      <link>/post/</link>
+      <link>http://mikaellundqvist.rbind.io/post/</link>
       <pubDate>Fri, 22 Nov 2019 00:00:00 +0000</pubDate>
       
-      <guid>/post/</guid>
+      <guid>http://mikaellundqvist.rbind.io/post/</guid>
       <description></description>
     </item>
     
