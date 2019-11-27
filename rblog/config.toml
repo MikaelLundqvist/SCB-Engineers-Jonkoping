@@ -1,4 +1,4 @@
-baseurl = "http://mikaellundqvist.rbind.io/"
+baseurl = "/"
 languageCode = "en-us"
 title = "A Hugo website"
 theme = "hugo-lithium"

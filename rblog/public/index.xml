@@ -1,243 +1,30 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on A Hugo website</title>
-    <link>/post/</link>
-    <description>Recent content in Posts on A Hugo website</description>
+    <title>
+    
+    A Hugo website
+    </title>
+    <link>/</link>
+    <description>Recent content 
+    on A Hugo website
+    </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
+    
+    
     <lastBuildDate>Fri, 22 Nov 2019 00:00:00 +0000</lastBuildDate>
     
-        <atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    
+        <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>The significance of experience on the salary of engineers in Sweden</title>
-      <link>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</link>
+      <title>Posts</title>
+      <link>/post/</link>
       <pubDate>Fri, 22 Nov 2019 00:00:00 +0000</pubDate>
       
-      <guid>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</guid>
-      <description>`
-
-
-&lt;p&gt;What causes the salary to change during the working life of engineers in Sweden?&lt;/p&gt;
-&lt;p&gt;I will examine data from Statistics Sweden to see what information you can interpret from it.&lt;/p&gt;
-&lt;p&gt;Statistics Sweden is the Swedish government agency responsible for producing official statistics regarding Sweden, &lt;a href=&#34;https://www.scb.se/en/&#34; class=&#34;uri&#34;&gt;https://www.scb.se/en/&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;“Everybody should have the opportunity to find facts and break the myths with our statistics!” Statistics Sweden twitter account, sverigeisiffror.&lt;/p&gt;
-&lt;p&gt;Salaries are reported for every occupational group SSYK (Standard for Swedish occupational classification). I will examine SSYK 214, architects, engineers and related professionals.&lt;/p&gt;
-&lt;p&gt;First, define libraries and functions.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (tidyverse) 
-## -- Attaching packages -------------------------------------------- tidyverse 1.2.1 --
-## v ggplot2 3.2.0     v purrr   0.3.2
-## v tibble  2.1.3     v dplyr   0.8.3
-## v tidyr   0.8.3     v stringr 1.4.0
-## v readr   1.3.1     v forcats 0.4.0
-## -- Conflicts ----------------------------------------------- tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()
-library (broom) 
-library (car)
-## Loading required package: carData
-## 
-## Attaching package: &amp;#39;car&amp;#39;
-## The following object is masked from &amp;#39;package:dplyr&amp;#39;:
-## 
-##     recode
-## The following object is masked from &amp;#39;package:purrr&amp;#39;:
-## 
-##     some
-library (polynom)
-
-readfile &amp;lt;- function (file1){  
-  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &amp;quot;latin1&amp;quot;), na = c(&amp;quot;..&amp;quot;, &amp;quot;NA&amp;quot;)) %&amp;gt;%  
-    gather (starts_with(&amp;quot;19&amp;quot;), starts_with(&amp;quot;20&amp;quot;), key = &amp;quot;year&amp;quot;, value = salary) %&amp;gt;%  
-    drop_na() %&amp;gt;%  
-    mutate (year_n = parse_number (year))
-}&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 00000031.csv, &lt;a href=&#34;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&#34; class=&#34;uri&#34;&gt;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;The table: Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occupational group (SSYK), age, sex and year. Year 2014 - 2018&lt;/p&gt;
-&lt;p&gt;The average age within each age group is used as a numeric value for graphical presentation and the linear model.&lt;/p&gt;
-&lt;p&gt;As the salary increases exponentially each year, I have used the logarithm for years in my model.&lt;/p&gt;
-&lt;p&gt;As a proxy for experience years since graduation can be used. I will simplify by using age as a proxy for experience. A polynomial can be used to approximate the increase in salary over age. I will use a polynomial of degree two.&lt;/p&gt;
-&lt;p&gt;We expect that both years and age are important factors on the salary. As a null hypothesis, we assume that years and age is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.&lt;/p&gt;
-&lt;p&gt;Every year the annual salary negotiation will increase the salaries. As age increases, we acquire more skill at work.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb &amp;lt;- readfile(&amp;quot;00000031.csv&amp;quot;) %&amp;gt;% 
-  rowwise() %&amp;gt;% 
-  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &amp;quot;-&amp;quot;), strtoi))[1]) %&amp;gt;%
-  rowwise() %&amp;gt;% 
-  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), &amp;quot;-&amp;quot;), strtoi))[2]) %&amp;gt;%
-  mutate(age_n = (age_l + age_h) / 2) 
-   
-tb %&amp;gt;%
-  ggplot () +  
-    geom_point (mapping = aes(x = year_n,y = salary, colour = age, shape=sex)) + 
-  labs(
-    x = &amp;quot;Year&amp;quot;,
-    y = &amp;quot;Salary (SEK/month)&amp;quot;
-  )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-2&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png&#34; alt=&#34;SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 1: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;    
-model &amp;lt;- lm (log(salary) ~ year_n + sex + poly(age_n, 2, raw = T), data = tb)
-
-tb &amp;lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &amp;quot;confidence&amp;quot;))))&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;From the summary table of the linear model, we can see that the wages have increased by 1,92 % +/- 0,41 % per year with 95 % confidence, holding age as constant. The Anova value for years is 86, sufficient for rejecting the null hypothesis that years has no effect on the salary. Holding year as constant, the p values for age are small (&amp;lt; 2e-16) and the Anova value for age is 1124, sufficient for rejecting the null hypothesis that experience has no effect on the salary. The adjusted R-squared value is 0,978 implying a good fit of the model.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb %&amp;gt;%
-  ggplot () +  
-    geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex)) + 
-  labs(
-    x = &amp;quot;Year&amp;quot;,
-    y = &amp;quot;Salary (SEK/month)&amp;quot;
-  )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-3&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png&#34; alt=&#34;Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 2: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;    
-summary(model) %&amp;gt;%  
-  tidy() %&amp;gt;%
-  knitr::kable( 
-  booktabs = TRUE,
-  caption = &amp;#39;Summary from linear model fit&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
-&lt;table&gt;
-&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-3&#34;&gt;Table 1: &lt;/span&gt;Summary from linear model fit&lt;/caption&gt;
-&lt;thead&gt;
-&lt;tr class=&#34;header&#34;&gt;
-&lt;th align=&#34;left&#34;&gt;term&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;estimate&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;std.error&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;statistic&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;p.value&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;(Intercept)&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-29.2385001&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;4.1729771&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-7.006628&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;year_n&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0191872&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0020697&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9.270469&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;sexwomen&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-0.0355067&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0059096&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-6.008289&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;poly(age_n, 2, raw = T)1&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0496844&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0015094&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;32.915771&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;poly(age_n, 2, raw = T)2&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-0.0004493&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0000175&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-25.643702&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
-Anova(model, type=2) %&amp;gt;% 
-  tidy() %&amp;gt;% 
-  knitr::kable( 
-  booktabs = TRUE,
-  caption = &amp;#39;Anova report from linear model fit&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
-&lt;table&gt;
-&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-3&#34;&gt;Table 1: &lt;/span&gt;Anova report from linear model fit&lt;/caption&gt;
-&lt;thead&gt;
-&lt;tr class=&#34;header&#34;&gt;
-&lt;th align=&#34;left&#34;&gt;term&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;sumsq&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;df&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;statistic&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;p.value&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;year_n&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0695478&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;1&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;85.94159&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;sex&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0292134&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;1&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;36.09954&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;poly(age_n, 2, raw = T)&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;2.7896373&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;2&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;1723.60457&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;Residuals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0720228&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;89&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;Let’s have a look at the coefficients from the linear fit for the age polynomial. To get coefficients that are easily interpreted we have to use raw instead of the default orthogonal polynomials.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
-summod &amp;lt;- tidy(summary (model))
-tb %&amp;gt;%
-  ggplot () +  
-    geom_point (mapping = aes(x = age_n,y = summod$estimate[4] * age_n + summod$estimate[5] * age_n ^ 2)) + 
-  labs(
-    x = &amp;quot;Age&amp;quot;,
-    y = &amp;quot;Salary&amp;quot;
-  )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-4&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png&#34; alt=&#34;Model fit, SSYK 214, Correlation between age and salary&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 3: Model fit, SSYK 214, Correlation between age and salary
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;p&gt;The derivative of the polynomial function for age is equal to the annual salary raise that comes from experience. I also add the salary raise that comes from the annual salary negotiation resulting in the total salary increase distributed over age.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
-pdx &amp;lt;- deriv(as.polynomial(c(0, summod$estimate[4], summod$estimate[5])))
-
-tb %&amp;gt;%
-  ggplot () +  
-    geom_point (mapping = aes(x = age_n,y = summod$estimate[2] + pdx[1] + pdx[2] * age_n)) + 
-  labs(
-    x = &amp;quot;Age&amp;quot;,
-    y = &amp;quot;Salary raise (%)&amp;quot;
-  )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-5&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-5-1.png&#34; alt=&#34;Model fit, SSYK 214, The derivative for age&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 4: Model fit, SSYK 214, The derivative for age
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;p&gt;Wage statistics The Mediation Institute is responsible for Sweden’s official salary statistics. This applies to three types of statistics: cyclical wage statistics, wage structure statistics and statistics supplied to the European statistical body Eurostat, &lt;a href=&#34;https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/&#34; class=&#34;uri&#34;&gt;https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/&lt;/a&gt;. The statistics are collected and processed by Statistics Sweden. It is reported both on Statistics Sweden’s website and the Mediation Institute’s website.&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://www.r-bloggers.com/&#34; class=&#34;uri&#34;&gt;https://www.r-bloggers.com/&lt;/a&gt;&lt;/p&gt;
-`</description>
+      <guid>/post/</guid>
+      <description></description>
     </item>
     
   </channel>
