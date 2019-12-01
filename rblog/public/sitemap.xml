@@ -3,53 +3,53 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>http://mikaellundqvist.rbind.io/</loc>
+    <loc>/about/</loc>
+    <lastmod>2019-12-01T21:48:51-07:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/</loc>
+    <lastmod>2019-12-01T21:48:51-07:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/categories/</loc>
     <lastmod>2019-11-22T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://mikaellundqvist.rbind.io/categories/</loc>
+    <loc>/tags/plot/</loc>
     <lastmod>2019-11-22T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://mikaellundqvist.rbind.io/tags/plot/</loc>
+    <loc>/post/</loc>
     <lastmod>2019-11-22T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://mikaellundqvist.rbind.io/post/</loc>
+    <loc>/categories/r/</loc>
     <lastmod>2019-11-22T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://mikaellundqvist.rbind.io/categories/r/</loc>
+    <loc>/tags/r-markdown/</loc>
     <lastmod>2019-11-22T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://mikaellundqvist.rbind.io/tags/r-markdown/</loc>
+    <loc>/tags/regression/</loc>
     <lastmod>2019-11-22T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://mikaellundqvist.rbind.io/tags/regression/</loc>
+    <loc>/tags/</loc>
     <lastmod>2019-11-22T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://mikaellundqvist.rbind.io/tags/</loc>
+    <loc>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</loc>
     <lastmod>2019-11-22T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>http://mikaellundqvist.rbind.io/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</loc>
-    <lastmod>2019-11-22T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>http://mikaellundqvist.rbind.io/about/</loc>
-    <lastmod>2016-05-05T21:48:51-07:00</lastmod>
   </url>
   
 </urlset>

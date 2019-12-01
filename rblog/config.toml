@@ -1,6 +1,6 @@
 baseurl = "http://mikaellundqvist.rbind.io/"
 languageCode = "en-us"
-title = "A Hugo website"
+title = "R Analystatistics Sweden"
 theme = "hugo-lithium"
 googleAnalytics = ""
 disqusShortname = ""
@@ -14,10 +14,10 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     url = "/about/"
 [[menu.main]]
     name = "GitHub"
-    url = "https://github.com/rstudio/blogdown"
+    url = "https://github.com/MikaelLundqvist"
 [[menu.main]]
     name = "Twitter"
-    url = "https://twitter.com/rstudio"
+    url = "https://twitter.com/MikaelLundqvist"
 
 [params]
     description = "A website built through Hugo and blogdown."

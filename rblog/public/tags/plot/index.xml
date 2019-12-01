@@ -1,13 +1,13 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>
-    plot on A Hugo website
+    plot on R Analystatistics Sweden
     
     </title>
-    <link>http://mikaellundqvist.rbind.io/tags/plot/</link>
+    <link>/tags/plot/</link>
     <description>Recent content 
     
-    in plot on A Hugo website
+    in plot on R Analystatistics Sweden
     </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
@@ -16,15 +16,15 @@
     <lastBuildDate>Fri, 22 Nov 2019 00:00:00 +0000</lastBuildDate>
     
     
-        <atom:link href="http://mikaellundqvist.rbind.io/tags/plot/index.xml" rel="self" type="application/rss+xml" />
+        <atom:link href="/tags/plot/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>The significance of experience on the salary of engineers in Sweden</title>
-      <link>http://mikaellundqvist.rbind.io/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</link>
+      <link>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</link>
       <pubDate>Fri, 22 Nov 2019 00:00:00 +0000</pubDate>
       
-      <guid>http://mikaellundqvist.rbind.io/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</guid>
+      <guid>/2019/11/22/the-significance-of-experience-on-the-salary-of-engineers-in-sweden/</guid>
       <description>
 
 
@@ -84,7 +84,7 @@ tb %&amp;gt;%
     y = &amp;quot;Salary (SEK/month)&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-2&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;http://mikaellundqvist.rbind.io/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png&#34; alt=&#34;SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png&#34; alt=&#34;SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
 &lt;/p&gt;
@@ -102,7 +102,7 @@ tb &amp;lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &amp;quot
     y = &amp;quot;Salary (SEK/month)&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-3&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;http://mikaellundqvist.rbind.io/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png&#34; alt=&#34;Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png&#34; alt=&#34;Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 2: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
 &lt;/p&gt;
@@ -221,7 +221,7 @@ tb %&amp;gt;%
     y = &amp;quot;Salary&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-4&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;http://mikaellundqvist.rbind.io/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png&#34; alt=&#34;Model fit, SSYK 214, Correlation between age and salary&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png&#34; alt=&#34;Model fit, SSYK 214, Correlation between age and salary&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 3: Model fit, SSYK 214, Correlation between age and salary
 &lt;/p&gt;
@@ -238,13 +238,14 @@ tb %&amp;gt;%
     y = &amp;quot;Salary raise (%)&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-5&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;http://mikaellundqvist.rbind.io/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-5-1.png&#34; alt=&#34;Model fit, SSYK 214, The derivative for age&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-5-1.png&#34; alt=&#34;Model fit, SSYK 214, The derivative for age&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 4: Model fit, SSYK 214, The derivative for age
 &lt;/p&gt;
 &lt;/div&gt;
 &lt;p&gt;Wage statistics The Mediation Institute is responsible for Sweden’s official salary statistics. This applies to three types of statistics: cyclical wage statistics, wage structure statistics and statistics supplied to the European statistical body Eurostat, &lt;a href=&#34;https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/&#34; class=&#34;uri&#34;&gt;https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/&lt;/a&gt;. The statistics are collected and processed by Statistics Sweden. It is reported both on Statistics Sweden’s website and the Mediation Institute’s website.&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://www.r-bloggers.com/&#34; class=&#34;uri&#34;&gt;https://www.r-bloggers.com/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://rweekly.org&#34; class=&#34;uri&#34;&gt;https://rweekly.org&lt;/a&gt;&lt;/p&gt;
 </description>
     </item>
     
