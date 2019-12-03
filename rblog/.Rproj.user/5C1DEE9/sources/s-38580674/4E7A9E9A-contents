@@ -1,0 +1,250 @@
+---
+title: The significance of experience on the salary in Sweden, a comparison between different occupational groups
+author: "Mikael Lundqvist"
+date: '2019-12-02'
+slug: the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups
+tags:
+- plot
+- R Markdown
+- regression
+categories: R
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+```
+
+In my last post, I found that experience has a significant impact on the salary of engineers. Is the significance of experience on wages unique to engineers or are there similar correlations in other occupational groups?
+
+I will use the same model in principal as in my previous post to calculate the significance of age. I will not use sex as an explanatory variable since there are occupational groups that do not have enough data for both genders. I will also use a polynomial of degree three since this provides a significant model fit for some occupational groups.
+
+There are still occupational groups with too little data for regression analysis. More than 30 posts are necessary to fit both age and year.
+
+The R-value from the Anova table is used as the single value to discriminate how much the age and salary correlates. For exploratory analysis, the Anova value seems good enough.
+
+In the figure below I will also use the estimate for the year to see how much the salaries are raised each year for the different occupational groups holding age as constant.
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (broom)
+library (car)
+library (polynom)
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+```
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000D2.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and age. Year 2014 - 2018 Monthly salary All sectors
+
+```{r, echo = TRUE, fig.cap = 'The significance of experience on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018'} 
+tb <- readfile("000000D2.csv") %>%
+  rowwise() %>%
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+  rowwise() %>%
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age_n = (age_l + age_h) / 2)
+
+summary_table = 0
+anova_table = 0
+
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 30){
+    model <-lm (log(salary) ~ year_n + poly(age_n, 3), data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}
+
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
+  filter (term.y == "poly(age_n, 3)") %>%
+  filter (term.x == "year_n") %>%
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y)) +
+    labs(
+      x = "Increase in salaries (% / year)",
+      y = "F-value for age"
+    ) 
+```
+
+The table with all occupational groups sorted by F-value in descending order.
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
+  filter (term.y == "poly(age_n, 3)") %>%
+  filter (term.x == "year_n") %>%
+  select (ssyk, estimate, statistic.y) %>%
+  rename (`F-value for age` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value for age`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (age) and the yearly increase in salaries with age held as constant')
+```
+
+Let's check what we have found.
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value, Primary- and pre-school teachers'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "234 Primary- and pre-school teachers")
+ 
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+    ) 
+```
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Primary- and pre-school teachers, Correlation between age and salary'}
+model <-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
+
+summod <- tidy(summary (model))
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
+    labs(
+      x = "Age",
+      y = "Salary"
+    )
+```
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Primary- and pre-school teachers, The derivative for age'}
+pdx <- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
+
+temp %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
+    labs(
+      x = "Age",
+      y = "Salary raise (%)"
+    )
+```
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value, Assemblers'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "821 Assemblers")
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+    ) 
+```
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Assemblers, Correlation between age and salary'}
+model <-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
+
+summod <- tidy(summary (model))
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
+    labs(
+      x = "Age",
+      y = "Salary"
+    )
+```
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Assemblers, The derivative for age'}
+pdx <- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
+
+temp %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
+    labs(
+      x = "Age",
+      y = "Salary raise (%)"
+    )
+```
+
+```{r, echo = TRUE, fig.cap = 'Highest yearly salary increase, Financial and insurance managers'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "161 Financial and insurance managers")
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
+    facet_grid(. ~ sex) + 
+      labs(
+        x = "Year",
+        y = "Salary (SEK/month)"
+      ) 
+```
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Financial and insurance managers, Correlation between age and salary'}
+model <- lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
+
+summod <- tidy(summary (model))
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
+    labs(
+      x = "Age",
+      y = "Salary"
+    )
+```
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Financial and insurance managers, The derivative for age'}
+pdx <- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
+
+temp %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
+    labs(
+      x = "Age",
+      y = "Salary raise (%)"
+    )
+```
+
+```{r, echo = TRUE, fig.cap = 'Lowest yearly salary increase, Cashiers and related clerks'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "523 Cashiers and related clerks")
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
+    facet_grid(. ~ sex) + 
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+  )
+```
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Cashiers and related clerks, Correlation between age and salary'}
+model <-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
+
+summod <- tidy(summary (model))
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
+    labs(
+      x = "Age",
+      y = "Salary"
+    )
+```
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Cashiers and related clerks, The derivative for age'}
+pdx <- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
+
+temp %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
+    labs(
+      x = "Age",
+      y = "Salary raise (%)"
+    )
+```

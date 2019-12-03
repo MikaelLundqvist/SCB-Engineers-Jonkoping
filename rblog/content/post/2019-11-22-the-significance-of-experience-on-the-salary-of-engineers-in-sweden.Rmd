@@ -83,8 +83,8 @@ tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
 ```
 
 
-From the summary table of the linear model, we can see that the wages have increased by 1,92 % +/- 0,41 % per year with 95 % confidence, holding age as constant. The Anova value for years is 86, sufficient for rejecting the null hypothesis that years has no effect on the salary.
-Holding year as constant, the p values for age are small (< 2e-16) and the Anova value for age is 1124, sufficient for rejecting the null hypothesis that experience has no effect on the salary.
+From the summary table of the linear model, we can see that the wages have increased by 1,92 % +/- 0,41 % per year with 95 % confidence, holding age as constant. The R-value from the Anova table for years is 86, sufficient for rejecting the null hypothesis that years has no effect on the salary.
+Holding year as constant, the p values for age are small (< 2e-16) and the R-value from the Anova table value for age is 1124, sufficient for rejecting the null hypothesis that experience has no effect on the salary.
 The adjusted R-squared value is 0,978 implying a good fit of the model.
 
 
