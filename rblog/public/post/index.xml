@@ -877,7 +877,9 @@ library (car)
 ## The following object is masked from &amp;#39;package:purrr&amp;#39;:
 ## 
 ##     some
-library (polynom)
+library (splines)
+#install_github(&amp;quot;ZheyuanLi/SplinesUtils&amp;quot;)
+library(SplinesUtils)
 
 readfile &amp;lt;- function (file1){  
   read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &amp;quot;latin1&amp;quot;), na = c(&amp;quot;..&amp;quot;, &amp;quot;NA&amp;quot;)) %&amp;gt;%  
@@ -889,7 +891,7 @@ readfile &amp;lt;- function (file1){
 &lt;p&gt;The table: Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occupational group (SSYK), age, sex and year. Year 2014 - 2018&lt;/p&gt;
 &lt;p&gt;The average age within each age group is used as a numeric value for graphical presentation and the linear model.&lt;/p&gt;
 &lt;p&gt;As the salary increases exponentially each year, I have used the logarithm for years in my model.&lt;/p&gt;
-&lt;p&gt;As a proxy for experience years since graduation can be used. I will simplify by using age as a proxy for experience. A polynomial can be used to approximate the increase in salary over age. I will use a polynomial of degree two.&lt;/p&gt;
+&lt;p&gt;As a proxy for experience years since graduation can be used. I will simplify by using age as a proxy for experience. I will use a B-spline function to approximate the increase in salaries over age. Spline function is used instead of a polynomial to avoid oscillation.&lt;/p&gt;
 &lt;p&gt;We expect that both years and age are important factors on the salary. As a null hypothesis, we assume that years and age is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.&lt;/p&gt;
 &lt;p&gt;Every year the annual salary negotiation will increase the salaries. As age increases, we acquire more skill at work.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb &amp;lt;- readfile(&amp;quot;00000031.csv&amp;quot;) %&amp;gt;% 
@@ -913,10 +915,10 @@ Figure 1: SSYK 214, Architects, engineers and related professionals, Year 2014 -
 &lt;/p&gt;
 &lt;/div&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;    
-model &amp;lt;- lm (log(salary) ~ year_n + sex + poly(age_n, 2, raw = T), data = tb)
+model &amp;lt;- lm (log(salary) ~ year_n + sex + bs(age_n, knots = c(30, 40, 50, 60)), data = tb)
 
 tb &amp;lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &amp;quot;confidence&amp;quot;))))&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;From the summary table of the linear model, we can see that the wages have increased by 1,92 % +/- 0,41 % per year with 95 % confidence, holding age as constant. The R-value from the Anova table for years is 86, sufficient for rejecting the null hypothesis that years has no effect on the salary. Holding year as constant, the p values for age are small (&amp;lt; 2e-16) and the R-value from the Anova table value for age is 1124, sufficient for rejecting the null hypothesis that experience has no effect on the salary. The adjusted R-squared value is 0,978 implying a good fit of the model.&lt;/p&gt;
+&lt;p&gt;From the summary table of the linear model, we can see that the wages have increased by 1,91 % +/- 0,35 % per year with 95 % confidence, holding age as constant. The R-value from the Anova table for years is 120, sufficient for rejecting the null hypothesis that years has no effect on the salary. Holding year as constant, the p values for age are small (&amp;lt; 2e-16) and the R-value from the Anova table value for age is 703, sufficient for rejecting the null hypothesis that experience has no effect on the salary. The adjusted R-squared value is 0,984 implying a good fit of the model.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb %&amp;gt;%
   ggplot () +  
     geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex)) + 
@@ -950,42 +952,80 @@ summary(model) %&amp;gt;%
 &lt;tbody&gt;
 &lt;tr class=&#34;odd&#34;&gt;
 &lt;td align=&#34;left&#34;&gt;(Intercept)&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-29.2385001&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;4.1729771&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-7.006628&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-28.1818464&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.5078741&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-8.0338820&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr class=&#34;even&#34;&gt;
 &lt;td align=&#34;left&#34;&gt;year_n&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0191872&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0020697&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9.270469&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0190896&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0017400&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.9709680&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr class=&#34;odd&#34;&gt;
 &lt;td align=&#34;left&#34;&gt;sexwomen&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-0.0355067&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0059096&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-6.008289&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0338703&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0050397&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-6.7207107&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;poly(age_n, 2, raw = T)1&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0496844&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0015094&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;32.915771&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;bs(age_n, knots = c(30, 40, 50, 60))1&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0136922&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0224921&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6087566&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.5443286&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;poly(age_n, 2, raw = T)2&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-0.0004493&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0000175&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;-25.643702&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;bs(age_n, knots = c(30, 40, 50, 60))2&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.2417694&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0207156&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.6708804&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(age_n, knots = c(30, 40, 50, 60))3&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4589440&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0172130&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;26.6625840&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(age_n, knots = c(30, 40, 50, 60))4&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4963401&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0176805&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;28.0727805&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(age_n, knots = c(30, 40, 50, 60))5&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.5045782&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0195688&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;25.7848966&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(age_n, knots = c(30, 40, 50, 60))6&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4878569&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0169888&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;28.7164274&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(age_n, knots = c(30, 40, 50, 60))7&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4850548&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0143718&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;33.7504146&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
+summary(model)$r.squared   
+## [1] 0.9839054
+  
 Anova(model, type=2) %&amp;gt;% 
   tidy() %&amp;gt;% 
   knitr::kable( 
@@ -1005,40 +1045,40 @@ Anova(model, type=2) %&amp;gt;%
 &lt;tbody&gt;
 &lt;tr class=&#34;odd&#34;&gt;
 &lt;td align=&#34;left&#34;&gt;year_n&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0695478&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0687831&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;1&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;85.94159&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;120.36214&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr class=&#34;even&#34;&gt;
 &lt;td align=&#34;left&#34;&gt;sex&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0292134&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0258120&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;1&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;36.09954&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;45.16795&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;poly(age_n, 2, raw = T)&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;2.7896373&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;2&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;1723.60457&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;bs(age_n, knots = c(30, 40, 50, 60))&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.8136569&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;703.36608&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
 &lt;/tr&gt;
 &lt;tr class=&#34;even&#34;&gt;
 &lt;td align=&#34;left&#34;&gt;Residuals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0720228&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;89&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0480033&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;84&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;Let’s have a look at the coefficients from the linear fit for the age polynomial. To get coefficients that are easily interpreted we have to use raw instead of the default orthogonal polynomials.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
-summod &amp;lt;- tidy(summary (model))
-tb %&amp;gt;%
-  ggplot () +  
-    geom_point (mapping = aes(x = age_n,y = summod$estimate[4] * age_n + summod$estimate[5] * age_n ^ 2)) + 
+&lt;p&gt;Let’s have a look at the spline function from the regression model. I use the package SplineUtils to extract the polynomial train from the model coefficients.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;myspline &amp;lt;- RegBsplineAsPiecePoly(model, &amp;quot;bs(age_n, knots = c(30, 40, 50, 60))&amp;quot;)
+
+tibble(age_n = 21:65) %&amp;gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n,y = predict(myspline, age_n))) +
   labs(
     x = &amp;quot;Age&amp;quot;,
     y = &amp;quot;Salary&amp;quot;
@@ -1049,13 +1089,16 @@ tb %&amp;gt;%
 Figure 3: Model fit, SSYK 214, Correlation between age and salary
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;p&gt;The derivative of the polynomial function for age is equal to the annual salary raise that comes from experience. I also add the salary raise that comes from the annual salary negotiation resulting in the total salary increase distributed over age.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
-pdx &amp;lt;- deriv(as.polynomial(c(0, summod$estimate[4], summod$estimate[5])))
+&lt;p&gt;The derivative of the spline function for age is equal to the annual salary raise that comes from experience. I also add the salary raise that comes from the annual salary negotiation resulting in the total salary increase distributed over age.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;summod &amp;lt;- tidy(summary (model))
 
-tb %&amp;gt;%
-  ggplot () +  
-    geom_point (mapping = aes(x = age_n,y = summod$estimate[2] + pdx[1] + pdx[2] * age_n)) + 
+myfun &amp;lt;- function(x){
+  return (predict(myspline, x, deriv = 1) + summod$estimate[2])
+}
+
+tibble(age_n = 21:65) %&amp;gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n,y = myfun(age_n))) +
   labs(
     x = &amp;quot;Age&amp;quot;,
     y = &amp;quot;Salary raise (%)&amp;quot;
@@ -1066,9 +1109,65 @@ tb %&amp;gt;%
 Figure 4: Model fit, SSYK 214, The derivative for age
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;p&gt;Wage statistics The Mediation Institute is responsible for Sweden’s official salary statistics. This applies to three types of statistics: cyclical wage statistics, wage structure statistics and statistics supplied to the European statistical body Eurostat, &lt;a href=&#34;https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/&#34; class=&#34;uri&#34;&gt;https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/&lt;/a&gt;. The statistics are collected and processed by Statistics Sweden. It is reported both on Statistics Sweden’s website and the Mediation Institute’s website.&lt;/p&gt;
+&lt;p&gt;Now. let´s perform some diagnostics on the model. First, a look at the residuals for the model shows no apparent problem.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
+plot(model, which = 1)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-6&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-1.png&#34; alt=&#34;Residuals vs Fitted of model fit&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 5: Residuals vs Fitted of model fit
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The Normal Q-Q shows some possible outliers.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
+plot(model, which = 2)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-7&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-1.png&#34; alt=&#34;Normal Q-Q&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 6: Normal Q-Q
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Again, the Standardised residuals show some possible outliers.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
+plot(model, which = 3)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-8&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-1.png&#34; alt=&#34;Scale-Location&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 7: Scale-Location
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The outliers are also found in the Leverage plot.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
+plot(model, which = 5)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-9&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-11-22-the-significance-of-experience-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-9-1.png&#34; alt=&#34;Residuals vs Leverage&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 8: Residuals vs Leverage
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The outliers 38, 56 and 75 are small groups with larger variance at either end of the age spectrum. Record 72 are women age 55-59.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb[38,]$age
+## [1] &amp;quot;18-24 years&amp;quot;
+tb[56,]$age
+## [1] &amp;quot;65-66 years&amp;quot;
+tb[75,]$age
+## [1] &amp;quot;65-66 years&amp;quot;
+
+tb[72,]
+## Source: local data frame [1 x 12]
+## Groups: &amp;lt;by row&amp;gt;
+## 
+## # A tibble: 1 x 12
+##   `occuptional  (~ age   sex   year  salary year_n age_l age_h age_n    fit
+##   &amp;lt;chr&amp;gt;            &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt;  &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;int&amp;gt; &amp;lt;int&amp;gt; &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;
+## 1 214 Engineering~ 55-5~ women 2017   45000   2017    55    59    57 48433.
+## # ... with 2 more variables: lwr &amp;lt;dbl&amp;gt;, upr &amp;lt;dbl&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Wage statistics&lt;/p&gt;
+&lt;p&gt;The Mediation Institute is responsible for Sweden’s official salary statistics. This applies to three types of statistics: cyclical wage statistics, wage structure statistics and statistics supplied to the European statistical body Eurostat, &lt;a href=&#34;https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/&#34; class=&#34;uri&#34;&gt;https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The statistics are collected and processed by Statistics Sweden. It is reported both on Statistics Sweden’s website and the Mediation Institute’s website.&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://www.r-bloggers.com/&#34; class=&#34;uri&#34;&gt;https://www.r-bloggers.com/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://rweekly.org&#34; class=&#34;uri&#34;&gt;https://rweekly.org&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Last edited: 2019-12-10&lt;/p&gt;
 `</description>
     </item>
     

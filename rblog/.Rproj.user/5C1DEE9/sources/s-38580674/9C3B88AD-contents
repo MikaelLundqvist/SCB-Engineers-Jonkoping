@@ -33,7 +33,9 @@ First, define libraries and functions.
 library (tidyverse) 
 library (broom) 
 library (car)
-library (polynom)
+library (splines)
+#install_github("ZheyuanLi/SplinesUtils")
+library(SplinesUtils)
 
 readfile <- function (file1){  
   read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
@@ -54,7 +56,7 @@ The average age within each age group is used as a numeric value for graphical p
 
 As the salary increases exponentially each year, I have used the logarithm for years in my model.
 
-As a proxy for experience years since graduation can be used. I will simplify by using age as a proxy for experience. A polynomial can be used to approximate the increase in salary over age. I will use a polynomial of degree two.
+As a proxy for experience years since graduation can be used. I will simplify by using age as a proxy for experience. I will use a B-spline function to approximate the increase in salaries over age. Spline function is used instead of a polynomial to avoid oscillation.
 
 We expect that both years and age are important factors on the salary. As a null hypothesis, we assume that years and age is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.
 
@@ -77,15 +79,14 @@ tb %>%
     y = "Salary (SEK/month)"
   )
 	
-model <- lm (log(salary) ~ year_n + sex + poly(age_n, 2, raw = T), data = tb)
+model <- lm (log(salary) ~ year_n + sex + bs(age_n, knots = c(30, 40, 50, 60)), data = tb)
 
 tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
 ```
 
-
-From the summary table of the linear model, we can see that the wages have increased by 1,92 % +/- 0,41 % per year with 95 % confidence, holding age as constant. The R-value from the Anova table for years is 86, sufficient for rejecting the null hypothesis that years has no effect on the salary.
-Holding year as constant, the p values for age are small (< 2e-16) and the R-value from the Anova table value for age is 1124, sufficient for rejecting the null hypothesis that experience has no effect on the salary.
-The adjusted R-squared value is 0,978 implying a good fit of the model.
+From the summary table of the linear model, we can see that the wages have increased by 1,91 % +/- 0,35 % per year with 95 % confidence, holding age as constant. The R-value from the Anova table for years is 120, sufficient for rejecting the null hypothesis that years has no effect on the salary.
+Holding year as constant, the p values for age are small (< 2e-16) and the R-value from the Anova table value for age is 703, sufficient for rejecting the null hypothesis that experience has no effect on the salary.
+The adjusted R-squared value is 0,984 implying a good fit of the model.
 
 
 ```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}
@@ -103,6 +104,8 @@ summary(model) %>%
   booktabs = TRUE,
   caption = 'Summary from linear model fit')
 
+summary(model)$r.squared   
+  
 Anova(model, type=2) %>% 
   tidy() %>% 
   knitr::kable( 
@@ -111,15 +114,15 @@ Anova(model, type=2) %>%
 ```
 
 
-Let's have a look at the coefficients from the linear fit for the age polynomial. To get coefficients that are easily interpreted we have to use raw instead of the default orthogonal polynomials.
+Let's have a look at the spline function from the regression model. I use the package SplineUtils to extract the polynomial train from the model coefficients.
 
 
 ```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Correlation between age and salary'}
+myspline <- RegBsplineAsPiecePoly(model, "bs(age_n, knots = c(30, 40, 50, 60))")
 
-summod <- tidy(summary (model))
-tb %>%
-  ggplot () +  
-    geom_point (mapping = aes(x = age_n,y = summod$estimate[4] * age_n + summod$estimate[5] * age_n ^ 2)) + 
+tibble(age_n = 21:65) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n,y = predict(myspline, age_n))) +
   labs(
     x = "Age",
     y = "Salary"
@@ -127,28 +130,81 @@ tb %>%
 ```
 
 
-The derivative of the polynomial function for age is equal to the annual salary raise that comes from experience. I also add the salary raise that comes from the annual salary negotiation resulting in the total salary increase distributed over age.
+The derivative of the spline function for age is equal to the annual salary raise that comes from experience. I also add the salary raise that comes from the annual salary negotiation resulting in the total salary increase distributed over age.
 
 
 ```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, The derivative for age'}
+summod <- tidy(summary (model))
 
-pdx <- deriv(as.polynomial(c(0, summod$estimate[4], summod$estimate[5])))
+myfun <- function(x){
+  return (predict(myspline, x, deriv = 1) + summod$estimate[2])
+}
 
-tb %>%
-  ggplot () +  
-    geom_point (mapping = aes(x = age_n,y = summod$estimate[2] + pdx[1] + pdx[2] * age_n)) + 
+tibble(age_n = 21:65) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n,y = myfun(age_n))) +
   labs(
     x = "Age",
     y = "Salary raise (%)"
   )
+```
+
+
+Now. let´s perform some diagnostics on the model. First, a look at the residuals for the model shows no apparent problem.
+
+ 
+```{r, echo = TRUE, fig.cap = 'Residuals vs Fitted of model fit'}
+
+plot(model, which = 1)
 
 ```
 
 
+The Normal Q-Q shows some possible outliers.
+  
+
+```{r, echo = TRUE, fig.cap = 'Normal Q-Q'}
+
+plot(model, which = 2)
+
+```
+
+Again, the Standardised residuals show some possible outliers.
+ 
+
+```{r, echo = TRUE, fig.cap = 'Scale-Location'}
+
+plot(model, which = 3)
+
+```
+
+The outliers are also found in the Leverage plot.
+
+  
+```{r, echo = TRUE, fig.cap = 'Residuals vs Leverage'}
+
+plot(model, which = 5)
+
+```
+
+The outliers 38, 56 and 75 are small groups with larger variance at either end of the age spectrum. Record 72 are women age 55-59.
+
+```{r, echo = TRUE, fig.cap = 'Residuals vs Leverage'}
+tb[38,]$age
+tb[56,]$age
+tb[75,]$age
+
+tb[72,]
+```
+
 Wage statistics
+
 The Mediation Institute is responsible for Sweden's official salary statistics. This applies to three types of statistics: cyclical wage statistics, wage structure statistics and statistics supplied to the European statistical body Eurostat, https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/.
+
 The statistics are collected and processed by Statistics Sweden. It is reported both on Statistics Sweden's website and the Mediation Institute's website.
 
 https://www.r-bloggers.com/
 
 https://rweekly.org
+
+Last edited: 2019-12-10
