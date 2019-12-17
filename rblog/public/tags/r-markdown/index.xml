@@ -13,11 +13,871 @@
     <language>en-us</language>
     
     
-    <lastBuildDate>Mon, 02 Dec 2019 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 15 Dec 2019 00:00:00 +0000</lastBuildDate>
     
     
         <atom:link href="/tags/r-markdown/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>The significance of education on the salary of engineers in Sweden</title>
+      <link>/2019/12/15/the-significance-of-education-on-the-salary-of-engineers-in-sweden/</link>
+      <pubDate>Sun, 15 Dec 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/2019/12/15/the-significance-of-education-on-the-salary-of-engineers-in-sweden/</guid>
+      <description>
+
+
+&lt;p&gt;In my last posts, I analysed the significance of experience for different occupational groups. In this post, I will turn the interest towards education. I will again start with engineers and see if I can expand my analysis to all occupational groups.&lt;/p&gt;
+&lt;p&gt;First, define libraries and functions.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (tidyverse) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## -- Attaching packages -------------------------------------------- tidyverse 1.2.1 --&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## v ggplot2 3.2.0     v purrr   0.3.2
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   0.8.3     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## -- Conflicts ----------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (broom) 
+library (car)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: carData&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;car&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:dplyr&amp;#39;:
+## 
+##     recode&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:purrr&amp;#39;:
+## 
+##     some&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (splines)
+#install_github(&amp;quot;ZheyuanLi/SplinesUtils&amp;quot;)
+library(SplinesUtils)
+
+readfile &amp;lt;- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &amp;quot;latin1&amp;quot;), na = c(&amp;quot;..&amp;quot;, &amp;quot;NA&amp;quot;)) %&amp;gt;%  
+    gather (starts_with(&amp;quot;19&amp;quot;), starts_with(&amp;quot;20&amp;quot;), key = &amp;quot;year&amp;quot;, value = salary) %&amp;gt;%  
+    drop_na() %&amp;gt;%  
+    mutate (year_n = parse_number (year))
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CY.csv, &lt;a href=&#34;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&#34; class=&#34;uri&#34;&gt;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and educational level (SUN). Year 2014 - 2018 Monthly salary All sectors&lt;/p&gt;
+&lt;p&gt;We expect that education is an important factor in salaries. As a null hypothesis, we assume that education is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.&lt;/p&gt;
+&lt;p&gt;The column &lt;code&gt;level of education&lt;/code&gt; is renamed because TukeyHSD doesn’t handle variable names within quotes.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb &amp;lt;- readfile(&amp;quot;000000CY.csv&amp;quot;) %&amp;gt;% 
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;214 Engineering professionals&amp;quot;) %&amp;gt;%       
+  mutate(edulevel = `level of education`)
+
+tb %&amp;gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = `level of education`, shape=sex)) + 
+  labs(
+    x = &amp;quot;Year&amp;quot;,
+    y = &amp;quot;Salary (SEK/month)&amp;quot;
+  )&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-2&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png&#34; alt=&#34;SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 1: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;model &amp;lt;- lm (log(salary) ~ year_n + sex + edulevel, data = tb)
+
+tb &amp;lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &amp;quot;confidence&amp;quot;))))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The F-value from the Anova table for years is 40 (Pr(&amp;gt;F) &amp;lt; 2.2e-16), sufficient for rejecting the null hypothesis that education has no effect on the salary holding year as constant. The adjusted R-squared value is 0,833 implying a good fit of the model.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb %&amp;gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = edulevel, shape = sex)) + 
+  labs(
+    x = &amp;quot;Year&amp;quot;,
+    y = &amp;quot;Salary (SEK/month)&amp;quot;
+  )&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-3&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png&#34; alt=&#34;Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 2: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;summary(model) %&amp;gt;%  
+  tidy() %&amp;gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &amp;#39;Summary from linear model fit&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-3&#34;&gt;Table 1: &lt;/span&gt;Summary from linear model fit&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;term&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;estimate&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;std.error&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;statistic&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;p.value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;(Intercept)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-27.3895893&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6.6236266&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-4.1351349&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001120&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;year_n&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0189082&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0032856&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.7549246&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000003&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;sexwomen&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0837412&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0092178&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-9.0847619&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevelpost-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1114561&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0171029&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6.5167907&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevelpost-secondary education 3 years or more (ISCED97 5A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0010205&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0171029&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0596699&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.9526168&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0332012&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0171029&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-1.9412595&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0569278&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevelprimary and secondary education 9-10 years (ISCED97 2)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1089810&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0175947&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-6.1939725&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000001&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevelupper secondary education 3 years (ISCED97 3A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0784305&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0171029&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-4.5857936&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000235&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevelupper secondary education, 2 years or less (ISCED97 3C)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1040503&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0171029&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-6.0837761&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000001&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;summary(model)$adj.r.squared  &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 0.8327314&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;Anova(model, type = 2) %&amp;gt;% 
+  tidy() %&amp;gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &amp;#39;Anova report from linear model fit&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-3&#34;&gt;Table 1: &lt;/span&gt;Anova report from linear model fit&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;term&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;sumsq&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;df&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;statistic&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;p.value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;year_n&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0484384&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;33.11916&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3e-07&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;sex&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1207084&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;82.53290&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0e+00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.3529225&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;40.21774&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0e+00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;Residuals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0877529&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;60&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;How much do the different levels of education affect the salary? We can calculate the differences between the levels with Tukey’s honest significant difference. All significant level differences are shown in the table below.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tukeytable &amp;lt;- TukeyHSD(aov(log(salary) ~ sex + edulevel, data = tb)) %&amp;gt;%
+  tidy() %&amp;gt;%
+  mutate(percdiff = (1 / exp(estimate) - 1) * 100)
+
+tukeytable  %&amp;gt;% 
+  filter(adj.p.value &amp;lt; 0.05) %&amp;gt;%
+  arrange(estimate) %&amp;gt;%  
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &amp;#39;Tukey HSD 95 % confidence intervals for the pairwise significant differences&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-4&#34;&gt;Table 2: &lt;/span&gt;Tukey HSD 95 % confidence intervals for the pairwise significant differences&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;term&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;comparison&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;estimate&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;conf.low&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;conf.high&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;adj.p.value&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;percdiff&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2160450&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2822364&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1498535&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;24.115819&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2155065&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2799325&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1510804&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;24.049001&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education 3 years (ISCED97 3A)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1898866&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2543126&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1254606&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;20.911247&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;post-secondary education, less than 3 years (ISCED97 4+5B)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1446573&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2090834&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0802313&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000001&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.564352&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;post-secondary education 3 years or more (ISCED97 5A)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1104356&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1748616&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0460096&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000443&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.676444&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)-post-secondary education 3 years or more (ISCED97 5A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1056094&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1718008&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0394179&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001649&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.138763&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education 3 years or more (ISCED97 5A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1050709&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1694969&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0406448&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001119&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.078932&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)-no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1045888&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1707803&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0383974&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001950&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.025400&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)-no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1040503&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1684764&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0396243&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001331&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.965630&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;sex&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;women-men&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0803151&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1030666&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0575637&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.362851&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education 3 years (ISCED97 3A)-post-secondary education 3 years or more (ISCED97 5A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0794510&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1438770&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0150250&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0066749&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.269249&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education 3 years (ISCED97 3A)-no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0784305&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1428565&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0140044&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0077374&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.158814&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)-post-secondary education, less than 3 years (ISCED97 4+5B)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0713876&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1375791&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0051962&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0264560&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.399745&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education, less than 3 years (ISCED97 4+5B)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0708491&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1352751&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0064231&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0221087&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.341926&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;post-graduate education (ISCED97 6)-no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1114561&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0470301&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1758822&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000370&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-10.546938&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;We can conclude from the summary table that there is a positive correlation between longer education and higher salaries.&lt;/p&gt;
+&lt;p&gt;From the table of Tukey’s honest significant difference, we can see the difference in salaries between the different education lengths. Note that the estimates are negative due to the log transformation, the untransformed differences are in the column percdiff.&lt;/p&gt;
+&lt;p&gt;Can we approximate how much the salaries increase by one year of education by assigning a numeric value to the factors in the table?&lt;/p&gt;
+&lt;p&gt;As a first approach, I will use the data in the following table.&lt;/p&gt;
+&lt;p&gt;I will use a B-spline function to approximate the increase in salaries over age. The rows for “no information about the level of educational attainment” is removed from the table from Statistics Sweden.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;numedulevel &amp;lt;- read.csv(&amp;quot;edulevel.csv&amp;quot;) 
+
+numedulevel %&amp;gt;%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = &amp;#39;Initial approach, length of education&amp;#39;) &lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-5&#34;&gt;Table 3: &lt;/span&gt;Initial approach, length of education&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;level.of.education&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;eduyears&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education 3 years (ISCED97 3A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;12&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;post-secondary education, less than 3 years (ISCED97 4+5B)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;14&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;post-secondary education 3 years or more (ISCED97 5A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;19&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tbnum &amp;lt;- tb %&amp;gt;% 
+    right_join(numedulevel, by = c(&amp;quot;level of education&amp;quot; = &amp;quot;level.of.education&amp;quot;)) %&amp;gt;%
+  filter(!is.na(eduyears))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: Column `level of education`/`level.of.education` joining character
+## vector and factor, coercing into character vector&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;modelcont &amp;lt;- lm(log(salary) ~ bs(eduyears, knots = c(14)) + year_n + sex, data = tbnum)
+
+tbnum &amp;lt;- bind_cols(tbnum, as_tibble(exp(predict(modelcont, tbnum, interval = &amp;quot;confidence&amp;quot;))))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The F-value from the Anova table for years is 146 and the adjusted R-squared value is 0,932 implying a good fit of the model. Both the F-value and the adjusted R-squared increased from then using the categorical predictors. (Removing the rows with “no information about level of educational attainment” improves the adjusted R-squared for the model with categorical predictors to 0.931.)&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tbnum %&amp;gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit1, colour = eduyears, shape = sex)) + 
+  labs(
+    x = &amp;quot;Year&amp;quot;,
+    y = &amp;quot;Salary (SEK/month)&amp;quot;
+  )&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-6&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-1.png&#34; alt=&#34;Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 3: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;summary(modelcont) %&amp;gt;%  
+  tidy() %&amp;gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &amp;#39;Summary from linear model fit&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-6&#34;&gt;Table 4: &lt;/span&gt;Summary from linear model fit&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;term&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;estimate&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;std.error&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;statistic&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;p.value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;(Intercept)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-35.1115742&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.5503183&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-7.7162898&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(eduyears, knots = c(14))1&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0113708&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0237866&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.4780331&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6346302&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(eduyears, knots = c(14))2&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0719453&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0468930&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.5342429&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1310323&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(eduyears, knots = c(14))3&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1850177&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0567742&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2588347&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0019749&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(eduyears, knots = c(14))4&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.2212179&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0111456&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;19.8480339&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;year_n&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0226818&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0022569&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.0500379&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;sexwomen&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0743275&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0063230&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-11.7551579&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;summary(modelcont)$adj.r.squared  &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] 0.9316461&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;Anova(modelcont, type = 2) %&amp;gt;% 
+  tidy() %&amp;gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &amp;#39;Anova report from linear model fit&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-6&#34;&gt;Table 4: &lt;/span&gt;Anova report from linear model fit&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;term&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;sumsq&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;df&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;statistic&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;p.value&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;bs(eduyears, knots = c(14))&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.3429901&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;145.7866&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;year_n&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0594072&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;101.0033&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;sex&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0812757&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;138.1837&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;Residuals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0305849&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;52&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;NA&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;What does the continous function from the model look like?&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;contspline &amp;lt;- RegBsplineAsPiecePoly(modelcont, &amp;quot;bs(eduyears, knots = c(14))&amp;quot;)
+
+tibble(eduyears = 9:19) %&amp;gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = &amp;quot;Years of education&amp;quot;,
+    y = &amp;quot;Salary&amp;quot;
+  )&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-7&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-1.png&#34; alt=&#34;Model fit, SSYK 214, Correlation between education and salary&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 4: Model fit, SSYK 214, Correlation between education and salary
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;And it’s derivative.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tibble(eduyears = 9:19) %&amp;gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = &amp;quot;Years of education&amp;quot;,
+    y = &amp;quot;Salary difference (%)&amp;quot;
+  )&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-8&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-1.png&#34; alt=&#34;Model fit, SSYK 214, The derivative for education&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 5: Model fit, SSYK 214, The derivative for education
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Comparison between the categorical and the continuous predictor. Column withinconf states if the estimate from the numerical model is within the 95 % confidence interval from the Tukey’s honest significant difference table. All estimates from the model with the continuous predictor are within the 95 % confidence intervals from the Tukey HSD table.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tukeytable &amp;lt;- tukeytable %&amp;gt;% 
+  rowwise() %&amp;gt;% 
+  mutate(comp_from = unlist(strsplit(comparison, &amp;quot;)-&amp;quot;))[1]) %&amp;gt;%
+  rowwise() %&amp;gt;% 
+  mutate(comp_to = unlist(strsplit(comparison, &amp;quot;)-&amp;quot;))[2]) %&amp;gt;%             mutate(comp_from = paste (comp_from, &amp;quot;)&amp;quot;, sep=&amp;quot;&amp;quot;)) %&amp;gt;%
+  left_join(numedulevel, by = c(&amp;quot;comp_from&amp;quot; = &amp;quot;level.of.education&amp;quot;)) %&amp;gt;%
+  left_join(numedulevel, by = c(&amp;quot;comp_to&amp;quot; = &amp;quot;level.of.education&amp;quot;)) %&amp;gt;%    mutate(numestimate = predict(contspline, eduyears.x) -           predict(contspline, eduyears.y)) %&amp;gt;% 
+  mutate(withinconf = numestimate &amp;gt; conf.low &amp;amp;&amp;amp; numestimate &amp;lt; conf.high) %&amp;gt;% 
+  mutate(percdiffcont = (1 / exp(predict(contspline, eduyears.x) - predict(contspline, eduyears.y)) - 1) * 100)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: Column `comp_from`/`level.of.education` joining character vector and
+## factor, coercing into character vector&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: Column `comp_to`/`level.of.education` joining character vector and
+## factor, coercing into character vector&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tukeytable %&amp;gt;% 
+  select(term, comparison, estimate, adj.p.value, numestimate, withinconf, percdiff, percdiffcont) %&amp;gt;%
+  filter(adj.p.value &amp;lt; 0.05) %&amp;gt;%
+  arrange(estimate) %&amp;gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &amp;#39;Comparison between categorical and continous predictor&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-9&#34;&gt;Table 5: &lt;/span&gt;Comparison between categorical and continous predictor&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;term&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;comparison&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;estimate&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;adj.p.value&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;numestimate&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;withinconf&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;percdiff&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;percdiffcont&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2160450&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2212179&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;24.115819&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;24.7595300&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2155065&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.2123268&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;24.049001&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;23.6551904&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education 3 years (ISCED97 3A)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1898866&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1942616&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;20.911247&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;21.4413939&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;post-secondary education, less than 3 years (ISCED97 4+5B)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1446573&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000001&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1418336&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.564352&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.2384840&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;post-secondary education 3 years or more (ISCED97 5A)-post-graduate education (ISCED97 6)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1104356&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000443&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1117048&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.676444&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.8182726&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)-post-secondary education 3 years or more (ISCED97 5A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1056094&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001649&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1095131&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.138763&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.5734729&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education 3 years or more (ISCED97 5A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1050709&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001119&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1006220&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.078932&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.5858529&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)-no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1045888&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001950&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;FALSE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.025400&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)-no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.1040503&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0001331&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0088912&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;FALSE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.965630&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.8851746&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;sex&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;women-men&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0803151&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;FALSE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.362851&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education 3 years (ISCED97 3A)-post-secondary education 3 years or more (ISCED97 5A)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0794510&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0066749&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0825568&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.269249&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.6060365&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education 3 years (ISCED97 3A)-no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0784305&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0077374&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0269563&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;FALSE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.158814&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-2.6596254&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;primary and secondary education 9-10 years (ISCED97 2)-post-secondary education, less than 3 years (ISCED97 4+5B)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0713876&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0264560&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0793844&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.399745&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.2620369&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education, less than 3 years (ISCED97 4+5B)&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0708491&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0221087&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.0704932&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;TRUE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.341926&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.3037289&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;edulevel&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;post-graduate education (ISCED97 6)-no information about level of educational attainment&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1114561&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0000370&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.2212179&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;FALSE&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-10.546938&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-19.8458026&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Now. let´s perform some diagnostics on the models. First, a look at the residuals for the model shows no apparent problem. We can see that the outlier at row 55 has disappeared in the plots for the continuous model.&lt;/p&gt;
+&lt;p&gt;Three out of four outliers when using categorical predictors were from the factor “no information about level of educational attainment”.&lt;/p&gt;
+&lt;p&gt;For the continuous predictors there are two outliers in the factor “upper secondary education, 2 years or less (ISCED97 3C)” and two outliers in the factor “upper secondary education 3 years (ISCED97 3A)” indicating that the model could be improved.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb[20,]$edulevel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;no information about level of educational attainment&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb[41,]$edulevel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;no information about level of educational attainment&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb[55,]$edulevel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;no information about level of educational attainment&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb[57,]$edulevel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;upper secondary education, 2 years or less (ISCED97 3C)&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tbnum[12,]$edulevel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;upper secondary education, 2 years or less (ISCED97 3C)&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tbnum[18,]$edulevel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;upper secondary education, 2 years or less (ISCED97 3C)&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tbnum[25,]$edulevel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;upper secondary education 3 years (ISCED97 3A)&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tbnum[29,]$edulevel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;upper secondary education 3 years (ISCED97 3A)&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(model, which = 1)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-111&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-1.png&#34; alt=&#34;Residuals vs Fitted of model fit&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 6: Residuals vs Fitted of model fit
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(modelcont, which = 1)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-112&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-2.png&#34; alt=&#34;Residuals vs Fitted of model fit&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 7: Residuals vs Fitted of model fit
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The Normal Q-Q shows some possible outliers.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(model, which = 2)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-121&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-12-1.png&#34; alt=&#34;Normal Q-Q&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 8: Normal Q-Q
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(modelcont, which = 2)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-122&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-12-2.png&#34; alt=&#34;Normal Q-Q&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 9: Normal Q-Q
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Again, the Standardised residuals show some possible outliers.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(model, which = 3)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-131&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-13-1.png&#34; alt=&#34;Scale-Location&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 10: Scale-Location
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(modelcont, which = 3)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-132&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-13-2.png&#34; alt=&#34;Scale-Location&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 11: Scale-Location
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The outliers are also found in the Leverage plot.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(model, which = 5)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-141&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-14-1.png&#34; alt=&#34;Residuals vs Leverage&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 12: Residuals vs Leverage
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(modelcont, which = 5)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-142&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-14-2.png&#34; alt=&#34;Residuals vs Leverage&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 13: Residuals vs Leverage
+&lt;/p&gt;
+&lt;/div&gt;
+</description>
+    </item>
     
     <item>
       <title>The significance of experience on the salary in Sweden, a comparison between different occupational groups</title>

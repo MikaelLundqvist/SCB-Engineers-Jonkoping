@@ -1,0 +1,16 @@
+"","term","comparison","estimate","conf.low","conf.high","adj.p.value"
+"1","sex","women-men",-0.0803151419694306,-0.103066595573873,-0.0575636883649876,1.85587378798147e-09
+"2","edu","post-graduate education (ISCED97 6)-no information about level of educational attainment",0.111456142065148,0.0470301201758648,0.175882163954431,3.7036229696974e-05
+"3","edu","primary and secondary education 9-10 years (ISCED97 2)-no information about level of educational attainment",-0.104588822689488,-0.170780267937801,-0.0383973774411743,0.000194979218389624
+"4","edu","upper secondary education 3 years (ISCED97 3A)-no information about level of educational attainment",-0.0784304559872329,-0.142856477876516,-0.01400443409795,0.00773743364480817
+"5","edu","upper secondary education, 2 years or less (ISCED97 3C)-no information about level of educational attainment",-0.104050328852262,-0.168476350741545,-0.039624306962979,0.000133145325950101
+"6","edu","post-secondary education 3 years or more (ISCED97 5A)-post-graduate education (ISCED97 6)",-0.11043561223558,-0.174861634124863,-0.0460095903462974,4.42688226259813e-05
+"7","edu","post-secondary education, less than 3 years (ISCED97 4+5B)-post-graduate education (ISCED97 6)",-0.144657346052121,-0.209083367941404,-0.0802313241628379,8.81701761601406e-08
+"8","edu","primary and secondary education 9-10 years (ISCED97 2)-post-graduate education (ISCED97 6)",-0.216044964754635,-0.282236410002949,-0.149853519506322,2.08283390534802e-11
+"9","edu","upper secondary education 3 years (ISCED97 3A)-post-graduate education (ISCED97 6)",-0.189886598052381,-0.254312619941663,-0.125460576163098,3.92659238457327e-11
+"10","edu","upper secondary education, 2 years or less (ISCED97 3C)-post-graduate education (ISCED97 6)",-0.215506470917409,-0.279932492806692,-0.151080449028127,2.0550783297324e-11
+"11","edu","primary and secondary education 9-10 years (ISCED97 2)-post-secondary education 3 years or more (ISCED97 5A)",-0.105609352519055,-0.171800797767369,-0.0394179072707416,0.000164850042371767
+"12","edu","upper secondary education 3 years (ISCED97 3A)-post-secondary education 3 years or more (ISCED97 5A)",-0.0794509858168002,-0.143877007706083,-0.0150249639275174,0.00667493900992777
+"13","edu","upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education 3 years or more (ISCED97 5A)",-0.105070858681829,-0.169496880571112,-0.0406448367925463,0.00011186461902124
+"14","edu","primary and secondary education 9-10 years (ISCED97 2)-post-secondary education, less than 3 years (ISCED97 4+5B)",-0.0713876187025146,-0.137579063950828,-0.00519617345420115,0.0264560217597101
+"15","edu","upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education, less than 3 years (ISCED97 4+5B)",-0.0708491248652887,-0.135275146754572,-0.00642310297600586,0.0221086873604042

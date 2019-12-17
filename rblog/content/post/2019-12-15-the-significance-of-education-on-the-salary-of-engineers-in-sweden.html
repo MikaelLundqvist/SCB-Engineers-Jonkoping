@@ -1,0 +1,862 @@
+---
+title: "The significance of education on the salary of engineers in Sweden"
+author: "Mikael Lundqvist"
+date: '2019-12-15'
+slug: the-significance-of-education-on-the-salary-of-engineers-in-sweden
+tags:
+- plot
+- R Markdown
+- regression
+categories: R
+---
+
+
+
+<p>In my last posts, I analysed the significance of experience for different occupational groups. In this post, I will turn the interest towards education. I will again start with engineers and see if I can expand my analysis to all occupational groups.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse) </code></pre>
+<pre><code>## -- Attaching packages -------------------------------------------- tidyverse 1.2.1 --</code></pre>
+<pre><code>## v ggplot2 3.2.0     v purrr   0.3.2
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   0.8.3     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts ----------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library (broom) 
+library (car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre class="r"><code>library (splines)
+#install_github(&quot;ZheyuanLi/SplinesUtils&quot;)
+library(SplinesUtils)
+
+readfile &lt;- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%  
+    gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = salary) %&gt;%  
+    drop_na() %&gt;%  
+    mutate (year_n = parse_number (year))
+}</code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CY.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and educational level (SUN). Year 2014 - 2018 Monthly salary All sectors</p>
+<p>We expect that education is an important factor in salaries. As a null hypothesis, we assume that education is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.</p>
+<p>The column <code>level of education</code> is renamed because TukeyHSD doesn’t handle variable names within quotes.</p>
+<pre class="r"><code>tb &lt;- readfile(&quot;000000CY.csv&quot;) %&gt;% 
+  filter(`occuptional  (SSYK 2012)` == &quot;214 Engineering professionals&quot;) %&gt;%       
+  mutate(edulevel = `level of education`)
+
+tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = `level of education`, shape=sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-2"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 1: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n + sex + edulevel, data = tb)
+
+tb &lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &quot;confidence&quot;))))</code></pre>
+<p>The F-value from the Anova table for years is 40 (Pr(&gt;F) &lt; 2.2e-16), sufficient for rejecting the null hypothesis that education has no effect on the salary holding year as constant. The adjusted R-squared value is 0,833 implying a good fit of the model.</p>
+<pre class="r"><code>tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = edulevel, shape = sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-3"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 2: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-3">Table 1: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-27.3895893</td>
+<td align="right">6.6236266</td>
+<td align="right">-4.1351349</td>
+<td align="right">0.0001120</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0189082</td>
+<td align="right">0.0032856</td>
+<td align="right">5.7549246</td>
+<td align="right">0.0000003</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0837412</td>
+<td align="right">0.0092178</td>
+<td align="right">-9.0847619</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelpost-graduate education (ISCED97 6)</td>
+<td align="right">0.1114561</td>
+<td align="right">0.0171029</td>
+<td align="right">6.5167907</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">0.0010205</td>
+<td align="right">0.0171029</td>
+<td align="right">0.0596699</td>
+<td align="right">0.9526168</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.0332012</td>
+<td align="right">0.0171029</td>
+<td align="right">-1.9412595</td>
+<td align="right">0.0569278</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">-0.1089810</td>
+<td align="right">0.0175947</td>
+<td align="right">-6.1939725</td>
+<td align="right">0.0000001</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">-0.0784305</td>
+<td align="right">0.0171029</td>
+<td align="right">-4.5857936</td>
+<td align="right">0.0000235</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">-0.1040503</td>
+<td align="right">0.0171029</td>
+<td align="right">-6.0837761</td>
+<td align="right">0.0000001</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.8327314</code></pre>
+<pre class="r"><code>Anova(model, type = 2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-3">Table 1: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0484384</td>
+<td align="right">1</td>
+<td align="right">33.11916</td>
+<td align="right">3e-07</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="right">0.1207084</td>
+<td align="right">1</td>
+<td align="right">82.53290</td>
+<td align="right">0e+00</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="right">0.3529225</td>
+<td align="right">6</td>
+<td align="right">40.21774</td>
+<td align="right">0e+00</td>
+</tr>
+<tr class="even">
+<td align="left">Residuals</td>
+<td align="right">0.0877529</td>
+<td align="right">60</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<p>How much do the different levels of education affect the salary? We can calculate the differences between the levels with Tukey’s honest significant difference. All significant level differences are shown in the table below.</p>
+<pre class="r"><code>tukeytable &lt;- TukeyHSD(aov(log(salary) ~ sex + edulevel, data = tb)) %&gt;%
+  tidy() %&gt;%
+  mutate(percdiff = (1 / exp(estimate) - 1) * 100)
+
+tukeytable  %&gt;% 
+  filter(adj.p.value &lt; 0.05) %&gt;%
+  arrange(estimate) %&gt;%  
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Tukey HSD 95 % confidence intervals for the pairwise significant differences&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 2: </span>Tukey HSD 95 % confidence intervals for the pairwise significant differences</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="left">comparison</th>
+<th align="right">estimate</th>
+<th align="right">conf.low</th>
+<th align="right">conf.high</th>
+<th align="right">adj.p.value</th>
+<th align="right">percdiff</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.2160450</td>
+<td align="right">-0.2822364</td>
+<td align="right">-0.1498535</td>
+<td align="right">0.0000000</td>
+<td align="right">24.115819</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.2155065</td>
+<td align="right">-0.2799325</td>
+<td align="right">-0.1510804</td>
+<td align="right">0.0000000</td>
+<td align="right">24.049001</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education 3 years (ISCED97 3A)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.1898866</td>
+<td align="right">-0.2543126</td>
+<td align="right">-0.1254606</td>
+<td align="right">0.0000000</td>
+<td align="right">20.911247</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">post-secondary education, less than 3 years (ISCED97 4+5B)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.1446573</td>
+<td align="right">-0.2090834</td>
+<td align="right">-0.0802313</td>
+<td align="right">0.0000001</td>
+<td align="right">15.564352</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">post-secondary education 3 years or more (ISCED97 5A)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.1104356</td>
+<td align="right">-0.1748616</td>
+<td align="right">-0.0460096</td>
+<td align="right">0.0000443</td>
+<td align="right">11.676444</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)-post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.1056094</td>
+<td align="right">-0.1718008</td>
+<td align="right">-0.0394179</td>
+<td align="right">0.0001649</td>
+<td align="right">11.138763</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.1050709</td>
+<td align="right">-0.1694969</td>
+<td align="right">-0.0406448</td>
+<td align="right">0.0001119</td>
+<td align="right">11.078932</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)-no information about level of educational attainment</td>
+<td align="right">-0.1045888</td>
+<td align="right">-0.1707803</td>
+<td align="right">-0.0383974</td>
+<td align="right">0.0001950</td>
+<td align="right">11.025400</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)-no information about level of educational attainment</td>
+<td align="right">-0.1040503</td>
+<td align="right">-0.1684764</td>
+<td align="right">-0.0396243</td>
+<td align="right">0.0001331</td>
+<td align="right">10.965630</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="left">women-men</td>
+<td align="right">-0.0803151</td>
+<td align="right">-0.1030666</td>
+<td align="right">-0.0575637</td>
+<td align="right">0.0000000</td>
+<td align="right">8.362851</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education 3 years (ISCED97 3A)-post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.0794510</td>
+<td align="right">-0.1438770</td>
+<td align="right">-0.0150250</td>
+<td align="right">0.0066749</td>
+<td align="right">8.269249</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education 3 years (ISCED97 3A)-no information about level of educational attainment</td>
+<td align="right">-0.0784305</td>
+<td align="right">-0.1428565</td>
+<td align="right">-0.0140044</td>
+<td align="right">0.0077374</td>
+<td align="right">8.158814</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)-post-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.0713876</td>
+<td align="right">-0.1375791</td>
+<td align="right">-0.0051962</td>
+<td align="right">0.0264560</td>
+<td align="right">7.399745</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.0708491</td>
+<td align="right">-0.1352751</td>
+<td align="right">-0.0064231</td>
+<td align="right">0.0221087</td>
+<td align="right">7.341926</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">post-graduate education (ISCED97 6)-no information about level of educational attainment</td>
+<td align="right">0.1114561</td>
+<td align="right">0.0470301</td>
+<td align="right">0.1758822</td>
+<td align="right">0.0000370</td>
+<td align="right">-10.546938</td>
+</tr>
+</tbody>
+</table>
+<p>We can conclude from the summary table that there is a positive correlation between longer education and higher salaries.</p>
+<p>From the table of Tukey’s honest significant difference, we can see the difference in salaries between the different education lengths. Note that the estimates are negative due to the log transformation, the untransformed differences are in the column percdiff.</p>
+<p>Can we approximate how much the salaries increase by one year of education by assigning a numeric value to the factors in the table?</p>
+<p>As a first approach, I will use the data in the following table.</p>
+<p>I will use a B-spline function to approximate the increase in salaries over age. The rows for “no information about the level of educational attainment” is removed from the table from Statistics Sweden.</p>
+<pre class="r"><code>numedulevel &lt;- read.csv(&quot;edulevel.csv&quot;) 
+
+numedulevel %&gt;%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = &#39;Initial approach, length of education&#39;) </code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 3: </span>Initial approach, length of education</caption>
+<thead>
+<tr class="header">
+<th align="left">level.of.education</th>
+<th align="right">eduyears</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">11</td>
+</tr>
+<tr class="odd">
+<td align="left">upper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">12</td>
+</tr>
+<tr class="even">
+<td align="left">post-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="left">post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="left">post-graduate education (ISCED97 6)</td>
+<td align="right">19</td>
+</tr>
+<tr class="odd">
+<td align="left">no information about level of educational attainment</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>tbnum &lt;- tb %&gt;% 
+    right_join(numedulevel, by = c(&quot;level of education&quot; = &quot;level.of.education&quot;)) %&gt;%
+  filter(!is.na(eduyears))</code></pre>
+<pre><code>## Warning: Column `level of education`/`level.of.education` joining character
+## vector and factor, coercing into character vector</code></pre>
+<pre class="r"><code>modelcont &lt;- lm(log(salary) ~ bs(eduyears, knots = c(14)) + year_n + sex, data = tbnum)
+
+tbnum &lt;- bind_cols(tbnum, as_tibble(exp(predict(modelcont, tbnum, interval = &quot;confidence&quot;))))</code></pre>
+<p>The F-value from the Anova table for years is 146 and the adjusted R-squared value is 0,932 implying a good fit of the model. Both the F-value and the adjusted R-squared increased from then using the categorical predictors. (Removing the rows with “no information about level of educational attainment” improves the adjusted R-squared for the model with categorical predictors to 0.931.)</p>
+<pre class="r"><code>tbnum %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit1, colour = eduyears, shape = sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-6"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 3: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>summary(modelcont) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-6">Table 4: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-35.1115742</td>
+<td align="right">4.5503183</td>
+<td align="right">-7.7162898</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))1</td>
+<td align="right">-0.0113708</td>
+<td align="right">0.0237866</td>
+<td align="right">-0.4780331</td>
+<td align="right">0.6346302</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))2</td>
+<td align="right">0.0719453</td>
+<td align="right">0.0468930</td>
+<td align="right">1.5342429</td>
+<td align="right">0.1310323</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))3</td>
+<td align="right">0.1850177</td>
+<td align="right">0.0567742</td>
+<td align="right">3.2588347</td>
+<td align="right">0.0019749</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))4</td>
+<td align="right">0.2212179</td>
+<td align="right">0.0111456</td>
+<td align="right">19.8480339</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0226818</td>
+<td align="right">0.0022569</td>
+<td align="right">10.0500379</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0743275</td>
+<td align="right">0.0063230</td>
+<td align="right">-11.7551579</td>
+<td align="right">0.0000000</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(modelcont)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9316461</code></pre>
+<pre class="r"><code>Anova(modelcont, type = 2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-6">Table 4: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))</td>
+<td align="right">0.3429901</td>
+<td align="right">4</td>
+<td align="right">145.7866</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0594072</td>
+<td align="right">1</td>
+<td align="right">101.0033</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">sex</td>
+<td align="right">0.0812757</td>
+<td align="right">1</td>
+<td align="right">138.1837</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Residuals</td>
+<td align="right">0.0305849</td>
+<td align="right">52</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<p>What does the continous function from the model look like?</p>
+<pre class="r"><code>contspline &lt;- RegBsplineAsPiecePoly(modelcont, &quot;bs(eduyears, knots = c(14))&quot;)
+
+tibble(eduyears = 9:19) %&gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = &quot;Years of education&quot;,
+    y = &quot;Salary&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-7"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-1.png" alt="Model fit, SSYK 214, Correlation between education and salary" width="672" />
+<p class="caption">
+Figure 4: Model fit, SSYK 214, Correlation between education and salary
+</p>
+</div>
+<p>And it’s derivative.</p>
+<pre class="r"><code>tibble(eduyears = 9:19) %&gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = &quot;Years of education&quot;,
+    y = &quot;Salary difference (%)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-8"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-1.png" alt="Model fit, SSYK 214, The derivative for education" width="672" />
+<p class="caption">
+Figure 5: Model fit, SSYK 214, The derivative for education
+</p>
+</div>
+<p>Comparison between the categorical and the continuous predictor. Column withinconf states if the estimate from the numerical model is within the 95 % confidence interval from the Tukey’s honest significant difference table. All estimates from the model with the continuous predictor are within the 95 % confidence intervals from the Tukey HSD table.</p>
+<pre class="r"><code>tukeytable &lt;- tukeytable %&gt;% 
+  rowwise() %&gt;% 
+  mutate(comp_from = unlist(strsplit(comparison, &quot;)-&quot;))[1]) %&gt;%
+  rowwise() %&gt;% 
+  mutate(comp_to = unlist(strsplit(comparison, &quot;)-&quot;))[2]) %&gt;%             mutate(comp_from = paste (comp_from, &quot;)&quot;, sep=&quot;&quot;)) %&gt;%
+  left_join(numedulevel, by = c(&quot;comp_from&quot; = &quot;level.of.education&quot;)) %&gt;%
+  left_join(numedulevel, by = c(&quot;comp_to&quot; = &quot;level.of.education&quot;)) %&gt;%    mutate(numestimate = predict(contspline, eduyears.x) -           predict(contspline, eduyears.y)) %&gt;% 
+  mutate(withinconf = numestimate &gt; conf.low &amp;&amp; numestimate &lt; conf.high) %&gt;% 
+  mutate(percdiffcont = (1 / exp(predict(contspline, eduyears.x) - predict(contspline, eduyears.y)) - 1) * 100)</code></pre>
+<pre><code>## Warning: Column `comp_from`/`level.of.education` joining character vector and
+## factor, coercing into character vector</code></pre>
+<pre><code>## Warning: Column `comp_to`/`level.of.education` joining character vector and
+## factor, coercing into character vector</code></pre>
+<pre class="r"><code>tukeytable %&gt;% 
+  select(term, comparison, estimate, adj.p.value, numestimate, withinconf, percdiff, percdiffcont) %&gt;%
+  filter(adj.p.value &lt; 0.05) %&gt;%
+  arrange(estimate) %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Comparison between categorical and continous predictor&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-9">Table 5: </span>Comparison between categorical and continous predictor</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="left">comparison</th>
+<th align="right">estimate</th>
+<th align="right">adj.p.value</th>
+<th align="right">numestimate</th>
+<th align="left">withinconf</th>
+<th align="right">percdiff</th>
+<th align="right">percdiffcont</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.2160450</td>
+<td align="right">0.0000000</td>
+<td align="right">-0.2212179</td>
+<td align="left">TRUE</td>
+<td align="right">24.115819</td>
+<td align="right">24.7595300</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.2155065</td>
+<td align="right">0.0000000</td>
+<td align="right">-0.2123268</td>
+<td align="left">TRUE</td>
+<td align="right">24.049001</td>
+<td align="right">23.6551904</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education 3 years (ISCED97 3A)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.1898866</td>
+<td align="right">0.0000000</td>
+<td align="right">-0.1942616</td>
+<td align="left">TRUE</td>
+<td align="right">20.911247</td>
+<td align="right">21.4413939</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">post-secondary education, less than 3 years (ISCED97 4+5B)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.1446573</td>
+<td align="right">0.0000001</td>
+<td align="right">-0.1418336</td>
+<td align="left">TRUE</td>
+<td align="right">15.564352</td>
+<td align="right">15.2384840</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">post-secondary education 3 years or more (ISCED97 5A)-post-graduate education (ISCED97 6)</td>
+<td align="right">-0.1104356</td>
+<td align="right">0.0000443</td>
+<td align="right">-0.1117048</td>
+<td align="left">TRUE</td>
+<td align="right">11.676444</td>
+<td align="right">11.8182726</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)-post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.1056094</td>
+<td align="right">0.0001649</td>
+<td align="right">-0.1095131</td>
+<td align="left">TRUE</td>
+<td align="right">11.138763</td>
+<td align="right">11.5734729</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.1050709</td>
+<td align="right">0.0001119</td>
+<td align="right">-0.1006220</td>
+<td align="left">TRUE</td>
+<td align="right">11.078932</td>
+<td align="right">10.5858529</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)-no information about level of educational attainment</td>
+<td align="right">-0.1045888</td>
+<td align="right">0.0001950</td>
+<td align="right">0.0000000</td>
+<td align="left">FALSE</td>
+<td align="right">11.025400</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)-no information about level of educational attainment</td>
+<td align="right">-0.1040503</td>
+<td align="right">0.0001331</td>
+<td align="right">0.0088912</td>
+<td align="left">FALSE</td>
+<td align="right">10.965630</td>
+<td align="right">-0.8851746</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="left">women-men</td>
+<td align="right">-0.0803151</td>
+<td align="right">0.0000000</td>
+<td align="right">0.0000000</td>
+<td align="left">FALSE</td>
+<td align="right">8.362851</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education 3 years (ISCED97 3A)-post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.0794510</td>
+<td align="right">0.0066749</td>
+<td align="right">-0.0825568</td>
+<td align="left">TRUE</td>
+<td align="right">8.269249</td>
+<td align="right">8.6060365</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education 3 years (ISCED97 3A)-no information about level of educational attainment</td>
+<td align="right">-0.0784305</td>
+<td align="right">0.0077374</td>
+<td align="right">0.0269563</td>
+<td align="left">FALSE</td>
+<td align="right">8.158814</td>
+<td align="right">-2.6596254</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)-post-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.0713876</td>
+<td align="right">0.0264560</td>
+<td align="right">-0.0793844</td>
+<td align="left">TRUE</td>
+<td align="right">7.399745</td>
+<td align="right">8.2620369</td>
+</tr>
+<tr class="even">
+<td align="left">edulevel</td>
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)-post-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.0708491</td>
+<td align="right">0.0221087</td>
+<td align="right">-0.0704932</td>
+<td align="left">TRUE</td>
+<td align="right">7.341926</td>
+<td align="right">7.3037289</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevel</td>
+<td align="left">post-graduate education (ISCED97 6)-no information about level of educational attainment</td>
+<td align="right">0.1114561</td>
+<td align="right">0.0000370</td>
+<td align="right">0.2212179</td>
+<td align="left">FALSE</td>
+<td align="right">-10.546938</td>
+<td align="right">-19.8458026</td>
+</tr>
+</tbody>
+</table>
+<p>Now. let´s perform some diagnostics on the models. First, a look at the residuals for the model shows no apparent problem. We can see that the outlier at row 55 has disappeared in the plots for the continuous model.</p>
+<p>Three out of four outliers when using categorical predictors were from the factor “no information about level of educational attainment”.</p>
+<p>For the continuous predictors there are two outliers in the factor “upper secondary education, 2 years or less (ISCED97 3C)” and two outliers in the factor “upper secondary education 3 years (ISCED97 3A)” indicating that the model could be improved.</p>
+<pre class="r"><code>tb[20,]$edulevel</code></pre>
+<pre><code>## [1] &quot;no information about level of educational attainment&quot;</code></pre>
+<pre class="r"><code>tb[41,]$edulevel</code></pre>
+<pre><code>## [1] &quot;no information about level of educational attainment&quot;</code></pre>
+<pre class="r"><code>tb[55,]$edulevel</code></pre>
+<pre><code>## [1] &quot;no information about level of educational attainment&quot;</code></pre>
+<pre class="r"><code>tb[57,]$edulevel</code></pre>
+<pre><code>## [1] &quot;upper secondary education, 2 years or less (ISCED97 3C)&quot;</code></pre>
+<pre class="r"><code>tbnum[12,]$edulevel</code></pre>
+<pre><code>## [1] &quot;upper secondary education, 2 years or less (ISCED97 3C)&quot;</code></pre>
+<pre class="r"><code>tbnum[18,]$edulevel</code></pre>
+<pre><code>## [1] &quot;upper secondary education, 2 years or less (ISCED97 3C)&quot;</code></pre>
+<pre class="r"><code>tbnum[25,]$edulevel</code></pre>
+<pre><code>## [1] &quot;upper secondary education 3 years (ISCED97 3A)&quot;</code></pre>
+<pre class="r"><code>tbnum[29,]$edulevel</code></pre>
+<pre><code>## [1] &quot;upper secondary education 3 years (ISCED97 3A)&quot;</code></pre>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-111"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-1.png" alt="Residuals vs Fitted of model fit" width="672" />
+<p class="caption">
+Figure 6: Residuals vs Fitted of model fit
+</p>
+</div>
+<pre class="r"><code>plot(modelcont, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-112"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-2.png" alt="Residuals vs Fitted of model fit" width="672" />
+<p class="caption">
+Figure 7: Residuals vs Fitted of model fit
+</p>
+</div>
+<p>The Normal Q-Q shows some possible outliers.</p>
+<pre class="r"><code>plot(model, which = 2)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-121"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-12-1.png" alt="Normal Q-Q" width="672" />
+<p class="caption">
+Figure 8: Normal Q-Q
+</p>
+</div>
+<pre class="r"><code>plot(modelcont, which = 2)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-122"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-12-2.png" alt="Normal Q-Q" width="672" />
+<p class="caption">
+Figure 9: Normal Q-Q
+</p>
+</div>
+<p>Again, the Standardised residuals show some possible outliers.</p>
+<pre class="r"><code>plot(model, which = 3)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-131"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-13-1.png" alt="Scale-Location" width="672" />
+<p class="caption">
+Figure 10: Scale-Location
+</p>
+</div>
+<pre class="r"><code>plot(modelcont, which = 3)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-132"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-13-2.png" alt="Scale-Location" width="672" />
+<p class="caption">
+Figure 11: Scale-Location
+</p>
+</div>
+<p>The outliers are also found in the Leverage plot.</p>
+<pre class="r"><code>plot(model, which = 5)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-141"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-14-1.png" alt="Residuals vs Leverage" width="672" />
+<p class="caption">
+Figure 12: Residuals vs Leverage
+</p>
+</div>
+<pre class="r"><code>plot(modelcont, which = 5)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-142"></span>
+<img src="/post/2019-12-15-the-significance-of-education-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-14-2.png" alt="Residuals vs Leverage" width="672" />
+<p class="caption">
+Figure 13: Residuals vs Leverage
+</p>
+</div>

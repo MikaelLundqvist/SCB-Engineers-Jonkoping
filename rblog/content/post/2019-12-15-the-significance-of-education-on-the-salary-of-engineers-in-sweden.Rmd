@@ -1,0 +1,295 @@
+---
+title: "The significance of education on the salary of engineers in Sweden"
+author: "Mikael Lundqvist"
+date: '2019-12-15'
+slug: the-significance-of-education-on-the-salary-of-engineers-in-sweden
+tags:
+- plot
+- R Markdown
+- regression
+categories: R
+---
+
+In my last posts, I analysed the significance of experience for different occupational groups. In this post, I will turn the interest towards education. I will again start with engineers and see if I can expand my analysis to all occupational groups.
+
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse) 
+library (broom) 
+library (car)
+library (splines)
+#install_github("ZheyuanLi/SplinesUtils")
+library(SplinesUtils)
+
+readfile <- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  
+	drop_na() %>%  
+    mutate (year_n = parse_number (year))
+}
+
+``` 
+
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CY.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The table:
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and educational level (SUN). Year 2014 - 2018
+Monthly salary
+All sectors
+
+We expect that education is an important factor in salaries. As a null hypothesis, we assume that education is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.
+
+The column `level of education` is renamed because TukeyHSD doesn't handle variable names within quotes.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+tb <- readfile("000000CY.csv") %>% 
+  filter(`occuptional  (SSYK 2012)` == "214 Engineering professionals") %>%       
+  mutate(edulevel = `level of education`)
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = `level of education`, shape=sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+
+model <- lm (log(salary) ~ year_n + sex + edulevel, data = tb)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+```
+
+
+The F-value from the Anova table for years is 40 (Pr(>F) < 2.2e-16), sufficient for rejecting the null hypothesis that education has no effect on the salary holding year as constant.
+The adjusted R-squared value is 0,833 implying a good fit of the model.
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = edulevel, shape = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+  
+Anova(model, type = 2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')
+```
+
+
+How much do the different levels of education affect the salary? We can calculate the differences between the levels with Tukey's honest significant difference. All significant level differences are shown in the table below. 
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}
+tukeytable <- TukeyHSD(aov(log(salary) ~ sex + edulevel, data = tb)) %>%
+  tidy() %>%
+  mutate(percdiff = (1 / exp(estimate) - 1) * 100)
+
+tukeytable  %>% 
+  filter(adj.p.value < 0.05) %>%
+  arrange(estimate) %>%  
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Tukey HSD 95 % confidence intervals for the pairwise significant differences')
+```
+
+
+We can conclude from the summary table that there is a positive correlation between longer education and higher salaries. 
+
+From the table of Tukey's honest significant difference, we can see the difference in salaries between the different education lengths. Note that the estimates are negative due to the log transformation, the untransformed differences are in the column percdiff.
+
+Can we approximate how much the salaries increase by one year of education by assigning a numeric value to the factors in the table? 
+
+As a first approach, I will use the data in the following table.
+
+I will use a B-spline function to approximate the increase in salaries over age. The rows for "no information about the level of educational attainment" is removed from the table from Statistics Sweden.
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}
+numedulevel <- read.csv("edulevel.csv") 
+
+numedulevel %>%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = 'Initial approach, length of education') 
+  
+tbnum <- tb %>% 
+    right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears))
+
+modelcont <- lm(log(salary) ~ bs(eduyears, knots = c(14)) + year_n + sex, data = tbnum)
+
+tbnum <- bind_cols(tbnum, as_tibble(exp(predict(modelcont, tbnum, interval = "confidence"))))
+```
+
+
+The F-value from the Anova table for years is 146 and the adjusted R-squared value is 0,932 implying a good fit of the model. Both the F-value and the adjusted R-squared increased from then using the categorical predictors. (Removing the rows with "no information about level of educational attainment" improves the adjusted R-squared for the model with categorical predictors to 0.931.)
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}
+
+tbnum %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit1, colour = eduyears, shape = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+	
+summary(modelcont) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(modelcont)$adj.r.squared  
+  
+Anova(modelcont, type = 2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')
+```
+
+
+What does the continous function from the model look like?
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Correlation between education and salary'}
+
+contspline <- RegBsplineAsPiecePoly(modelcont, "bs(eduyears, knots = c(14))")
+
+tibble(eduyears = 9:19) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = "Years of education",
+    y = "Salary"
+  )
+```
+
+
+And it's derivative.
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, The derivative for education'}
+
+tibble(eduyears = 9:19) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = "Years of education",
+    y = "Salary difference (%)"
+  )
+```
+
+
+Comparison between the categorical and the continuous predictor. Column withinconf states if the estimate from the numerical model is within the 95 % confidence interval from the Tukey’s honest significant difference table. All estimates from the model with the continuous predictor are within the 95 % confidence intervals from the Tukey HSD table.
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, The derivative for education'}
+tukeytable <- tukeytable %>% 
+  rowwise() %>% 
+  mutate(comp_from = unlist(strsplit(comparison, ")-"))[1]) %>%
+  rowwise() %>% 
+  mutate(comp_to = unlist(strsplit(comparison, ")-"))[2]) %>%             mutate(comp_from = paste (comp_from, ")", sep="")) %>%
+  left_join(numedulevel, by = c("comp_from" = "level.of.education")) %>%
+  left_join(numedulevel, by = c("comp_to" = "level.of.education")) %>%    mutate(numestimate = predict(contspline, eduyears.x) -           predict(contspline, eduyears.y)) %>% 
+  mutate(withinconf = numestimate > conf.low && numestimate < conf.high) %>% 
+  mutate(percdiffcont = (1 / exp(predict(contspline, eduyears.x) - predict(contspline, eduyears.y)) - 1) * 100)
+  
+tukeytable %>% 
+  select(term, comparison, estimate, adj.p.value, numestimate, withinconf, percdiff, percdiffcont) %>%
+  filter(adj.p.value < 0.05) %>%
+  arrange(estimate) %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Comparison between categorical and continous predictor')
+```
+
+
+Now. let´s perform some diagnostics on the models. First, a look at the residuals for the model shows no apparent problem. We can see that the outlier at row 55 has disappeared in the plots for the continuous model.
+
+Three out of four outliers when using categorical predictors were from the factor "no information about level of educational attainment". 
+
+For the continuous predictors there are two outliers in the factor "upper secondary education, 2 years or less (ISCED97 3C)" and two outliers in the factor "upper secondary education 3 years (ISCED97 3A)" indicating that the model could be improved.
+
+
+```{r, echo = TRUE, fig.cap = 'Outliers'}
+
+tb[20,]$edulevel
+
+tb[41,]$edulevel
+
+tb[55,]$edulevel
+
+tb[57,]$edulevel
+
+tbnum[12,]$edulevel
+
+tbnum[18,]$edulevel
+
+tbnum[25,]$edulevel
+
+tbnum[29,]$edulevel
+
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Residuals vs Fitted of model fit'}
+
+plot(model, which = 1)
+
+plot(modelcont, which = 1)
+
+```
+
+The Normal Q-Q shows some possible outliers.
+
+
+```{r, echo = TRUE, fig.cap = 'Normal Q-Q'}
+
+plot(model, which = 2)
+
+plot(modelcont, which = 2)
+
+```
+
+Again, the Standardised residuals show some possible outliers.
+
+
+```{r, echo = TRUE, fig.cap = 'Scale-Location'}
+
+plot(model, which = 3)
+
+plot(modelcont, which = 3)
+
+```
+
+The outliers are also found in the Leverage plot.
+
+
+```{r, echo = TRUE, fig.cap = 'Residuals vs Leverage'}
+
+plot(model, which = 5)
+
+plot(modelcont, which = 5)
+
+```

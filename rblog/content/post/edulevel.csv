@@ -1,0 +1,8 @@
+"level of education", eduyears
+"primary and secondary education 9-10 years (ISCED97 2)",9
+"upper secondary education, 2 years or less (ISCED97 3C)",11
+"upper secondary education 3 years (ISCED97 3A)",12
+"post-secondary education, less than 3 years (ISCED97 4+5B)",14
+"post-secondary education 3 years or more (ISCED97 5A)",15
+"post-graduate education (ISCED97 6)",19
+"no information about level of educational attainment",NA
