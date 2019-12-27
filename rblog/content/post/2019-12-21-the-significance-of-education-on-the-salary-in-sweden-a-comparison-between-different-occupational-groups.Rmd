@@ -1,0 +1,187 @@
+---
+title: The significance of education on the salary in Sweden, a comparison between different occupational groups
+author: "Mikael Lundqvist"
+date: '2019-12-21'
+slug: the-significance-of-education-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups
+tags:
+- plot
+- R Markdown
+- regression
+categories: R
+---
+
+In my last post, I found that education has a significant impact on the salary of engineers. Is the significance of education on wages unique to engineers or are there similar correlations in other occupational groups?
+
+I will use the same model in principal as in my previous post to calculate the significance of education. I will not use sex as an explanatory variable since there are occupational groups that do not have enough data for both genders.  Searching through the different occupational groups I will fit education with a polynomial of degree one. I am interested in occupational groups where a longer education also results in higher salaries. Because of that, I will use the numerical approximation from my last post instead of using the categorical predictor. A polynomial of higher degree than one would result in a better fit but the problem with oscillation and overfitting made me settle for degree one. A straight line as a function also has the advantage that the average increase in salary for each education year is directly given from the model.
+
+There are still occupational groups with too little data for regression analysis. More than 30 posts are necessary to fit both education and year.
+
+The F-value from the Anova table is used as the single value to discriminate how much education and salary correlates. For exploratory analysis, the Anova value seems good enough. 
+
+In the figure below I will also use the estimate for education to see how much the salaries are raised by education for the different occupational groups holding year as constant.
+
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (broom)
+library (car)
+library (splines)
+#install_github("ZheyuanLi/SplinesUtils")
+library (SplinesUtils)
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+```
+
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CY.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The table:
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and educational level (SUN). Year 2014 - 2018
+Monthly salary
+All sectors
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of education on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018'} 
+tb <- readfile("000000CY.csv")
+
+numedulevel <- read.csv("edulevel.csv") 
+
+numedulevel %>%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = 'Initial approach, length of education') 
+  
+tbnum <- tb %>% 
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears))
+
+summary_table = vector()
+anova_table = vector()
+
+for (i in unique(tbnum$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tbnum, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 30){
+    model <- lm (log(salary) ~ year_n + eduyears, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}
+
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
+  filter (term.y == "eduyears") %>%
+  filter (term.x == "eduyears") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y)) +
+    labs(
+      x = "Increase in salaries (% / year of education)",
+      y = "F-value for education"
+    ) 
+```
+
+
+The table with all occupational groups sorted by Increase in salary in descending order.
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
+  filter (term.y == "eduyears") %>%
+  filter (term.x == "eduyears") %>%
+  select (ssyk, estimate, statistic.y) %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%
+  rename (`F-value for education` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`Increase in salary`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (education) and the increase in salaries for each year of education')
+```
+
+
+Let's check what we have found.
+
+
+```{r, echo = TRUE, fig.cap = 'Highest increase in salary, 151 Health care managers'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "151 Health care managers")
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = eduyears)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+    ) 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Health care managers, Correlation between education and salary'}
+modelcont <- lm (log(salary) ~ year_n + bs(eduyears, degree = 1), data = temp)
+
+contspline <- RegBsplineAsPiecePoly(modelcont, "bs(eduyears, degree = 1)")
+
+tibble(eduyears = seq(11, 19, by=0.1)) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = "Years of education",
+    y = "Salary"
+  )
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Health care managers, The derivative for educaton'}
+tibble(eduyears = seq(11, 19, by=0.1)) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = "Years of education",
+    y = "Salary difference (%)"
+  )
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest increase in salary, 265 Creative and performing artists'} 
+temp <- tbnum %>% 
+  filter(`occuptional  (SSYK 2012)` == "265 Creative and performing artists")
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = eduyears)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+    ) 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Creative and performing artists, Correlation between education and salary'}
+modelcont <- lm (log(salary) ~ year_n + bs(eduyears, degree = 1), data = temp)
+
+contspline <- RegBsplineAsPiecePoly(modelcont, "bs(eduyears, degree = 1)")
+
+tibble(eduyears = seq(11, 15, by=0.1)) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = "Years of education",
+    y = "Salary"
+  )
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, Creative and performing artists, The derivative for education'}
+tibble(eduyears = seq(11, 15, by=0.1)) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = "Years of education",
+    y = "Salary difference (%)"
+  )
+```

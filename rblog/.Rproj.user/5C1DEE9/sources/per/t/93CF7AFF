@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1574357903024.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1217533735",
+    "id" : "93CF7AFF",
+    "lastKnownWriteTime" : 1574359569,
+    "last_content_update" : 1574359569192,
+    "path" : "C:/R/rblog/content/post/2019-11-21-r-age-salary-structure.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "87,0",
+        "last_setup_crc32" : "",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

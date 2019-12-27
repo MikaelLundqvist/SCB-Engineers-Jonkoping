@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.59.1" />
+
+
+<title>The significance of education on the salary in Sweden, a comparison between different occupational groups - R Analystatistics Sweden</title>
+<meta property="og:title" content="The significance of education on the salary in Sweden, a comparison between different occupational groups - R Analystatistics Sweden">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/MikaelLundqvist">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/MikaelLundqvist">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">9 min read</span>
+    
+
+    <h1 class="article-title">The significance of education on the salary in Sweden, a comparison between different occupational groups</h1>
+
+    
+    <span class="article-date">2019-12-21</span>
+    
+
+    <div class="article-content">
+      
+
+
+<p>In my last post, I found that education has a significant impact on the salary of engineers. Is the significance of education on wages unique to engineers or are there similar correlations in other occupational groups?</p>
+<p>I will use the same model in principal as in my previous post to calculate the significance of education. I will not use sex as an explanatory variable since there are occupational groups that do not have enough data for both genders. Searching through the different occupational groups I will fit education with a polynomial of degree one. I am interested in occupational groups where a longer education also results in higher salaries. Because of that, I will use the numerical approximation from my last post instead of using the categorical predictor. A polynomial of higher degree than one would result in a better fit but the problem with oscillation and overfitting made me settle for degree one. A straight line as a function also has the advantage that the average increase in salary for each education year is directly given from the model.</p>
+<p>There are still occupational groups with too little data for regression analysis. More than 30 posts are necessary to fit both education and year.</p>
+<p>The F-value from the Anova table is used as the single value to discriminate how much education and salary correlates. For exploratory analysis, the Anova value seems good enough.</p>
+<p>In the figure below I will also use the estimate for education to see how much the salaries are raised by education for the different occupational groups holding year as constant.</p>
+<pre class="r"><code>library (tidyverse)</code></pre>
+<pre><code>## -- Attaching packages ------------------------------------------- tidyverse 1.2.1 --</code></pre>
+<pre><code>## v ggplot2 3.2.0     v purrr   0.3.2
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   0.8.3     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts ---------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library (broom)
+library (car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre class="r"><code>library (splines)
+#install_github(&quot;ZheyuanLi/SplinesUtils&quot;)
+library (SplinesUtils)
+
+readfile &lt;- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%
+  gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = salary) %&gt;%
+  drop_na() %&gt;%
+  mutate (year_n = parse_number (year))
+}</code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CY.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and educational level (SUN). Year 2014 - 2018 Monthly salary All sectors</p>
+<pre class="r"><code>tb &lt;- readfile(&quot;000000CY.csv&quot;)
+
+numedulevel &lt;- read.csv(&quot;edulevel.csv&quot;) 
+
+numedulevel %&gt;%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = &#39;Initial approach, length of education&#39;) </code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-2">Table 1: </span>Initial approach, length of education</caption>
+<thead>
+<tr class="header">
+<th align="left">level.of.education</th>
+<th align="right">eduyears</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">11</td>
+</tr>
+<tr class="odd">
+<td align="left">upper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">12</td>
+</tr>
+<tr class="even">
+<td align="left">post-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="left">post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="left">post-graduate education (ISCED97 6)</td>
+<td align="right">19</td>
+</tr>
+<tr class="odd">
+<td align="left">no information about level of educational attainment</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>tbnum &lt;- tb %&gt;% 
+  right_join(numedulevel, by = c(&quot;level of education&quot; = &quot;level.of.education&quot;)) %&gt;%
+  filter(!is.na(eduyears))</code></pre>
+<pre><code>## Warning: Column `level of education`/`level.of.education` joining character
+## vector and factor, coercing into character vector</code></pre>
+<pre class="r"><code>summary_table = vector()
+anova_table = vector()
+
+for (i in unique(tbnum$`occuptional  (SSYK 2012)`)){
+  temp &lt;- filter(tbnum, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] &gt; 30){
+    model &lt;- lm (log(salary) ~ year_n + eduyears, data = temp)
+    summary_table &lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
+    anova_table &lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}
+
+merge(summary_table, anova_table, by = &quot;ssyk&quot;, all = TRUE) %&gt;%
+  filter (term.y == &quot;eduyears&quot;) %&gt;%
+  filter (term.x == &quot;eduyears&quot;) %&gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y)) +
+    labs(
+      x = &quot;Increase in salaries (% / year of education)&quot;,
+      y = &quot;F-value for education&quot;
+    ) </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-2"></span>
+<img src="/post/2019-12-21-the-significance-of-education-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-2-1.png" alt="The significance of education on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 1: The significance of education on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018
+</p>
+</div>
+<p>The table with all occupational groups sorted by Increase in salary in descending order.</p>
+<pre class="r"><code>merge(summary_table, anova_table, by = &quot;ssyk&quot;, all = TRUE) %&gt;%
+  filter (term.y == &quot;eduyears&quot;) %&gt;%
+  filter (term.x == &quot;eduyears&quot;) %&gt;%
+  select (ssyk, estimate, statistic.y) %&gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%
+  rename (`F-value for education` = statistic.y) %&gt;%
+  rename (`Increase in salary` = estimate) %&gt;%
+  arrange (desc (`Increase in salary`)) %&gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &#39;Correlation for F-value (education) and the increase in salaries for each year of education&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-3">Table 2: </span>Correlation for F-value (education) and the increase in salaries for each year of education</caption>
+<thead>
+<tr class="header">
+<th align="left">ssyk</th>
+<th align="right">Increase in salary</th>
+<th align="right">F-value for education</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">151 Health care managers</td>
+<td align="right">11.3222562</td>
+<td align="right">615.8861538</td>
+</tr>
+<tr class="even">
+<td align="left">221 Medical doctors</td>
+<td align="right">10.2650113</td>
+<td align="right">70.5835974</td>
+</tr>
+<tr class="odd">
+<td align="left">121 Finance managers</td>
+<td align="right">9.9172689</td>
+<td align="right">32.7350353</td>
+</tr>
+<tr class="even">
+<td align="left">261 Legal professionals</td>
+<td align="right">9.7834120</td>
+<td align="right">48.1004817</td>
+</tr>
+<tr class="odd">
+<td align="left">122 Human resource managers</td>
+<td align="right">9.0394770</td>
+<td align="right">103.8231602</td>
+</tr>
+<tr class="even">
+<td align="left">161 Financial and insurance managers</td>
+<td align="right">8.6603822</td>
+<td align="right">19.2527280</td>
+</tr>
+<tr class="odd">
+<td align="left">231 University and higher education teachers</td>
+<td align="right">7.5276294</td>
+<td align="right">141.4796497</td>
+</tr>
+<tr class="even">
+<td align="left">132 Supply, logistics and transport managers</td>
+<td align="right">6.6969576</td>
+<td align="right">87.6384397</td>
+</tr>
+<tr class="odd">
+<td align="left">137 Production managers in manufacturing</td>
+<td align="right">6.5378753</td>
+<td align="right">65.2842719</td>
+</tr>
+<tr class="even">
+<td align="left">123 Administration and planning managers</td>
+<td align="right">6.2977859</td>
+<td align="right">129.4982036</td>
+</tr>
+<tr class="odd">
+<td align="left">136 Production managers in construction and mining</td>
+<td align="right">6.2192630</td>
+<td align="right">57.8361291</td>
+</tr>
+<tr class="even">
+<td align="left">129 Administration and service managers not elsewhere classified</td>
+<td align="right">5.6522431</td>
+<td align="right">74.9238199</td>
+</tr>
+<tr class="odd">
+<td align="left">131 Information and communications technology service managers</td>
+<td align="right">5.1937185</td>
+<td align="right">95.3092758</td>
+</tr>
+<tr class="even">
+<td align="left">159 Other social services managers</td>
+<td align="right">5.1920288</td>
+<td align="right">355.8557670</td>
+</tr>
+<tr class="odd">
+<td align="left">134 Architectural and engineering managers</td>
+<td align="right">4.6458339</td>
+<td align="right">186.5137309</td>
+</tr>
+<tr class="even">
+<td align="left">262 Museum curators and librarians and related professionals</td>
+<td align="right">4.4638502</td>
+<td align="right">294.6004878</td>
+</tr>
+<tr class="odd">
+<td align="left">332 Insurance advisers, sales and purchasing agents</td>
+<td align="right">4.2505985</td>
+<td align="right">57.1999444</td>
+</tr>
+<tr class="even">
+<td align="left">179 Other services managers not elsewhere classified</td>
+<td align="right">4.0931013</td>
+<td align="right">44.9824826</td>
+</tr>
+<tr class="odd">
+<td align="left">235 Teaching professionals not elsewhere classified</td>
+<td align="right">3.9957394</td>
+<td align="right">189.3385229</td>
+</tr>
+<tr class="even">
+<td align="left">311 Physical and engineering science technicians</td>
+<td align="right">3.9729301</td>
+<td align="right">134.6441603</td>
+</tr>
+<tr class="odd">
+<td align="left">234 Primary- and pre-school teachers</td>
+<td align="right">3.8498852</td>
+<td align="right">140.3499938</td>
+</tr>
+<tr class="even">
+<td align="left">233 Secondary education teachers</td>
+<td align="right">3.7146273</td>
+<td align="right">167.3564935</td>
+</tr>
+<tr class="odd">
+<td align="left">125 Sales and marketing managers</td>
+<td align="right">3.6489071</td>
+<td align="right">17.5675213</td>
+</tr>
+<tr class="even">
+<td align="left">241 Accountants, financial analysts and fund managers</td>
+<td align="right">3.3820710</td>
+<td align="right">49.5445027</td>
+</tr>
+<tr class="odd">
+<td align="left">242 Organisation analysts, policy administrators and human resource specialists</td>
+<td align="right">3.1833018</td>
+<td align="right">94.6038730</td>
+</tr>
+<tr class="even">
+<td align="left">213 Biologists, pharmacologists and specialists in agriculture and forestry</td>
+<td align="right">2.9242020</td>
+<td align="right">93.6360138</td>
+</tr>
+<tr class="odd">
+<td align="left">321 Medical and pharmaceutical technicians</td>
+<td align="right">2.7274994</td>
+<td align="right">130.1793959</td>
+</tr>
+<tr class="even">
+<td align="left">133 Research and development managers</td>
+<td align="right">2.5377568</td>
+<td align="right">28.8355719</td>
+</tr>
+<tr class="odd">
+<td align="left">173 Retail and wholesale trade managers</td>
+<td align="right">2.4736675</td>
+<td align="right">5.9078862</td>
+</tr>
+<tr class="even">
+<td align="left">335 Tax and related government associate professionals</td>
+<td align="right">2.3658837</td>
+<td align="right">41.8703194</td>
+</tr>
+<tr class="odd">
+<td align="left">214 Engineering professionals</td>
+<td align="right">2.3546977</td>
+<td align="right">140.9367261</td>
+</tr>
+<tr class="even">
+<td align="left">243 Marketing and public relations professionals</td>
+<td align="right">2.3458276</td>
+<td align="right">31.1353096</td>
+</tr>
+<tr class="odd">
+<td align="left">232 Vocational education teachers</td>
+<td align="right">2.3303514</td>
+<td align="right">27.2589020</td>
+</tr>
+<tr class="even">
+<td align="left">334 Administrative and specialized secretaries</td>
+<td align="right">2.2765069</td>
+<td align="right">20.8078772</td>
+</tr>
+<tr class="odd">
+<td align="left">342 Athletes, fitness instructors and recreational workers</td>
+<td align="right">2.1279403</td>
+<td align="right">24.0465329</td>
+</tr>
+<tr class="even">
+<td align="left">266 Social work and counselling professionals</td>
+<td align="right">2.0818202</td>
+<td align="right">46.6894573</td>
+</tr>
+<tr class="odd">
+<td align="left">331 Financial and accounting associate professionals</td>
+<td align="right">2.0726916</td>
+<td align="right">8.1402279</td>
+</tr>
+<tr class="even">
+<td align="left">411 Office assistants and other secretaries</td>
+<td align="right">2.0115047</td>
+<td align="right">60.8893100</td>
+</tr>
+<tr class="odd">
+<td align="left">523 Cashiers and related clerks</td>
+<td align="right">1.8137124</td>
+<td align="right">13.9599411</td>
+</tr>
+<tr class="even">
+<td align="left">524 Event seller and telemarketers</td>
+<td align="right">1.7261688</td>
+<td align="right">13.0208742</td>
+</tr>
+<tr class="odd">
+<td align="left">251 ICT architects, systems analysts and test managers</td>
+<td align="right">1.5958484</td>
+<td align="right">81.4664709</td>
+</tr>
+<tr class="even">
+<td align="left">819 Process control technicians</td>
+<td align="right">1.4963794</td>
+<td align="right">40.1366829</td>
+</tr>
+<tr class="odd">
+<td align="left">962 Newspaper distributors, janitors and other service workers</td>
+<td align="right">1.3940863</td>
+<td align="right">38.9982657</td>
+</tr>
+<tr class="even">
+<td align="left">812 Metal processing and finishing plant operators</td>
+<td align="right">1.3878292</td>
+<td align="right">12.9570916</td>
+</tr>
+<tr class="odd">
+<td align="left">432 Stores and transport clerks</td>
+<td align="right">1.2376483</td>
+<td align="right">43.6773646</td>
+</tr>
+<tr class="even">
+<td align="left">341 Social work and religious associate professionals</td>
+<td align="right">1.1195539</td>
+<td align="right">60.5012820</td>
+</tr>
+<tr class="odd">
+<td align="left">531 Child care workers and teachers aides</td>
+<td align="right">1.0815506</td>
+<td align="right">16.6066709</td>
+</tr>
+<tr class="even">
+<td align="left">264 Authors, journalists and linguists</td>
+<td align="right">1.0636388</td>
+<td align="right">5.4839869</td>
+</tr>
+<tr class="odd">
+<td align="left">333 Business services agents</td>
+<td align="right">1.0019699</td>
+<td align="right">3.5614940</td>
+</tr>
+<tr class="even">
+<td align="left">522 Shop staff</td>
+<td align="right">0.9835325</td>
+<td align="right">9.4858527</td>
+</tr>
+<tr class="odd">
+<td align="left">351 ICT operations and user support technicians</td>
+<td align="right">0.9821077</td>
+<td align="right">7.4180769</td>
+</tr>
+<tr class="even">
+<td align="left">441 Library and filing clerks</td>
+<td align="right">0.9770931</td>
+<td align="right">17.5562894</td>
+</tr>
+<tr class="odd">
+<td align="left">941 Fast-food workers, food preparation assistants</td>
+<td align="right">0.8675015</td>
+<td align="right">15.3917476</td>
+</tr>
+<tr class="even">
+<td align="left">611 Market gardeners and crop growers</td>
+<td align="right">0.8014313</td>
+<td align="right">6.0302572</td>
+</tr>
+<tr class="odd">
+<td align="left">817 Wood processing and papermaking plant operators</td>
+<td align="right">0.7291227</td>
+<td align="right">7.4060017</td>
+</tr>
+<tr class="even">
+<td align="left">217 Designers</td>
+<td align="right">0.7088900</td>
+<td align="right">1.8475401</td>
+</tr>
+<tr class="odd">
+<td align="left">831 Train operators and related workers</td>
+<td align="right">0.5548934</td>
+<td align="right">3.3520151</td>
+</tr>
+<tr class="even">
+<td align="left">932 Manufacturing labourers</td>
+<td align="right">0.5533498</td>
+<td align="right">4.2142587</td>
+</tr>
+<tr class="odd">
+<td align="left">343 Photographers, interior decorators and entertainers</td>
+<td align="right">0.5498463</td>
+<td align="right">0.6786136</td>
+</tr>
+<tr class="even">
+<td align="left">513 Waiters and bartenders</td>
+<td align="right">0.5489340</td>
+<td align="right">2.0997794</td>
+</tr>
+<tr class="odd">
+<td align="left">312 Construction and manufacturing supervisors</td>
+<td align="right">0.5475032</td>
+<td align="right">1.3980603</td>
+</tr>
+<tr class="even">
+<td align="left">534 Attendants, personal assistants and related workers</td>
+<td align="right">0.5264678</td>
+<td align="right">28.8067668</td>
+</tr>
+<tr class="odd">
+<td align="left">515 Building caretakers and related workers</td>
+<td align="right">0.5221112</td>
+<td align="right">6.8499176</td>
+</tr>
+<tr class="even">
+<td align="left">815 Machine operators, textile, fur and leather products</td>
+<td align="right">0.4691193</td>
+<td align="right">2.1375421</td>
+</tr>
+<tr class="odd">
+<td align="left">422 Client information clerks</td>
+<td align="right">0.3886323</td>
+<td align="right">1.7115048</td>
+</tr>
+<tr class="even">
+<td align="left">533 Health care assistants</td>
+<td align="right">0.3239149</td>
+<td align="right">4.1630503</td>
+</tr>
+<tr class="odd">
+<td align="left">818 Other stationary plant and machine operators</td>
+<td align="right">0.2957261</td>
+<td align="right">1.0364217</td>
+</tr>
+<tr class="even">
+<td align="left">512 Cooks and cold-buffet managers</td>
+<td align="right">0.2548134</td>
+<td align="right">0.9265992</td>
+</tr>
+<tr class="odd">
+<td align="left">711 Carpenters, bricklayers and construction workers</td>
+<td align="right">0.2417011</td>
+<td align="right">0.1572365</td>
+</tr>
+<tr class="even">
+<td align="left">218 Specialists within environmental and health protection</td>
+<td align="right">0.2397413</td>
+<td align="right">0.4222318</td>
+</tr>
+<tr class="odd">
+<td align="left">961 Recycling collectors</td>
+<td align="right">0.1921605</td>
+<td align="right">0.8568597</td>
+</tr>
+<tr class="even">
+<td align="left">541 Other surveillance and security workers</td>
+<td align="right">0.1812197</td>
+<td align="right">0.4153472</td>
+</tr>
+<tr class="odd">
+<td align="left">511 Cabin crew, guides and related workers</td>
+<td align="right">0.1658380</td>
+<td align="right">0.2150479</td>
+</tr>
+<tr class="even">
+<td align="left">723 Machinery mechanics and fitters</td>
+<td align="right">0.1410149</td>
+<td align="right">0.2170183</td>
+</tr>
+<tr class="odd">
+<td align="left">821 Assemblers</td>
+<td align="right">0.0644892</td>
+<td align="right">0.0858323</td>
+</tr>
+<tr class="even">
+<td align="left">813 Machine operators, chemical and pharmaceutical products</td>
+<td align="right">0.0326476</td>
+<td align="right">0.0217158</td>
+</tr>
+<tr class="odd">
+<td align="left">833 Heavy truck and bus drivers</td>
+<td align="right">0.0309875</td>
+<td align="right">0.0482259</td>
+</tr>
+<tr class="even">
+<td align="left">816 Machine operators, food and related products</td>
+<td align="right">0.0069780</td>
+<td align="right">0.0017000</td>
+</tr>
+<tr class="odd">
+<td align="left">532 Personal care workers in health services</td>
+<td align="right">-0.0383003</td>
+<td align="right">0.1216850</td>
+</tr>
+<tr class="even">
+<td align="left">352 Broadcasting and audio-visual technicians</td>
+<td align="right">-0.0705932</td>
+<td align="right">0.0171995</td>
+</tr>
+<tr class="odd">
+<td align="left">814 Machine operators, rubber, plastic and paper products</td>
+<td align="right">-0.1428982</td>
+<td align="right">0.2504506</td>
+</tr>
+<tr class="even">
+<td align="left">722 Blacksmiths, toolmakers and related trades workers</td>
+<td align="right">-0.1569686</td>
+<td align="right">0.4841203</td>
+</tr>
+<tr class="odd">
+<td align="left">732 Printing trades workers</td>
+<td align="right">-0.3543764</td>
+<td align="right">0.5477171</td>
+</tr>
+<tr class="even">
+<td align="left">911 Cleaners and helpers</td>
+<td align="right">-0.3859718</td>
+<td align="right">4.5299051</td>
+</tr>
+<tr class="odd">
+<td align="left">834 Mobile plant operators</td>
+<td align="right">-0.3979938</td>
+<td align="right">5.1952942</td>
+</tr>
+<tr class="even">
+<td align="left">216 Architects and surveyors</td>
+<td align="right">-0.6970606</td>
+<td align="right">1.2794827</td>
+</tr>
+<tr class="odd">
+<td align="left">516 Other service related workers</td>
+<td align="right">-0.7106422</td>
+<td align="right">1.0123452</td>
+</tr>
+<tr class="even">
+<td align="left">265 Creative and performing artists</td>
+<td align="right">-1.4326841</td>
+<td align="right">6.0250927</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s check what we have found.</p>
+<pre class="r"><code>temp &lt;- tbnum %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;151 Health care managers&quot;)
+
+temp %&gt;%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = eduyears)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = &quot;Year&quot;,
+      y = &quot;Salary (SEK/month)&quot;
+    ) </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-4"></span>
+<img src="/post/2019-12-21-the-significance-of-education-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-4-1.png" alt="Highest increase in salary, 151 Health care managers" width="672" />
+<p class="caption">
+Figure 2: Highest increase in salary, 151 Health care managers
+</p>
+</div>
+<pre class="r"><code>modelcont &lt;- lm (log(salary) ~ year_n + bs(eduyears, degree = 1), data = temp)
+
+contspline &lt;- RegBsplineAsPiecePoly(modelcont, &quot;bs(eduyears, degree = 1)&quot;)
+
+tibble(eduyears = seq(11, 19, by=0.1)) %&gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = &quot;Years of education&quot;,
+    y = &quot;Salary&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-5"></span>
+<img src="/post/2019-12-21-the-significance-of-education-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-5-1.png" alt="Model fit, Health care managers, Correlation between education and salary" width="672" />
+<p class="caption">
+Figure 3: Model fit, Health care managers, Correlation between education and salary
+</p>
+</div>
+<pre class="r"><code>tibble(eduyears = seq(11, 19, by=0.1)) %&gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = &quot;Years of education&quot;,
+    y = &quot;Salary difference (%)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-6"></span>
+<img src="/post/2019-12-21-the-significance-of-education-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-6-1.png" alt="Model fit, Health care managers, The derivative for educaton" width="672" />
+<p class="caption">
+Figure 4: Model fit, Health care managers, The derivative for educaton
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tbnum %&gt;% 
+  filter(`occuptional  (SSYK 2012)` == &quot;265 Creative and performing artists&quot;)
+
+temp %&gt;%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = eduyears)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = &quot;Year&quot;,
+      y = &quot;Salary (SEK/month)&quot;
+    ) </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-7"></span>
+<img src="/post/2019-12-21-the-significance-of-education-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-7-1.png" alt="Lowest increase in salary, 265 Creative and performing artists" width="672" />
+<p class="caption">
+Figure 5: Lowest increase in salary, 265 Creative and performing artists
+</p>
+</div>
+<pre class="r"><code>modelcont &lt;- lm (log(salary) ~ year_n + bs(eduyears, degree = 1), data = temp)
+
+contspline &lt;- RegBsplineAsPiecePoly(modelcont, &quot;bs(eduyears, degree = 1)&quot;)
+
+tibble(eduyears = seq(11, 15, by=0.1)) %&gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = &quot;Years of education&quot;,
+    y = &quot;Salary&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-8"></span>
+<img src="/post/2019-12-21-the-significance-of-education-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-8-1.png" alt="Model fit, Creative and performing artists, Correlation between education and salary" width="672" />
+<p class="caption">
+Figure 6: Model fit, Creative and performing artists, Correlation between education and salary
+</p>
+</div>
+<pre class="r"><code>tibble(eduyears = seq(11, 15, by=0.1)) %&gt;%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = &quot;Years of education&quot;,
+    y = &quot;Salary difference (%)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-9"></span>
+<img src="/post/2019-12-21-the-significance-of-education-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-9-1.png" alt="Model fit, Creative and performing artists, The derivative for education" width="672" />
+<p class="caption">
+Figure 7: Model fit, Creative and performing artists, The derivative for education
+</p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+          <li>
+            <a href="https://www.r-bloggers.com/" class="footer-links-kudos">R-bloggers</a>
+          </li>	
+          <li>
+            <a href="https://rweekly.org/" class="footer-links-kudos">R Weekly</a>
+          </li>			  
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+
