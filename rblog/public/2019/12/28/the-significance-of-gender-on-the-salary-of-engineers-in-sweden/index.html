@@ -1,0 +1,3208 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.59.1" />
+
+
+<title>The significance of gender on the salary of engineers in Sweden - R Analystatistics Sweden</title>
+<meta property="og:title" content="The significance of gender on the salary of engineers in Sweden - R Analystatistics Sweden">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/MikaelLundqvist">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/MikaelLundqvist">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">35 min read</span>
+    
+
+    <h1 class="article-title">The significance of gender on the salary of engineers in Sweden</h1>
+
+    
+    <span class="article-date">2019-12-28</span>
+    
+
+    <div class="article-content">
+      
+
+
+<p>In my previous posts, I have shown that there exists a correlation between salaries and experience as well as between salaries and education within many occupational groups. Within the data I used from Statistics Sweden there was also information about gender. Some of the models and graphs also showed that there is a difference in salaries between the different genders.</p>
+<p>In this post, I will examine the interaction between the predictors. Apart from gender the interaction between year also needs to be investigated.</p>
+<p>It would have been very interesting to examine the interaction between experience and education. However, this information is not available at Statistics Sweden, at least not for free.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse) </code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.2.1 --</code></pre>
+<pre><code>## v ggplot2 3.2.0     v purrr   0.3.2
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   1.0.0     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library (broom) 
+library (car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre class="r"><code>library (splines)
+#install_github(&quot;ZheyuanLi/SplinesUtils&quot;)
+library(SplinesUtils)
+library(sjPlot)
+
+readfile &lt;- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%  
+    gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = salary) %&gt;%  
+    drop_na() %&gt;%  
+    mutate (year_n = parse_number (year))
+}</code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 00000031.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occupational group (SSYK), age, sex and year. Year 2014 - 2018</p>
+<p>There are no women in the age group 65-66 years which explains the uncertainty for this group.</p>
+<p>We are interested to see if the interaction terms between gender, age and year are important factors in salaries. As a null hypothesis, we assume that the interaction terms between gender, age and year is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.</p>
+<pre class="r"><code>tb &lt;- readfile(&quot;00000031.csv&quot;) %&gt;% 
+  rowwise() %&gt;% 
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[1]) %&gt;%
+  rowwise() %&gt;% 
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[2]) %&gt;%
+  mutate(age_n = (age_l + age_h) / 2) 
+   
+tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age, shape = sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-21"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 1: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n + sex + age, data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-2">Table 1: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-28.1818327</td>
+<td align="right">3.5502758</td>
+<td align="right">-7.937928</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0190896</td>
+<td align="right">0.0017610</td>
+<td align="right">10.839936</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0338702</td>
+<td align="right">0.0051006</td>
+<td align="right">-6.640420</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">age25-29 years</td>
+<td align="right">0.1194646</td>
+<td align="right">0.0108200</td>
+<td align="right">11.041048</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">age30-34 years</td>
+<td align="right">0.2670157</td>
+<td align="right">0.0108200</td>
+<td align="right">24.677885</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">age35-39 years</td>
+<td align="right">0.3798043</td>
+<td align="right">0.0108200</td>
+<td align="right">35.101929</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">age40-44 years</td>
+<td align="right">0.4507298</td>
+<td align="right">0.0108200</td>
+<td align="right">41.656942</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">age45-49 years</td>
+<td align="right">0.4826082</td>
+<td align="right">0.0108200</td>
+<td align="right">44.603178</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">age50-54 years</td>
+<td align="right">0.4957858</td>
+<td align="right">0.0108200</td>
+<td align="right">45.821064</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">age55-59 years</td>
+<td align="right">0.4999386</td>
+<td align="right">0.0108200</td>
+<td align="right">46.204870</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">age60-64 years</td>
+<td align="right">0.4926852</td>
+<td align="right">0.0108200</td>
+<td align="right">45.534501</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">age65-66 years</td>
+<td align="right">0.4850540</td>
+<td align="right">0.0145457</td>
+<td align="right">33.346995</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9817476</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##            Sum Sq Df F value    Pr(&gt;F)    
+## year_n    0.06878  1 117.504 &lt; 2.2e-16 ***
+## sex       0.02581  1  44.095 3.166e-09 ***
+## age       2.81366  9 534.074 &lt; 2.2e-16 ***
+## Residuals 0.04800 82                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-22"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 2: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[38,]</code></pre>
+<pre><code>## Source: local data frame [1 x 9]
+## Groups: &lt;by row&gt;
+## 
+## # A tibble: 1 x 9
+##   `occuptional  (SSYK 2012~ age      sex   year  salary year_n age_l age_h age_n
+##   &lt;chr&gt;                     &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;
+## 1 214 Engineering professi~ 18-24 y~ men   2016   27300   2016    18    24    21</code></pre>
+<pre class="r"><code>tb[56,]</code></pre>
+<pre><code>## Source: local data frame [1 x 9]
+## Groups: &lt;by row&gt;
+## 
+## # A tibble: 1 x 9
+##   `occuptional  (SSYK 2012~ age      sex   year  salary year_n age_l age_h age_n
+##   &lt;chr&gt;                     &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;
+## 1 214 Engineering professi~ 65-66 y~ men   2016   51500   2016    65    66  65.5</code></pre>
+<pre class="r"><code>tb[72,]</code></pre>
+<pre><code>## Source: local data frame [1 x 9]
+## Groups: &lt;by row&gt;
+## 
+## # A tibble: 1 x 9
+##   `occuptional  (SSYK 2012~ age      sex   year  salary year_n age_l age_h age_n
+##   &lt;chr&gt;                     &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;
+## 1 214 Engineering professi~ 55-59 y~ women 2017   45000   2017    55    59    57</code></pre>
+<p>I will examine models with both the categorical and continuous predictors to see if they can make the same predictions. The models with continuous predictors show approximately the same as the models with categorical predictors as you can see below.</p>
+<p>We start by examining the interaction between year and age. We find that the only significant interaction between age and year is in the age group 65-66 years old.</p>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ sex + year_n * age, data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-3">Table 2: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-41.8453794</td>
+<td align="right">10.9079056</td>
+<td align="right">-3.8362433</td>
+<td align="right">0.0002631</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-0.0338702</td>
+<td align="right">0.0051012</td>
+<td align="right">-6.6396284</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0258672</td>
+<td align="right">0.0054107</td>
+<td align="right">4.7807733</td>
+<td align="right">0.0000088</td>
+</tr>
+<tr class="even">
+<td align="left">age25-29 years</td>
+<td align="right">14.3621579</td>
+<td align="right">15.4261077</td>
+<td align="right">0.9310293</td>
+<td align="right">0.3549073</td>
+</tr>
+<tr class="odd">
+<td align="left">age30-34 years</td>
+<td align="right">27.5176359</td>
+<td align="right">15.4261077</td>
+<td align="right">1.7838353</td>
+<td align="right">0.0786064</td>
+</tr>
+<tr class="even">
+<td align="left">age35-39 years</td>
+<td align="right">20.9934100</td>
+<td align="right">15.4261077</td>
+<td align="right">1.3609013</td>
+<td align="right">0.1777316</td>
+</tr>
+<tr class="odd">
+<td align="left">age40-44 years</td>
+<td align="right">16.2491631</td>
+<td align="right">15.4261077</td>
+<td align="right">1.0533547</td>
+<td align="right">0.2956526</td>
+</tr>
+<tr class="even">
+<td align="left">age45-49 years</td>
+<td align="right">5.7537717</td>
+<td align="right">15.4261077</td>
+<td align="right">0.3729892</td>
+<td align="right">0.7102373</td>
+</tr>
+<tr class="odd">
+<td align="left">age50-54 years</td>
+<td align="right">0.6906147</td>
+<td align="right">15.4261077</td>
+<td align="right">0.0447692</td>
+<td align="right">0.9644135</td>
+</tr>
+<tr class="even">
+<td align="left">age55-59 years</td>
+<td align="right">14.2039759</td>
+<td align="right">15.4261077</td>
+<td align="right">0.9207751</td>
+<td align="right">0.3602008</td>
+</tr>
+<tr class="odd">
+<td align="left">age60-64 years</td>
+<td align="right">13.3026500</td>
+<td align="right">15.4261077</td>
+<td align="right">0.8623465</td>
+<td align="right">0.3913210</td>
+</tr>
+<tr class="even">
+<td align="left">age65-66 years</td>
+<td align="right">44.0644781</td>
+<td align="right">19.7739637</td>
+<td align="right">2.2284090</td>
+<td align="right">0.0289332</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age25-29 years</td>
+<td align="right">-0.0070648</td>
+<td align="right">0.0076518</td>
+<td align="right">-0.9232852</td>
+<td align="right">0.3589003</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age30-34 years</td>
+<td align="right">-0.0135172</td>
+<td align="right">0.0076518</td>
+<td align="right">-1.7665264</td>
+<td align="right">0.0814879</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age35-39 years</td>
+<td align="right">-0.0102250</td>
+<td align="right">0.0076518</td>
+<td align="right">-1.3362808</td>
+<td align="right">0.1856080</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age40-44 years</td>
+<td align="right">-0.0078365</td>
+<td align="right">0.0076518</td>
+<td align="right">-1.0241363</td>
+<td align="right">0.3091527</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age45-49 years</td>
+<td align="right">-0.0026147</td>
+<td align="right">0.0076518</td>
+<td align="right">-0.3417041</td>
+<td align="right">0.7335553</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age50-54 years</td>
+<td align="right">-0.0000966</td>
+<td align="right">0.0076518</td>
+<td align="right">-0.0126298</td>
+<td align="right">0.9899576</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age55-59 years</td>
+<td align="right">-0.0067976</td>
+<td align="right">0.0076518</td>
+<td align="right">-0.8883667</td>
+<td align="right">0.3772614</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age60-64 years</td>
+<td align="right">-0.0063541</td>
+<td align="right">0.0076518</td>
+<td align="right">-0.8304083</td>
+<td align="right">0.4090156</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age65-66 years</td>
+<td align="right">-0.0216149</td>
+<td align="right">0.0098077</td>
+<td align="right">-2.2038822</td>
+<td align="right">0.0306865</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9817432</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##             Sum Sq Df  F value    Pr(&gt;F)    
+## sex        0.02581  1  44.0847 4.817e-09 ***
+## year_n     0.06878  1 117.4762 &lt; 2.2e-16 ***
+## age        2.81366  9 533.9464 &lt; 2.2e-16 ***
+## year_n:age 0.00526  9   0.9978    0.4497    
+## Residuals  0.04274 73                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;age&quot;), colors = &quot;Set3&quot;)</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-31"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 3: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-32"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 4: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ sex + year_n * bs(age_n, knots = c(35, 50)), data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-3">Table 2: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-42.2169094</td>
+<td align="right">10.4483489</td>
+<td align="right">-4.0405340</td>
+<td align="right">0.0001206</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-0.0339907</td>
+<td align="right">0.0048836</td>
+<td align="right">-6.9601677</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0260513</td>
+<td align="right">0.0051827</td>
+<td align="right">5.0265834</td>
+<td align="right">0.0000029</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))1</td>
+<td align="right">15.9469335</td>
+<td align="right">23.8937700</td>
+<td align="right">0.6674097</td>
+<td align="right">0.5064075</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(age_n, knots = c(35, 50))2</td>
+<td align="right">37.3855896</td>
+<td align="right">23.7587981</td>
+<td align="right">1.5735472</td>
+<td align="right">0.1194903</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))3</td>
+<td align="right">-8.1493593</td>
+<td align="right">25.1608613</td>
+<td align="right">-0.3238903</td>
+<td align="right">0.7468559</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(age_n, knots = c(35, 50))4</td>
+<td align="right">8.6142351</td>
+<td align="right">22.3328612</td>
+<td align="right">0.3857202</td>
+<td align="right">0.7007151</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))5</td>
+<td align="right">37.8153976</td>
+<td align="right">18.0285162</td>
+<td align="right">2.0975324</td>
+<td align="right">0.0390644</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))1</td>
+<td align="right">-0.0078854</td>
+<td align="right">0.0118521</td>
+<td align="right">-0.6653159</td>
+<td align="right">0.5077385</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))2</td>
+<td align="right">-0.0183302</td>
+<td align="right">0.0117851</td>
+<td align="right">-1.5553743</td>
+<td align="right">0.1237557</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))3</td>
+<td align="right">0.0042939</td>
+<td align="right">0.0124805</td>
+<td align="right">0.3440519</td>
+<td align="right">0.7316989</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))4</td>
+<td align="right">-0.0040248</td>
+<td align="right">0.0110776</td>
+<td align="right">-0.3633240</td>
+<td align="right">0.7173094</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))5</td>
+<td align="right">-0.0185161</td>
+<td align="right">0.0089421</td>
+<td align="right">-2.0706713</td>
+<td align="right">0.0415743</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.98315</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                                      Sum Sq Df   F value    Pr(&gt;F)    
+## sex                                 0.02618  1   48.4439 8.049e-10 ***
+## year_n                              0.06883  1  127.3747 &lt; 2.2e-16 ***
+## bs(age_n, knots = c(35, 50))        2.81344  5 1041.2680 &lt; 2.2e-16 ***
+## year_n:bs(age_n, knots = c(35, 50)) 0.00445  5    1.6454    0.1574    
+## Residuals                           0.04377 81                        
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;year_n&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-33"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-3.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 5: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-34"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-4.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 6: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Examine the interaction between gender and age. We can see that women have a significantly lower salary for the age groups 35-39 years, 45-49 years, 50-54 years, 55-59 years and 60-64 years.</p>
+<p>The F-value from the Anova table for the interaction term between gender and age is 3,2 (Pr(&gt;F) &lt; 0.003564), sufficient for rejecting the null hypothesis that the interaction between gender and age has no effect on the salary holding year as constant.</p>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n + sex * age, data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 3: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-28.2022208</td>
+<td align="right">3.2212924</td>
+<td align="right">-8.7549396</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0190896</td>
+<td align="right">0.0015979</td>
+<td align="right">11.9470190</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">0.0069060</td>
+<td align="right">0.0138839</td>
+<td align="right">0.4974127</td>
+<td align="right">0.6203728</td>
+</tr>
+<tr class="even">
+<td align="left">age25-29 years</td>
+<td align="right">0.1287635</td>
+<td align="right">0.0138839</td>
+<td align="right">9.2743148</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">age30-34 years</td>
+<td align="right">0.2841357</td>
+<td align="right">0.0138839</td>
+<td align="right">20.4651381</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">age35-39 years</td>
+<td align="right">0.3994082</td>
+<td align="right">0.0138839</td>
+<td align="right">28.7677512</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">age40-44 years</td>
+<td align="right">0.4652656</td>
+<td align="right">0.0138839</td>
+<td align="right">33.5111890</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">age45-49 years</td>
+<td align="right">0.5076384</td>
+<td align="right">0.0138839</td>
+<td align="right">36.5631348</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">age50-54 years</td>
+<td align="right">0.5175734</td>
+<td align="right">0.0138839</td>
+<td align="right">37.2787098</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">age55-59 years</td>
+<td align="right">0.5389253</td>
+<td align="right">0.0138839</td>
+<td align="right">38.8166009</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">age60-64 years</td>
+<td align="right">0.5298153</td>
+<td align="right">0.0138839</td>
+<td align="right">38.1604449</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">age65-66 years</td>
+<td align="right">0.5054421</td>
+<td align="right">0.0147315</td>
+<td align="right">34.3102881</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:age25-29 years</td>
+<td align="right">-0.0185979</td>
+<td align="right">0.0196348</td>
+<td align="right">-0.9471913</td>
+<td align="right">0.3466242</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:age30-34 years</td>
+<td align="right">-0.0342399</td>
+<td align="right">0.0196348</td>
+<td align="right">-1.7438372</td>
+<td align="right">0.0853402</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:age35-39 years</td>
+<td align="right">-0.0392078</td>
+<td align="right">0.0196348</td>
+<td align="right">-1.9968533</td>
+<td align="right">0.0495192</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:age40-44 years</td>
+<td align="right">-0.0290715</td>
+<td align="right">0.0196348</td>
+<td align="right">-1.4806107</td>
+<td align="right">0.1429556</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:age45-49 years</td>
+<td align="right">-0.0500604</td>
+<td align="right">0.0196348</td>
+<td align="right">-2.5495786</td>
+<td align="right">0.0128556</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:age50-54 years</td>
+<td align="right">-0.0435752</td>
+<td align="right">0.0196348</td>
+<td align="right">-2.2192866</td>
+<td align="right">0.0295322</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:age55-59 years</td>
+<td align="right">-0.0779734</td>
+<td align="right">0.0196348</td>
+<td align="right">-3.9711888</td>
+<td align="right">0.0001643</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:age60-64 years</td>
+<td align="right">-0.0742603</td>
+<td align="right">0.0196348</td>
+<td align="right">-3.7820779</td>
+<td align="right">0.0003131</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9849736</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Note: model has aliased coefficients
+##       sums of squares computed by model comparison</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##            Sum Sq Df  F value    Pr(&gt;F)    
+## year_n    0.06878  1 142.7313 &lt; 2.2e-16 ***
+## sex       0.02581  1  53.5620 2.492e-10 ***
+## age       2.81366  9 648.7344 &lt; 2.2e-16 ***
+## sex:age   0.01234  8   3.2006  0.003564 ** 
+## Residuals 0.03566 74                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Warning in predict.lm(model, newdata = fitfram, type = &quot;response&quot;, se.fit =
+## se, : prediction from a rank-deficient fit may be misleading</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-41"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 7: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-42"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 8: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[75,]</code></pre>
+<pre><code>## Source: local data frame [1 x 9]
+## Groups: &lt;by row&gt;
+## 
+## # A tibble: 1 x 9
+##   `occuptional  (SSYK 2012~ age      sex   year  salary year_n age_l age_h age_n
+##   &lt;chr&gt;                     &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;
+## 1 214 Engineering professi~ 65-66 y~ men   2017   46500   2017    65    66  65.5</code></pre>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n + sex * bs(age_n, knots = c(35, 50)), data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 3: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-28.2038536</td>
+<td align="right">3.1195378</td>
+<td align="right">-9.0410359</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0190902</td>
+<td align="right">0.0015474</td>
+<td align="right">12.3371071</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">0.0071007</td>
+<td align="right">0.0134078</td>
+<td align="right">0.5295958</td>
+<td align="right">0.5978408</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))1</td>
+<td align="right">0.0569146</td>
+<td align="right">0.0216453</td>
+<td align="right">2.6294148</td>
+<td align="right">0.0102324</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(age_n, knots = c(35, 50))2</td>
+<td align="right">0.4595799</td>
+<td align="right">0.0214465</td>
+<td align="right">21.4291344</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))3</td>
+<td align="right">0.5131788</td>
+<td align="right">0.0225545</td>
+<td align="right">22.7528180</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(age_n, knots = c(35, 50))4</td>
+<td align="right">0.5585990</td>
+<td align="right">0.0195443</td>
+<td align="right">28.5811988</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))5</td>
+<td align="right">0.5056993</td>
+<td align="right">0.0139459</td>
+<td align="right">36.2613732</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))1</td>
+<td align="right">-0.0156019</td>
+<td align="right">0.0309691</td>
+<td align="right">-0.5037899</td>
+<td align="right">0.6157765</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))2</td>
+<td align="right">-0.0520644</td>
+<td align="right">0.0314890</td>
+<td align="right">-1.6534151</td>
+<td align="right">0.1021172</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))3</td>
+<td align="right">-0.0173455</td>
+<td align="right">0.0347256</td>
+<td align="right">-0.4995018</td>
+<td align="right">0.6187800</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))4</td>
+<td align="right">-0.1083142</td>
+<td align="right">0.0346022</td>
+<td align="right">-3.1302674</td>
+<td align="right">0.0024289</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))5</td>
+<td align="right">-0.0509037</td>
+<td align="right">0.0386819</td>
+<td align="right">-1.3159563</td>
+<td align="right">0.1919009</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9859063</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                                   Sum Sq Df   F value    Pr(&gt;F)    
+## year_n                           0.06880  1  152.2042 &lt; 2.2e-16 ***
+## sex                              0.02612  1   57.7814 4.558e-11 ***
+## bs(age_n, knots = c(35, 50))     2.81344  5 1244.9030 &lt; 2.2e-16 ***
+## sex:bs(age_n, knots = c(35, 50)) 0.01161  5    5.1354 0.0003844 ***
+## Residuals                        0.03661 81                        
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-43"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-3.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 9: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-44"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-4.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 10: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Examine the interaction between gender and year. Both the model with categorical predictors and the model with continuous predictors indicates that women’s salaries increase more than men’s salaries.</p>
+<p>The F-value from the Anova table for the interaction term between gender and year is 3,1 (Pr(&gt;F) &lt; 0.08053), with 90 % significance we can reject the null hypothesis that the interaction between gender and year has no effect on the salary holding age as constant.</p>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n * sex + age, data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 4: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-22.2600278</td>
+<td align="right">4.8457687</td>
+<td align="right">-4.593704</td>
+<td align="right">0.0000158</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0161522</td>
+<td align="right">0.0024037</td>
+<td align="right">6.719863</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-12.4532110</td>
+<td align="right">7.0175325</td>
+<td align="right">-1.774585</td>
+<td align="right">0.0797236</td>
+</tr>
+<tr class="even">
+<td align="left">age25-29 years</td>
+<td align="right">0.1194646</td>
+<td align="right">0.0106821</td>
+<td align="right">11.183664</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">age30-34 years</td>
+<td align="right">0.2670157</td>
+<td align="right">0.0106821</td>
+<td align="right">24.996646</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">age35-39 years</td>
+<td align="right">0.3798043</td>
+<td align="right">0.0106821</td>
+<td align="right">35.555336</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">age40-44 years</td>
+<td align="right">0.4507298</td>
+<td align="right">0.0106821</td>
+<td align="right">42.195020</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">age45-49 years</td>
+<td align="right">0.4826082</td>
+<td align="right">0.0106821</td>
+<td align="right">45.179312</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">age50-54 years</td>
+<td align="right">0.4957858</td>
+<td align="right">0.0106821</td>
+<td align="right">46.412928</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">age55-59 years</td>
+<td align="right">0.4999386</td>
+<td align="right">0.0106821</td>
+<td align="right">46.801692</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">age60-64 years</td>
+<td align="right">0.4926852</td>
+<td align="right">0.0106821</td>
+<td align="right">46.122664</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">age65-66 years</td>
+<td align="right">0.4857883</td>
+<td align="right">0.0143662</td>
+<td align="right">33.814759</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen</td>
+<td align="right">0.0061604</td>
+<td align="right">0.0034809</td>
+<td align="right">1.769759</td>
+<td align="right">0.0805306</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9822101</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##             Sum Sq Df F value    Pr(&gt;F)    
+## year_n     0.06878  1 120.559 &lt; 2.2e-16 ***
+## sex        0.02581  1  45.242 2.266e-09 ***
+## age        2.81430  9 548.084 &lt; 2.2e-16 ***
+## year_n:sex 0.00179  1   3.132   0.08053 .  
+## Residuals  0.04621 81                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-51"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-5-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 11: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n * sex + bs(age_n, knots = c(35, 50)), data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 4: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-22.2810163</td>
+<td align="right">4.7408239</td>
+<td align="right">-4.699819</td>
+<td align="right">0.0000099</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0161625</td>
+<td align="right">0.0023516</td>
+<td align="right">6.872990</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-12.4325740</td>
+<td align="right">6.8662746</td>
+<td align="right">-1.810672</td>
+<td align="right">0.0737248</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))1</td>
+<td align="right">0.0497887</td>
+<td align="right">0.0168608</td>
+<td align="right">2.952920</td>
+<td align="right">0.0040694</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(age_n, knots = c(35, 50))2</td>
+<td align="right">0.4323307</td>
+<td align="right">0.0167836</td>
+<td align="right">25.759071</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))3</td>
+<td align="right">0.5064797</td>
+<td align="right">0.0178110</td>
+<td align="right">28.436385</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(age_n, knots = c(35, 50))4</td>
+<td align="right">0.5014488</td>
+<td align="right">0.0159182</td>
+<td align="right">31.501692</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))5</td>
+<td align="right">0.4850317</td>
+<td align="right">0.0132343</td>
+<td align="right">36.649526</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen</td>
+<td align="right">0.0061501</td>
+<td align="right">0.0034059</td>
+<td align="right">1.805728</td>
+<td align="right">0.0745008</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9829655</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                               Sum Sq Df   F value    Pr(&gt;F)    
+## year_n                       0.06883  1  125.9950 &lt; 2.2e-16 ***
+## sex                          0.02612  1   47.8063 8.182e-10 ***
+## bs(age_n, knots = c(35, 50)) 2.81407  5 1030.2198 &lt; 2.2e-16 ***
+## year_n:sex                   0.00178  1    3.2607    0.0745 .  
+## Residuals                    0.04644 85                        
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-52"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-5-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 12: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Examine the interaction between year, gender and age. It’s becoming a bit difficult to make any significant predictions about the interactions from the model, the data is not sufficiently large, the degrees of freedom has been reduced from 82 in the model with no interaction terms to 56.</p>
+<p>The following interaction terms are significant to 90 %.</p>
+<p>year_n:sexwomen</p>
+<p>sexwomen:age35-39 years</p>
+<p>year_n:sexwomen:age35-39 years</p>
+<p>In the graph below you can that the salaries for men in the age group 35-39 years has increased more than for women.</p>
+<p>The F-value from the Anova table for the interaction term between gender and age is 3,3 (Pr(&gt;F) &lt; 0.00373), sufficient for rejecting the null hypothesis that the interaction between gender and age has no effect on the salary holding year as constant.</p>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n * sex * age, data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-6">Table 5: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-23.0500250</td>
+<td align="right">13.7844076</td>
+<td align="right">-1.6721810</td>
+<td align="right">0.1000676</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0165340</td>
+<td align="right">0.0068375</td>
+<td align="right">2.4181290</td>
+<td align="right">0.0188783</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-37.6245789</td>
+<td align="right">19.4940962</td>
+<td align="right">-1.9300499</td>
+<td align="right">0.0586714</td>
+</tr>
+<tr class="even">
+<td align="left">age25-29 years</td>
+<td align="right">0.3057247</td>
+<td align="right">19.4940962</td>
+<td align="right">0.0156829</td>
+<td align="right">0.9875431</td>
+</tr>
+<tr class="odd">
+<td align="left">age30-34 years</td>
+<td align="right">13.4212323</td>
+<td align="right">19.4940962</td>
+<td align="right">0.6884768</td>
+<td align="right">0.4939950</td>
+</tr>
+<tr class="even">
+<td align="left">age35-39 years</td>
+<td align="right">-6.4835219</td>
+<td align="right">19.4940962</td>
+<td align="right">-0.3325890</td>
+<td align="right">0.7406864</td>
+</tr>
+<tr class="odd">
+<td align="left">age40-44 years</td>
+<td align="right">-4.3559249</td>
+<td align="right">19.4940962</td>
+<td align="right">-0.2234484</td>
+<td align="right">0.8239997</td>
+</tr>
+<tr class="even">
+<td align="left">age45-49 years</td>
+<td align="right">-8.7690292</td>
+<td align="right">19.4940962</td>
+<td align="right">-0.4498300</td>
+<td align="right">0.6545695</td>
+</tr>
+<tr class="odd">
+<td align="left">age50-54 years</td>
+<td align="right">-0.8787263</td>
+<td align="right">19.4940962</td>
+<td align="right">-0.0450765</td>
+<td align="right">0.9642067</td>
+</tr>
+<tr class="even">
+<td align="left">age55-59 years</td>
+<td align="right">-6.3664653</td>
+<td align="right">19.4940962</td>
+<td align="right">-0.3265843</td>
+<td align="right">0.7451998</td>
+</tr>
+<tr class="odd">
+<td align="left">age60-64 years</td>
+<td align="right">2.4331505</td>
+<td align="right">19.4940962</td>
+<td align="right">0.1248147</td>
+<td align="right">0.9011172</td>
+</tr>
+<tr class="even">
+<td align="left">age65-66 years</td>
+<td align="right">25.2691238</td>
+<td align="right">20.1796414</td>
+<td align="right">1.2522088</td>
+<td align="right">0.2156985</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen</td>
+<td align="right">0.0186664</td>
+<td align="right">0.0096697</td>
+<td align="right">1.9304047</td>
+<td align="right">0.0586265</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age25-29 years</td>
+<td align="right">-0.0000878</td>
+<td align="right">0.0096697</td>
+<td align="right">-0.0090777</td>
+<td align="right">0.9927894</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age30-34 years</td>
+<td align="right">-0.0065164</td>
+<td align="right">0.0096697</td>
+<td align="right">-0.6739015</td>
+<td align="right">0.5031462</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age35-39 years</td>
+<td align="right">0.0034142</td>
+<td align="right">0.0096697</td>
+<td align="right">0.3530778</td>
+<td align="right">0.7253558</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age40-44 years</td>
+<td align="right">0.0023915</td>
+<td align="right">0.0096697</td>
+<td align="right">0.2473155</td>
+<td align="right">0.8055686</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age45-49 years</td>
+<td align="right">0.0046015</td>
+<td align="right">0.0096697</td>
+<td align="right">0.4758707</td>
+<td align="right">0.6360177</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age50-54 years</td>
+<td align="right">0.0006926</td>
+<td align="right">0.0096697</td>
+<td align="right">0.0716268</td>
+<td align="right">0.9431541</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age55-59 years</td>
+<td align="right">0.0034253</td>
+<td align="right">0.0096697</td>
+<td align="right">0.3542299</td>
+<td align="right">0.7244970</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:age60-64 years</td>
+<td align="right">-0.0009441</td>
+<td align="right">0.0096697</td>
+<td align="right">-0.0976365</td>
+<td align="right">0.9225696</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:age65-66 years</td>
+<td align="right">-0.0122817</td>
+<td align="right">0.0100091</td>
+<td align="right">-1.2270593</td>
+<td align="right">0.2249341</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:age25-29 years</td>
+<td align="right">28.1128665</td>
+<td align="right">27.5688152</td>
+<td align="right">1.0197343</td>
+<td align="right">0.3122398</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:age30-34 years</td>
+<td align="right">28.1928073</td>
+<td align="right">27.5688152</td>
+<td align="right">1.0226340</td>
+<td align="right">0.3108784</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:age35-39 years</td>
+<td align="right">54.9538639</td>
+<td align="right">27.5688152</td>
+<td align="right">1.9933343</td>
+<td align="right">0.0511051</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:age40-44 years</td>
+<td align="right">41.2101760</td>
+<td align="right">27.5688152</td>
+<td align="right">1.4948113</td>
+<td align="right">0.1405778</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:age45-49 years</td>
+<td align="right">29.0456019</td>
+<td align="right">27.5688152</td>
+<td align="right">1.0535673</td>
+<td align="right">0.2966058</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:age50-54 years</td>
+<td align="right">3.1386820</td>
+<td align="right">27.5688152</td>
+<td align="right">0.1138490</td>
+<td align="right">0.9097647</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:age55-59 years</td>
+<td align="right">41.1408823</td>
+<td align="right">27.5688152</td>
+<td align="right">1.4922978</td>
+<td align="right">0.1412337</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:age60-64 years</td>
+<td align="right">21.7389989</td>
+<td align="right">27.5688152</td>
+<td align="right">0.7885358</td>
+<td align="right">0.4337089</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen:age25-29 years</td>
+<td align="right">-0.0139541</td>
+<td align="right">0.0136750</td>
+<td align="right">-1.0204092</td>
+<td align="right">0.3119226</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sexwomen:age30-34 years</td>
+<td align="right">-0.0140015</td>
+<td align="right">0.0136750</td>
+<td align="right">-1.0238762</td>
+<td align="right">0.3102964</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen:age35-39 years</td>
+<td align="right">-0.0272783</td>
+<td align="right">0.0136750</td>
+<td align="right">-1.9947569</td>
+<td align="right">0.0509451</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sexwomen:age40-44 years</td>
+<td align="right">-0.0204560</td>
+<td align="right">0.0136750</td>
+<td align="right">-1.4958662</td>
+<td align="right">0.1403033</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen:age45-49 years</td>
+<td align="right">-0.0144324</td>
+<td align="right">0.0136750</td>
+<td align="right">-1.0553834</td>
+<td align="right">0.2957821</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sexwomen:age50-54 years</td>
+<td align="right">-0.0015785</td>
+<td align="right">0.0136750</td>
+<td align="right">-0.1154296</td>
+<td align="right">0.9085175</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen:age55-59 years</td>
+<td align="right">-0.0204459</td>
+<td align="right">0.0136750</td>
+<td align="right">-1.4951265</td>
+<td align="right">0.1404958</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sexwomen:age60-64 years</td>
+<td align="right">-0.0108201</td>
+<td align="right">0.0136750</td>
+<td align="right">-0.7912297</td>
+<td align="right">0.4321485</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9854223</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Note: model has aliased coefficients
+##       sums of squares computed by model comparison</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                 Sum Sq Df  F value    Pr(&gt;F)    
+## year_n         0.06878  1 147.1250 &lt; 2.2e-16 ***
+## sex            0.02581  1  55.2108 6.727e-10 ***
+## age            2.81430  9 668.8557 &lt; 2.2e-16 ***
+## year_n:sex     0.00113  1   2.4097   0.12622    
+## year_n:age     0.00460  9   1.0927   0.38295    
+## sex:age        0.01234  8   3.2991   0.00373 ** 
+## year_n:sex:age 0.00310  8   0.8277   0.58192    
+## Residuals      0.02618 56                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;age&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Warning in predict.lm(model, newdata = fitfram, type = &quot;response&quot;, se.fit =
+## se, : prediction from a rank-deficient fit may be misleading</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<pre><code>## Warning in RColorBrewer::brewer.pal(n, pal): n too large, allowed maximum for palette Set1 is 9
+## Returning the palette you asked for with that many colors</code></pre>
+<pre><code>## Warning: Removed 10 rows containing missing values (geom_path).</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-61"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 13: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-62"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 14: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n * sex * bs(age_n, knots = c(35, 50)), data = tb)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-6">Table 5: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-24.0868942</td>
+<td align="right">12.7931370</td>
+<td align="right">-1.8827981</td>
+<td align="right">0.0638836</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0170481</td>
+<td align="right">0.0063458</td>
+<td align="right">2.6865147</td>
+<td align="right">0.0090115</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-35.9593922</td>
+<td align="right">18.0942402</td>
+<td align="right">-1.9873392</td>
+<td align="right">0.0507987</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))1</td>
+<td align="right">13.5471021</td>
+<td align="right">29.2057808</td>
+<td align="right">0.4638500</td>
+<td align="right">0.6441944</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(age_n, knots = c(35, 50))2</td>
+<td align="right">-3.5308622</td>
+<td align="right">28.9253132</td>
+<td align="right">-0.1220682</td>
+<td align="right">0.9031947</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))3</td>
+<td align="right">-3.0003750</td>
+<td align="right">30.3944067</td>
+<td align="right">-0.0987147</td>
+<td align="right">0.9216469</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(age_n, knots = c(35, 50))4</td>
+<td align="right">-10.6818355</td>
+<td align="right">26.2596260</td>
+<td align="right">-0.4067779</td>
+<td align="right">0.6854122</td>
+</tr>
+<tr class="even">
+<td align="left">bs(age_n, knots = c(35, 50))5</td>
+<td align="right">24.6956649</td>
+<td align="right">18.4012753</td>
+<td align="right">1.3420627</td>
+<td align="right">0.1839126</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen</td>
+<td align="right">0.0178405</td>
+<td align="right">0.0089753</td>
+<td align="right">1.9877332</td>
+<td align="right">0.0507540</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))1</td>
+<td align="right">-0.0066913</td>
+<td align="right">0.0144870</td>
+<td align="right">-0.4618860</td>
+<td align="right">0.6455954</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))2</td>
+<td align="right">0.0019790</td>
+<td align="right">0.0143478</td>
+<td align="right">0.1379286</td>
+<td align="right">0.8906928</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))3</td>
+<td align="right">0.0017435</td>
+<td align="right">0.0150765</td>
+<td align="right">0.1156429</td>
+<td align="right">0.9082666</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))4</td>
+<td align="right">0.0055746</td>
+<td align="right">0.0130255</td>
+<td align="right">0.4279781</td>
+<td align="right">0.6699809</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(age_n, knots = c(35, 50))5</td>
+<td align="right">-0.0119974</td>
+<td align="right">0.0091271</td>
+<td align="right">-1.3144829</td>
+<td align="right">0.1929745</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))1</td>
+<td align="right">-3.0882433</td>
+<td align="right">41.7901518</td>
+<td align="right">-0.0738988</td>
+<td align="right">0.9413017</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))2</td>
+<td align="right">96.0533158</td>
+<td align="right">42.4835588</td>
+<td align="right">2.2609527</td>
+<td align="right">0.0268729</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))3</td>
+<td align="right">-33.3604447</td>
+<td align="right">46.8350731</td>
+<td align="right">-0.7122962</td>
+<td align="right">0.4786489</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))4</td>
+<td align="right">73.5641700</td>
+<td align="right">46.6314260</td>
+<td align="right">1.5775664</td>
+<td align="right">0.1191741</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(age_n, knots = c(35, 50))5</td>
+<td align="right">-29.6631727</td>
+<td align="right">52.0527929</td>
+<td align="right">-0.5698671</td>
+<td align="right">0.5705923</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sexwomen:bs(age_n, knots = c(35, 50))1</td>
+<td align="right">0.0015239</td>
+<td align="right">0.0207292</td>
+<td align="right">0.0735146</td>
+<td align="right">0.9416063</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen:bs(age_n, knots = c(35, 50))2</td>
+<td align="right">-0.0476709</td>
+<td align="right">0.0210732</td>
+<td align="right">-2.2621610</td>
+<td align="right">0.0267943</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sexwomen:bs(age_n, knots = c(35, 50))3</td>
+<td align="right">0.0165386</td>
+<td align="right">0.0232316</td>
+<td align="right">0.7118987</td>
+<td align="right">0.4788935</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sexwomen:bs(age_n, knots = c(35, 50))4</td>
+<td align="right">-0.0365429</td>
+<td align="right">0.0231306</td>
+<td align="right">-1.5798519</td>
+<td align="right">0.1186493</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sexwomen:bs(age_n, knots = c(35, 50))5</td>
+<td align="right">0.0146870</td>
+<td align="right">0.0258196</td>
+<td align="right">0.5688315</td>
+<td align="right">0.5712911</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9873689</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                                          Sum Sq Df  F value    Pr(&gt;F)    
+## year_n                                  0.06880  1 169.8286 &lt; 2.2e-16 ***
+## sex                                     0.03780  6  15.5511 3.011e-11 ***
+## bs(age_n, knots = c(35, 50))            2.82569 10 697.5506 &lt; 2.2e-16 ***
+## year_n:sex                              0.00126  1   3.1090 0.0822248 .  
+## year_n:bs(age_n, knots = c(35, 50))     0.00394  5   1.9452 0.0977419 .  
+## sex:bs(age_n, knots = c(35, 50))        0.01163  5   5.7405 0.0001702 ***
+## year_n:sex:bs(age_n, knots = c(35, 50)) 0.00253  5   1.2489 0.2958798    
+## Residuals                               0.02836 70                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;year_n&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-63"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-3.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 15: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-64"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-4.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 16: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), gender and educational level (SUN). Year 2014 - 2018 Monthly salary All sectors</p>
+<p>We expect that gender is an important factor in salaries. As a null hypothesis, we assume that the interaction between gender and education is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.</p>
+<pre class="r"><code>tb &lt;- readfile(&quot;000000CY.csv&quot;) %&gt;% 
+  filter(`occuptional  (SSYK 2012)` == &quot;214 Engineering professionals&quot;) %&gt;%    
+  mutate(edulevel = `level of education`)
+
+numedulevel &lt;- read.csv(&quot;edulevel.csv&quot;) 
+
+tbnum &lt;- tb %&gt;% 
+  right_join(numedulevel, by = c(&quot;level of education&quot; = &quot;level.of.education&quot;)) %&gt;%
+  filter(!is.na(eduyears))</code></pre>
+<pre><code>## Warning: Column `level of education`/`level.of.education` joining character
+## vector and factor, coercing into character vector</code></pre>
+<pre class="r"><code>numedulevel %&gt;%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = &#39;Initial approach, length of education&#39;) </code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-7">Table 6: </span>Initial approach, length of education</caption>
+<thead>
+<tr class="header">
+<th align="left">level.of.education</th>
+<th align="right">eduyears</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">11</td>
+</tr>
+<tr class="odd">
+<td align="left">upper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">12</td>
+</tr>
+<tr class="even">
+<td align="left">post-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="left">post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="left">post-graduate education (ISCED97 6)</td>
+<td align="right">19</td>
+</tr>
+<tr class="odd">
+<td align="left">no information about level of educational attainment</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = `level of education`, shape = sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-71"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 17: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>model &lt;- lm (log(salary) ~ year_n + sex + edulevel, data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-7">Table 6: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-34.8741818</td>
+<td align="right">4.5648337</td>
+<td align="right">-7.639749</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0226738</td>
+<td align="right">0.0022643</td>
+<td align="right">10.013413</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0743114</td>
+<td align="right">0.0063438</td>
+<td align="right">-11.713990</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.1104356</td>
+<td align="right">0.0108816</td>
+<td align="right">-10.148796</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.1446573</td>
+<td align="right">0.0108816</td>
+<td align="right">-13.293700</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">-0.2207500</td>
+<td align="right">0.0111971</td>
+<td align="right">-19.714892</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">-0.1898866</td>
+<td align="right">0.0108816</td>
+<td align="right">-17.450172</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">-0.2155065</td>
+<td align="right">0.0108816</td>
+<td align="right">-19.804583</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9311952</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##            Sum Sq Df F value    Pr(&gt;F)    
+## year_n    0.05936  1  100.27 1.232e-13 ***
+## sex       0.08124  1  137.22 4.476e-16 ***
+## edulevel  0.34338  5  116.00 &lt; 2.2e-16 ***
+## Residuals 0.03019 51                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-72"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 18: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[20,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ men   no information a~ 2015   48400   2015 no infor~</code></pre>
+<pre class="r"><code>tb[41,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ women no information a~ 2016   39400   2016 no infor~</code></pre>
+<pre class="r"><code>tb[55,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ women no information a~ 2017   35300   2017 no infor~</code></pre>
+<p>We start by examining the interaction between year and education. The salaries for the education upper secondary education, 2 years or less increase more than other educations during the time period 2014-2018, however, this can not be shown with 95% significance from this data.</p>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ sex + year_n * edulevel, data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-8">Table 7: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-29.3041153</td>
+<td align="right">10.9645273</td>
+<td align="right">-2.6726291</td>
+<td align="right">0.0103775</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-0.0743499</td>
+<td align="right">0.0063563</td>
+<td align="right">-11.6971241</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0199109</td>
+<td align="right">0.0054388</td>
+<td align="right">3.6609245</td>
+<td align="right">0.0006464</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">3.5092165</td>
+<td align="right">15.5061826</td>
+<td align="right">0.2263108</td>
+<td align="right">0.8219623</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-3.7498523</td>
+<td align="right">15.5061826</td>
+<td align="right">-0.2418295</td>
+<td align="right">0.8099871</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">-6.8196567</td>
+<td align="right">16.6031078</td>
+<td align="right">-0.4107458</td>
+<td align="right">0.6831661</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">-0.3311115</td>
+<td align="right">15.5061826</td>
+<td align="right">-0.0213535</td>
+<td align="right">0.9830560</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">-27.1431543</td>
+<td align="right">15.5061826</td>
+<td align="right">-1.7504730</td>
+<td align="right">0.0867042</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.0017955</td>
+<td align="right">0.0076916</td>
+<td align="right">-0.2334329</td>
+<td align="right">0.8164610</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">0.0017883</td>
+<td align="right">0.0076916</td>
+<td align="right">0.2325005</td>
+<td align="right">0.8171806</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">0.0032732</td>
+<td align="right">0.0082351</td>
+<td align="right">0.3974684</td>
+<td align="right">0.6928605</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">0.0000701</td>
+<td align="right">0.0076916</td>
+<td align="right">0.0091077</td>
+<td align="right">0.9927726</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">0.0133570</td>
+<td align="right">0.0076916</td>
+<td align="right">1.7365753</td>
+<td align="right">0.0891557</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9312476</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                  Sum Sq Df  F value    Pr(&gt;F)    
+## sex             0.08094  1 136.8227 2.212e-15 ***
+## year_n          0.05936  1 100.3448 3.853e-13 ***
+## edulevel        0.34338  5 116.0852 &lt; 2.2e-16 ***
+## year_n:edulevel 0.00298  5   1.0078     0.424    
+## Residuals       0.02721 46                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;edulevel&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-81"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 19: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-82"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 20: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[10,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ women post-secondary e~ 2014   38800   2014 post-sec~</code></pre>
+<pre class="r"><code>tb[25,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ women post-secondary e~ 2015   41200   2015 post-sec~</code></pre>
+<pre class="r"><code>tb[29,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ men   upper secondary ~ 2016   42100   2016 upper se~</code></pre>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ sex + year_n * bs(eduyears, knots = c(14)), data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-8">Table 7: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-37.5638852</td>
+<td align="right">12.5188542</td>
+<td align="right">-3.0005849</td>
+<td align="right">0.0042648</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-0.0744192</td>
+<td align="right">0.0064006</td>
+<td align="right">-11.6269343</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0238981</td>
+<td align="right">0.0062092</td>
+<td align="right">3.8488437</td>
+<td align="right">0.0003504</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))1</td>
+<td align="right">-33.5129947</td>
+<td align="right">34.8826450</td>
+<td align="right">-0.9607355</td>
+<td align="right">0.3415000</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))2</td>
+<td align="right">52.9743796</td>
+<td align="right">67.5504892</td>
+<td align="right">0.7842190</td>
+<td align="right">0.4367647</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))3</td>
+<td align="right">-26.1485331</td>
+<td align="right">82.0008933</td>
+<td align="right">-0.3188811</td>
+<td align="right">0.7512002</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))4</td>
+<td align="right">8.2849059</td>
+<td align="right">16.6914080</td>
+<td align="right">0.4963575</td>
+<td align="right">0.6219077</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(eduyears, knots = c(14))1</td>
+<td align="right">0.0166181</td>
+<td align="right">0.0173024</td>
+<td align="right">0.9604499</td>
+<td align="right">0.3416422</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(eduyears, knots = c(14))2</td>
+<td align="right">-0.0262412</td>
+<td align="right">0.0335071</td>
+<td align="right">-0.7831529</td>
+<td align="right">0.4373844</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(eduyears, knots = c(14))3</td>
+<td align="right">0.0130625</td>
+<td align="right">0.0406748</td>
+<td align="right">0.3211439</td>
+<td align="right">0.7494955</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(eduyears, knots = c(14))4</td>
+<td align="right">-0.0039997</td>
+<td align="right">0.0082789</td>
+<td align="right">-0.4831182</td>
+<td align="right">0.6312082</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9302821</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                                     Sum Sq Df  F value    Pr(&gt;F)    
+## sex                                0.08110  1 135.1856 1.453e-15 ***
+## year_n                             0.05941  1  99.0272 2.972e-13 ***
+## bs(eduyears, knots = c(14))        0.34299  4 142.9343 &lt; 2.2e-16 ***
+## year_n:bs(eduyears, knots = c(14)) 0.00179  4   0.7457    0.5657    
+## Residuals                          0.02880 48                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;eduyears&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-83"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-3.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 21: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-84"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-4.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 22: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[25,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ women post-secondary e~ 2015   41200   2015 post-sec~</code></pre>
+<p>Examine the interaction between gender and education. The only significant difference in salaries for the length in education is for the group upper secondary education, 2 years or less.</p>
+<p>The F-value from the Anova table for the interaction term between gender and education is 3,3 (Pr(&gt;F) &lt; 0.01195), sufficient for rejecting the null hypothesis that the interaction between gender and education has no effect on the salary holding year as constant.</p>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ sex * edulevel + year_n, data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-9">Table 8: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-34.7430460</td>
+<td align="right">4.1272331</td>
+<td align="right">-8.4179994</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-0.0771083</td>
+<td align="right">0.0138850</td>
+<td align="right">-5.5533508</td>
+<td align="right">0.0000013</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.1168022</td>
+<td align="right">0.0138850</td>
+<td align="right">-8.4121058</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.1597128</td>
+<td align="right">0.0138850</td>
+<td align="right">-11.5025341</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">-0.2251088</td>
+<td align="right">0.0138850</td>
+<td align="right">-16.2123615</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">-0.1948942</td>
+<td align="right">0.0138850</td>
+<td align="right">-14.0363072</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">-0.1931089</td>
+<td align="right">0.0138850</td>
+<td align="right">-13.9077238</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0226094</td>
+<td align="right">0.0020472</td>
+<td align="right">11.0438961</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">0.0127331</td>
+<td align="right">0.0196364</td>
+<td align="right">0.6484450</td>
+<td align="right">0.5199213</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">0.0301109</td>
+<td align="right">0.0196364</td>
+<td align="right">1.5334243</td>
+<td align="right">0.1320210</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">0.0094897</td>
+<td align="right">0.0202666</td>
+<td align="right">0.4682454</td>
+<td align="right">0.6418203</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">0.0100153</td>
+<td align="right">0.0196364</td>
+<td align="right">0.5100385</td>
+<td align="right">0.6124632</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">-0.0447952</td>
+<td align="right">0.0196364</td>
+<td align="right">-2.2812368</td>
+<td align="right">0.0272117</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9439866</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##               Sum Sq Df  F value    Pr(&gt;F)    
+## sex          0.08124  1 168.5530 &lt; 2.2e-16 ***
+## edulevel     0.34338  5 142.4863 &lt; 2.2e-16 ***
+## year_n       0.05879  1 121.9676 1.576e-14 ***
+## sex:edulevel 0.00802  5   3.3293   0.01195 *  
+## Residuals    0.02217 46                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;edulevel&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-91"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-9-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 23: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-92"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-9-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 24: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[12,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (S~ sex   `level of educa~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;             &lt;chr&gt; &lt;chr&gt;            &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering ~ women post-graduate e~ 2014   45000   2014 post-gra~</code></pre>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ sex * bs(eduyears, knots = c(14)) + year_n, data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-9">Table 8: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-35.0137987</td>
+<td align="right">4.1599657</td>
+<td align="right">-8.4168479</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-0.0691630</td>
+<td align="right">0.0148436</td>
+<td align="right">-4.6594632</td>
+<td align="right">0.0000254</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))1</td>
+<td align="right">0.0563505</td>
+<td align="right">0.0303035</td>
+<td align="right">1.8595384</td>
+<td align="right">0.0690857</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))2</td>
+<td align="right">-0.0451702</td>
+<td align="right">0.0604863</td>
+<td align="right">-0.7467842</td>
+<td align="right">0.4588363</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))3</td>
+<td align="right">0.2884546</td>
+<td align="right">0.0731010</td>
+<td align="right">3.9459725</td>
+<td align="right">0.0002585</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))4</td>
+<td align="right">0.2248785</td>
+<td align="right">0.0139796</td>
+<td align="right">16.0861324</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0226322</td>
+<td align="right">0.0020635</td>
+<td align="right">10.9680236</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:bs(eduyears, knots = c(14))1</td>
+<td align="right">-0.1362989</td>
+<td align="right">0.0434669</td>
+<td align="right">-3.1356935</td>
+<td align="right">0.0029251</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(eduyears, knots = c(14))2</td>
+<td align="right">0.2339328</td>
+<td align="right">0.0855779</td>
+<td align="right">2.7335654</td>
+<td align="right">0.0087471</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:bs(eduyears, knots = c(14))3</td>
+<td align="right">-0.2077223</td>
+<td align="right">0.1036306</td>
+<td align="right">-2.0044483</td>
+<td align="right">0.0506812</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(eduyears, knots = c(14))4</td>
+<td align="right">-0.0079140</td>
+<td align="right">0.0203999</td>
+<td align="right">-0.3879451</td>
+<td align="right">0.6997718</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.943092</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                                  Sum Sq Df  F value    Pr(&gt;F)    
+## sex                             0.08128  1 165.9766 &lt; 2.2e-16 ***
+## bs(eduyears, knots = c(14))     0.34299  4 175.1086 &lt; 2.2e-16 ***
+## year_n                          0.05891  1 120.2975 1.128e-14 ***
+## sex:bs(eduyears, knots = c(14)) 0.00708  4   3.6147   0.01181 *  
+## Residuals                       0.02350 48                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;eduyears&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-93"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-9-3.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 25: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-94"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-9-4.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 26: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Examine the interaction between gender and year There is no evidence that the salaries for men and women are interacting with year, holding education constant.</p>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ sex * year_n + edulevel, data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-10">Table 9: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-33.2392045</td>
+<td align="right">6.3870956</td>
+<td align="right">-5.2041188</td>
+<td align="right">0.0000037</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-3.4777309</td>
+<td align="right">9.2153884</td>
+<td align="right">-0.3773830</td>
+<td align="right">0.7074862</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0218628</td>
+<td align="right">0.0031682</td>
+<td align="right">6.9007009</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.1104356</td>
+<td align="right">0.0109750</td>
+<td align="right">-10.0625026</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.1446573</td>
+<td align="right">0.0109750</td>
+<td align="right">-13.1806660</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">-0.2209486</td>
+<td align="right">0.0113059</td>
+<td align="right">-19.5427007</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">-0.1898866</td>
+<td align="right">0.0109750</td>
+<td align="right">-17.3017955</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">-0.2155065</td>
+<td align="right">0.0109750</td>
+<td align="right">-19.6361878</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:year_n</td>
+<td align="right">0.0016882</td>
+<td align="right">0.0045710</td>
+<td align="right">0.3693193</td>
+<td align="right">0.7134493</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.93001</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##             Sum Sq Df  F value    Pr(&gt;F)    
+## sex        0.08124  1 134.8940 8.258e-16 ***
+## year_n     0.05936  1  98.5705 2.047e-13 ***
+## edulevel   0.34343  5 114.0493 &lt; 2.2e-16 ***
+## sex:year_n 0.00008  1   0.1364    0.7134    
+## Residuals  0.03011 50                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-101"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-10-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 27: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-102"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-10-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 28: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[18,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ men   post-secondary e~ 2015   44800   2015 post-sec~</code></pre>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ sex * year_n + bs(eduyears, knots = c(14)), data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-10">Table 9: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-33.4606036</td>
+<td align="right">6.3648511</td>
+<td align="right">-5.2570914</td>
+<td align="right">0.0000029</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-3.5113836</td>
+<td align="right">9.1831982</td>
+<td align="right">-0.3823704</td>
+<td align="right">0.7037755</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0218628</td>
+<td align="right">0.0031572</td>
+<td align="right">6.9248186</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))1</td>
+<td align="right">-0.0110825</td>
+<td align="right">0.0239981</td>
+<td align="right">-0.4618072</td>
+<td align="right">0.6461835</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))2</td>
+<td align="right">0.0720456</td>
+<td align="right">0.0472864</td>
+<td align="right">1.5236020</td>
+<td align="right">0.1337855</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))3</td>
+<td align="right">0.1853033</td>
+<td align="right">0.0572546</td>
+<td align="right">3.2364779</td>
+<td align="right">0.0021284</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))4</td>
+<td align="right">0.2214175</td>
+<td align="right">0.0112515</td>
+<td align="right">19.6788574</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:year_n</td>
+<td align="right">0.0017049</td>
+<td align="right">0.0045551</td>
+<td align="right">0.3742767</td>
+<td align="right">0.7097502</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9304967</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                              Sum Sq Df  F value    Pr(&gt;F)    
+## sex                         0.08128  1 135.8986 5.361e-16 ***
+## year_n                      0.05941  1  99.3330 1.446e-13 ***
+## bs(eduyears, knots = c(14)) 0.34304  4 143.3973 &lt; 2.2e-16 ***
+## sex:year_n                  0.00008  1   0.1401    0.7098    
+## Residuals                   0.03050 51                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;eduyears&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-103"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-10-3.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 29: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-104"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-10-4.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 30: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Examine the interaction between year, gender and education It’s becoming a bit difficult to make any significant predictions from the model, the data is not sufficiently large, the degrees of freedom has been reduced from 51 in the model with no interaction terms to 35.</p>
+<p>There are no significant interaction terms in the summary.</p>
+<p>The F-value from the Anova table for the interaction term between gender and education is 3,0 (Pr(&gt;F) &lt; 0.02377), sufficient for rejecting the null hypothesis that the interaction between gender and education has no effect on the salary holding year as constant.</p>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ sex * year_n * edulevel, data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-11">Table 10: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-28.6598716</td>
+<td align="right">14.7502103</td>
+<td align="right">-1.9430144</td>
+<td align="right">0.0600924</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-1.3628373</td>
+<td align="right">20.8599474</td>
+<td align="right">-0.0653327</td>
+<td align="right">0.9482808</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0195920</td>
+<td align="right">0.0073166</td>
+<td align="right">2.6777544</td>
+<td align="right">0.0112090</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">5.7063531</td>
+<td align="right">20.8599474</td>
+<td align="right">0.2735555</td>
+<td align="right">0.7860341</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">1.8926757</td>
+<td align="right">20.8599474</td>
+<td align="right">0.0907325</td>
+<td align="right">0.9282224</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">-6.5228901</td>
+<td align="right">20.8599474</td>
+<td align="right">-0.3126993</td>
+<td align="right">0.7563648</td>
+</tr>
+<tr class="odd">
+<td align="left">edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">3.4041093</td>
+<td align="right">20.8599474</td>
+<td align="right">0.1631888</td>
+<td align="right">0.8713084</td>
+</tr>
+<tr class="even">
+<td align="left">edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">-32.8376799</td>
+<td align="right">20.8599474</td>
+<td align="right">-1.5741976</td>
+<td align="right">0.1244390</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:year_n</td>
+<td align="right">0.0006378</td>
+<td align="right">0.0103472</td>
+<td align="right">0.0616363</td>
+<td align="right">0.9512031</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-4.3942731</td>
+<td align="right">29.5004205</td>
+<td align="right">-0.1489563</td>
+<td align="right">0.8824431</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-11.2850561</td>
+<td align="right">29.5004205</td>
+<td align="right">-0.3825388</td>
+<td align="right">0.7043750</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">1.3504648</td>
+<td align="right">32.9857439</td>
+<td align="right">0.0409409</td>
+<td align="right">0.9675757</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">-7.4704416</td>
+<td align="right">29.5004205</td>
+<td align="right">-0.2532317</td>
+<td align="right">0.8015707</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">11.3890513</td>
+<td align="right">29.5004205</td>
+<td align="right">0.3860640</td>
+<td align="right">0.7017862</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">-0.0028885</td>
+<td align="right">0.0103472</td>
+<td align="right">-0.2791549</td>
+<td align="right">0.7817689</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">-0.0010180</td>
+<td align="right">0.0103472</td>
+<td align="right">-0.0983890</td>
+<td align="right">0.9221848</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">0.0031239</td>
+<td align="right">0.0103472</td>
+<td align="right">0.3019079</td>
+<td align="right">0.7645090</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">-0.0017852</td>
+<td align="right">0.0103472</td>
+<td align="right">-0.1725318</td>
+<td align="right">0.8640133</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">0.0161927</td>
+<td align="right">0.0103472</td>
+<td align="right">1.5649406</td>
+<td align="right">0.1265947</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:year_n:edulevelpost-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">0.0021860</td>
+<td align="right">0.0146331</td>
+<td align="right">0.1493879</td>
+<td align="right">0.8821050</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:year_n:edulevelpost-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">0.0056127</td>
+<td align="right">0.0146331</td>
+<td align="right">0.3835596</td>
+<td align="right">0.7036250</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:year_n:edulevelprimary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">-0.0006652</td>
+<td align="right">0.0163603</td>
+<td align="right">-0.0406584</td>
+<td align="right">0.9677993</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:year_n:edulevelupper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">0.0037105</td>
+<td align="right">0.0146331</td>
+<td align="right">0.2535713</td>
+<td align="right">0.8013105</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:year_n:edulevelupper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">-0.0056716</td>
+<td align="right">0.0146331</td>
+<td align="right">-0.3875826</td>
+<td align="right">0.7006721</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9377879</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                      Sum Sq Df  F value    Pr(&gt;F)    
+## sex                 0.08897  6  27.6985 6.428e-12 ***
+## year_n              0.05879  1 109.8150 2.456e-12 ***
+## edulevel            0.35144 10  65.6498 &lt; 2.2e-16 ***
+## sex:year_n          0.00007  1   0.1338   0.71677    
+## sex:edulevel        0.00800  5   2.9902   0.02377 *  
+## year_n:edulevel     0.00298  5   1.1127   0.37150    
+## sex:year_n:edulevel 0.00039  5   0.1445   0.98038    
+## Residuals           0.01874 35                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;edulevel&quot;,&quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-111"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 31: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-112"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 32: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[29,]</code></pre>
+<pre><code>## # A tibble: 1 x 8
+##   sector  `occuptional  (~ sex   `level of educat~ year  salary year_n edulevel 
+##   &lt;chr&gt;   &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;             &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1 0 all ~ 214 Engineering~ men   upper secondary ~ 2016   42100   2016 upper se~</code></pre>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ sex * year_n * bs(eduyears, knots = c(14)), data = tbnum)
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-11">Table 10: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-36.4297072</td>
+<td align="right">14.8747312</td>
+<td align="right">-2.4491002</td>
+<td align="right">0.0189181</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-1.4146024</td>
+<td align="right">25.7220917</td>
+<td align="right">-0.0549956</td>
+<td align="right">0.9564227</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0233345</td>
+<td align="right">0.0073783</td>
+<td align="right">3.1625710</td>
+<td align="right">0.0030250</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))1</td>
+<td align="right">-52.0255138</td>
+<td align="right">45.6462798</td>
+<td align="right">-1.1397536</td>
+<td align="right">0.2613408</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))2</td>
+<td align="right">93.3207084</td>
+<td align="right">91.1108278</td>
+<td align="right">1.0242549</td>
+<td align="right">0.3120264</td>
+</tr>
+<tr class="even">
+<td align="left">bs(eduyears, knots = c(14))3</td>
+<td align="right">-61.4602190</td>
+<td align="right">110.1124840</td>
+<td align="right">-0.5581585</td>
+<td align="right">0.5799266</td>
+</tr>
+<tr class="odd">
+<td align="left">bs(eduyears, knots = c(14))4</td>
+<td align="right">7.8004982</td>
+<td align="right">21.0576228</td>
+<td align="right">0.3704358</td>
+<td align="right">0.7130621</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:year_n</td>
+<td align="right">0.0006670</td>
+<td align="right">0.0127569</td>
+<td align="right">0.0522889</td>
+<td align="right">0.9585654</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(eduyears, knots = c(14))1</td>
+<td align="right">35.6845382</td>
+<td align="right">68.0014005</td>
+<td align="right">0.5247618</td>
+<td align="right">0.6027192</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:bs(eduyears, knots = c(14))2</td>
+<td align="right">-81.1592876</td>
+<td align="right">129.0648894</td>
+<td align="right">-0.6288255</td>
+<td align="right">0.5331293</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:bs(eduyears, knots = c(14))3</td>
+<td align="right">69.2953946</td>
+<td align="right">157.1561131</td>
+<td align="right">0.4409335</td>
+<td align="right">0.6616959</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:bs(eduyears, knots = c(14))4</td>
+<td align="right">0.0407412</td>
+<td align="right">33.2552425</td>
+<td align="right">0.0012251</td>
+<td align="right">0.9990288</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(eduyears, knots = c(14))1</td>
+<td align="right">0.0258343</td>
+<td align="right">0.0226420</td>
+<td align="right">1.1409884</td>
+<td align="right">0.2608328</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(eduyears, knots = c(14))2</td>
+<td align="right">-0.0463124</td>
+<td align="right">0.0451939</td>
+<td align="right">-1.0247509</td>
+<td align="right">0.3117952</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:bs(eduyears, knots = c(14))3</td>
+<td align="right">0.0306293</td>
+<td align="right">0.0546193</td>
+<td align="right">0.5607783</td>
+<td align="right">0.5781565</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:bs(eduyears, knots = c(14))4</td>
+<td align="right">-0.0037577</td>
+<td align="right">0.0104452</td>
+<td align="right">-0.3597567</td>
+<td align="right">0.7209699</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:year_n:bs(eduyears, knots = c(14))1</td>
+<td align="right">-0.0177678</td>
+<td align="right">0.0337292</td>
+<td align="right">-0.5267776</td>
+<td align="right">0.6013316</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:year_n:bs(eduyears, knots = c(14))2</td>
+<td align="right">0.0403738</td>
+<td align="right">0.0640202</td>
+<td align="right">0.6306418</td>
+<td align="right">0.5319531</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:year_n:bs(eduyears, knots = c(14))3</td>
+<td align="right">-0.0344753</td>
+<td align="right">0.0779537</td>
+<td align="right">-0.4422531</td>
+<td align="right">0.6607490</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:year_n:bs(eduyears, knots = c(14))4</td>
+<td align="right">-0.0000238</td>
+<td align="right">0.0164940</td>
+<td align="right">-0.0014428</td>
+<td align="right">0.9988562</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared  </code></pre>
+<pre><code>## [1] 0.9364598</code></pre>
+<pre class="r"><code>Anova(model, type = 2)</code></pre>
+<pre><code>## Anova Table (Type II tests)
+## 
+## Response: log(salary)
+##                                         Sum Sq Df  F value    Pr(&gt;F)    
+## sex                                    0.08817  5  32.2521 7.295e-13 ***
+## year_n                                 0.05891  1 107.7412 8.809e-13 ***
+## bs(eduyears, knots = c(14))            0.35011  8  80.0434 &lt; 2.2e-16 ***
+## sex:year_n                             0.00008  1   0.1517   0.69908    
+## sex:bs(eduyears, knots = c(14))        0.00706  4   3.2268   0.02218 *  
+## year_n:bs(eduyears, knots = c(14))     0.00179  4   0.8168   0.52231    
+## sex:year_n:bs(eduyears, knots = c(14)) 0.00032  4   0.1468   0.96335    
+## Residuals                              0.02132 39                       
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;eduyears&quot;, &quot;year_n&quot;,&quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-113"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-3.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 33: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-114"></span>
+<img src="/post/2019-12-28-the-significance-of-gender-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-4.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 34: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+          <li>
+            <a href="https://www.r-bloggers.com/" class="footer-links-kudos">R-bloggers</a>
+          </li>	
+          <li>
+            <a href="https://rweekly.org/" class="footer-links-kudos">R Weekly</a>
+          </li>			  
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

@@ -1,0 +1,475 @@
+---
+title: "The significance of gender on the salary of engineers in Sweden"
+author: "Mikael Lundqvist"
+date: '2019-12-28'
+slug: the-significance-of-gender-on-the-salary-of-engineers-in-sweden
+tags:
+- plot
+- R Markdown
+- regression
+categories: R
+---
+
+In my previous posts, I have shown that there exists a correlation between salaries and experience as well as between salaries and education within many occupational groups. Within the data I used from Statistics Sweden there was also information about gender. Some of the models and graphs also showed that there is a difference in salaries between the different genders. 
+
+In this post, I will examine the interaction between the predictors. Apart from gender the interaction between year also needs to be investigated.
+
+It would have been very interesting to examine the interaction between experience and education. However, this information is not available at Statistics Sweden, at least not for free.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse) 
+library (broom) 
+library (car)
+library (splines)
+#install_github("ZheyuanLi/SplinesUtils")
+library(SplinesUtils)
+library(sjPlot)
+
+readfile <- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  
+	drop_na() %>%  
+    mutate (year_n = parse_number (year))
+}
+
+``` 
+
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 00000031.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK by occupational group (SSYK), age, sex and year. Year 2014 - 2018
+
+There are no women in the age group 65-66 years which explains the uncertainty for this group.
+
+We are interested to see if the interaction terms between gender, age and year are important factors in salaries. As a null hypothesis, we assume that the interaction terms between gender, age and year is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}   
+tb <- readfile("00000031.csv") %>% 
+  rowwise() %>% 
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+  rowwise() %>% 
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age_n = (age_l + age_h) / 2) 
+   
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age, shape = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+
+model <- lm (log(salary) ~ year_n + sex + age, data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot(model, which = 1)
+
+tb[38,]
+tb[56,]
+tb[72,]
+```
+
+
+I will examine models with both the categorical and continuous predictors to see if they can make the same predictions. The models with continuous predictors show approximately the same as the models with categorical predictors as you can see below.
+
+We start by examining the interaction between year and age. We find that the only significant interaction between age and year is in the age group 65-66 years old. 
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- lm (log(salary) ~ sex + year_n * age, data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("year_n", "age"), colors = "Set3")
+
+plot(model, which = 1)
+
+model <- lm (log(salary) ~ sex + year_n * bs(age_n, knots = c(35, 50)), data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("age_n", "year_n"))
+
+plot(model, which = 1)
+```
+
+
+Examine the interaction between gender and age. We can see that women have a significantly lower salary for the age groups 35-39 years, 45-49 years, 50-54 years, 55-59 years and 60-64 years. 
+
+The F-value from the Anova table for the interaction term between gender and age is 3,2 (Pr(>F) < 0.003564), sufficient for rejecting the null hypothesis that the interaction between gender and age has no effect on the salary holding year as constant.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}  
+model <- lm (log(salary) ~ year_n + sex * age, data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("age", "sex"))
+	
+plot(model, which = 1)
+
+tb[75,]
+
+model <- lm (log(salary) ~ year_n + sex * bs(age_n, knots = c(35, 50)), data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("age_n", "sex"))
+
+plot(model, which = 1)
+```
+
+
+Examine the interaction between gender and year. Both the model with categorical predictors and the model with continuous predictors indicates that women's salaries increase more than men's salaries. 
+
+The F-value from the Anova table for the interaction term between gender and year is 3,1 (Pr(>F) < 0.08053), with 90 % significance we can reject the null hypothesis that the interaction between gender and year has no effect on the salary holding age as constant.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}  
+
+model <- lm (log(salary) ~ year_n * sex + age, data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("year_n", "sex"))
+
+model <- lm (log(salary) ~ year_n * sex + bs(age_n, knots = c(35, 50)), data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("year_n", "sex"))
+
+```
+
+
+Examine the interaction between year, gender and age. It's becoming a bit difficult to make any significant predictions about the interactions from the model, the data is not sufficiently large, the degrees of freedom has been reduced from 82 in the model with no interaction terms to 56.
+
+The following interaction terms are significant to 90 %.
+
+year_n:sexwomen 
+
+sexwomen:age35-39 years
+
+year_n:sexwomen:age35-39 years
+
+In the graph below you can that the salaries for men in the age group 35-39 years has increased more than for women.
+
+The F-value from the Anova table for the interaction term between gender and age is 3,3 (Pr(>F) < 0.00373), sufficient for rejecting the null hypothesis that the interaction between gender and age has no effect on the salary holding year as constant.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}  
+
+model <- lm (log(salary) ~ year_n * sex * age, data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("year_n", "age", "sex"))
+
+plot(model, which = 1)
+
+model <- lm (log(salary) ~ year_n * sex * bs(age_n, knots = c(35, 50)), data = tb)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("age_n", "year_n", "sex"))
+
+plot(model, which = 1)
+```
+
+
+Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), gender and educational level (SUN). Year 2014 - 2018
+Monthly salary
+All sectors
+
+We expect that gender is an important factor in salaries. As a null hypothesis, we assume that the interaction between gender and education is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+tb <- readfile("000000CY.csv") %>% 
+  filter(`occuptional  (SSYK 2012)` == "214 Engineering professionals") %>%    
+  mutate(edulevel = `level of education`)
+
+numedulevel <- read.csv("edulevel.csv") 
+
+tbnum <- tb %>% 
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears))
+
+numedulevel %>%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = 'Initial approach, length of education') 
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = `level of education`, shape = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+
+model <- lm (log(salary) ~ year_n + sex + edulevel, data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot(model, which = 1)
+tb[20,]
+tb[41,]
+tb[55,]
+```
+
+
+We start by examining the interaction between year and education. The salaries for the education upper secondary education, 2 years or less increase more than other educations during the time period 2014-2018, however, this can not be shown with 95% significance from this data.
+
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- lm(log(salary) ~ sex + year_n * edulevel, data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("year_n", "edulevel"))
+
+plot(model, which = 1)
+
+tb[10,]
+tb[25,]
+tb[29,]
+
+model <- lm(log(salary) ~ sex + year_n * bs(eduyears, knots = c(14)), data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("year_n", "eduyears"))
+
+plot(model, which = 1)
+
+tb[25,]
+```
+
+
+Examine the interaction between gender and education. The only significant difference in salaries for the length in education is for the group upper secondary education, 2 years or less.
+
+The F-value from the Anova table for the interaction term between gender and education is 3,3 (Pr(>F) < 0.01195), sufficient for rejecting the null hypothesis that the interaction between gender and education has no effect on the salary holding year as constant.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- lm(log(salary) ~ sex * edulevel + year_n, data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("edulevel", "sex"))
+
+plot(model, which = 1)
+
+tb[12,]
+
+model <- lm(log(salary) ~ sex * bs(eduyears, knots = c(14)) + year_n, data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("eduyears", "sex"))
+
+plot(model, which = 1)
+```
+
+
+Examine the interaction between gender and year There is no evidence that the salaries for men and women are interacting with year, holding education constant.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- lm(log(salary) ~ sex * year_n + edulevel, data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("year_n", "sex"))
+
+plot(model, which = 1)
+
+tb[18,]
+
+model <- lm(log(salary) ~ sex * year_n + bs(eduyears, knots = c(14)), data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("eduyears", "sex"))
+
+plot(model, which = 1)
+```
+
+
+Examine the interaction between year, gender and education It's becoming a bit difficult to make any significant predictions from the model, the data is not sufficiently large, the degrees of freedom has been reduced from 51 in the model with no interaction terms to 35.
+
+There are no significant interaction terms in the summary.
+
+The F-value from the Anova table for the interaction term between gender and education is 3,0 (Pr(>F) < 0.02377), sufficient for rejecting the null hypothesis that the interaction between gender and education has no effect on the salary holding year as constant.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- lm(log(salary) ~ sex * year_n * edulevel, data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("year_n", "edulevel","sex"))
+
+plot(model, which = 1)
+
+tb[29,]
+
+model <- lm(log(salary) ~ sex * year_n * bs(eduyears, knots = c(14)), data = tbnum)
+
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$adj.r.squared  
+
+Anova(model, type = 2)
+
+plot_model(model, type = "pred", terms = c("eduyears", "year_n","sex"))
+
+plot(model, which = 1)
+```
