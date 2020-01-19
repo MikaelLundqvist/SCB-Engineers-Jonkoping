@@ -1,0 +1,611 @@
+---
+title: "Presentation 200121"
+author: "Mikael Lundqvist"
+date: "21 januari 2020"
+output: revealjs::revealjs_presentation
+self_contained: true
+reveal_options:
+autoSlide: 5000
+loop: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+```{r , echo = FALSE}
+library (tidyverse) 
+library (broom) 
+library (car)
+library (polynom)
+library (splines)
+#install_github("ZheyuanLi/SplinesUtils")
+library(SplinesUtils)
+library(sjPlot)
+
+readfile <- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  
+	drop_na() %>%  
+    mutate (year_n = parse_number (year))
+}
+
+```
+
+## Engineering professionals
+
+```{r , echo = FALSE}
+tb <- readfile("00000031.csv") %>% 
+  rowwise() %>% 
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+  rowwise() %>% 
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age_n = (age_l + age_h) / 2) 
+   
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age, shape=sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+```
+
+## Engineering professionals
+
+```{r , echo = FALSE}
+model <- lm (log(salary) ~ year_n + sex + bs(age_n, knots = c(30, 40, 50, 60)), data = tb)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}
+myspline <- RegBsplineAsPiecePoly(model, "bs(age_n, knots = c(30, 40, 50, 60))")
+
+tibble(age_n = 21:65) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n,y = predict(myspline, age_n))) +
+  labs(
+    x = "Age",
+    y = "Salary"
+  )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}
+summod <- tidy(summary (model))
+
+myfun <- function(x){
+  return (predict(myspline, x, deriv = 1) + summod$estimate[2])
+}
+
+tibble(age_n = 21:65) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n,y = myfun(age_n))) +
+  labs(
+    x = "Age",
+    y = "Salary raise (%)"
+  )
+```
+
+## Different occupational groups
+
+```{r, echo = FALSE} 
+tb <- readfile("000000D2.csv") %>%
+  rowwise() %>%
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+  rowwise() %>%
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age_n = (age_l + age_h) / 2)
+
+summary_table = 0
+anova_table = 0
+
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 30){
+    model <-lm (log(salary) ~ year_n + poly(age_n, 3), data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}
+
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
+  filter (term.y == "poly(age_n, 3)") %>%
+  filter (term.x == "year_n") %>%
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y)) +
+    labs(
+      x = "Increase in salaries (% / year)",
+      y = "F-value for age"
+    ) 
+```
+
+## Primary- and pre-school teachers
+
+```{r, echo = FALSE} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "234 Primary- and pre-school teachers")
+ 
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+    ) 
+```
+
+## Primary- and pre-school teachers
+
+```{r, echo = FALSE}
+model <-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
+
+summod <- tidy(summary (model))
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
+    labs(
+      x = "Age",
+      y = "Salary"
+    )
+```
+
+## Primary- and pre-school teachers
+
+```{r, echo = FALSE}
+pdx <- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
+
+temp %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
+    labs(
+      x = "Age",
+      y = "Salary raise (%)"
+    )
+```
+
+## Assemblers
+
+```{r, echo = FALSE} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "821 Assemblers")
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+    ) 
+```
+
+## Assemblers
+
+```{r, echo = FALSE}
+model <-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
+
+summod <- tidy(summary (model))
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
+    labs(
+      x = "Age",
+      y = "Salary"
+    )
+```
+
+## Assemblers
+
+```{r, echo = FALSE}
+pdx <- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
+
+temp %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
+    labs(
+      x = "Age",
+      y = "Salary raise (%)"
+    )
+```
+
+## Financial and insurance managers
+
+```{r, echo = FALSE} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "161 Financial and insurance managers")
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
+    facet_grid(. ~ sex) + 
+      labs(
+        x = "Year",
+        y = "Salary (SEK/month)"
+      ) 
+```
+
+## Financial and insurance managers
+
+```{r, echo = FALSE}
+model <- lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
+
+summod <- tidy(summary (model))
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
+    labs(
+      x = "Age",
+      y = "Salary"
+    )
+```
+
+## Financial and insurance managers
+
+```{r, echo = FALSE}
+pdx <- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
+
+temp %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
+    labs(
+      x = "Age",
+      y = "Salary raise (%)"
+    )
+```
+
+## Cashiers and related clerks
+
+```{r, echo = FALSE} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "523 Cashiers and related clerks")
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
+    facet_grid(. ~ sex) + 
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+  )
+```
+
+## Cashiers and related clerks
+
+```{r, echo = FALSE}
+model <-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
+
+summod <- tidy(summary (model))
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
+    labs(
+      x = "Age",
+      y = "Salary"
+    )
+```
+
+## Cashiers and related clerks
+
+```{r, echo = FALSE}
+pdx <- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
+
+temp %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
+    labs(
+      x = "Age",
+      y = "Salary raise (%)"
+    )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE} 
+tb <- readfile("000000CY.csv") %>% 
+  filter(`occuptional  (SSYK 2012)` == "214 Engineering professionals") %>%       
+  mutate(edulevel = `level of education`)
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = `level of education`, shape=sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+
+model <- lm (log(salary) ~ year_n + sex + edulevel, data = tb)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = edulevel, shape = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}
+numedulevel <- read.csv("edulevel.csv") 
+  
+tbnum <- tb %>% 
+    right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears))
+
+modelcont <- lm(log(salary) ~ bs(eduyears, knots = c(14)) + year_n + sex, data = tbnum)
+
+tbnum <- bind_cols(tbnum, as_tibble(exp(predict(modelcont, tbnum, interval = "confidence"))))
+
+tbnum %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit1, colour = eduyears, shape = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}
+
+contspline <- RegBsplineAsPiecePoly(modelcont, "bs(eduyears, knots = c(14))")
+
+tibble(eduyears = 9:19) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = "Years of education",
+    y = "Salary"
+  )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}
+
+tibble(eduyears = 9:19) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = "Years of education",
+    y = "Salary difference (%)"
+  )
+```
+
+## Different occupational groups
+
+```{r, echo = FALSE} 
+tb <- readfile("000000CY.csv")
+
+numedulevel <- read.csv("edulevel.csv") 
+
+tbnum <- tb %>% 
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears))
+
+summary_table = vector()
+anova_table = vector()
+
+for (i in unique(tbnum$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tbnum, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 30){
+    model <- lm (log(salary) ~ year_n + eduyears, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
+  }
+}
+
+merge(summary_table, anova_table, by = "ssyk", all = TRUE) %>%
+  filter (term.y == "eduyears") %>%
+  filter (term.x == "eduyears") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y)) +
+    labs(
+      x = "Increase in salaries (% / year of education)",
+      y = "F-value for education"
+    ) 
+```
+
+## Health care managers
+
+```{r, echo = FALSE} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "151 Health care managers")
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = eduyears)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+    ) 
+```
+
+## Health care managers
+
+```{r, echo = FALSE}
+modelcont <- lm (log(salary) ~ year_n + bs(eduyears, degree = 1), data = temp)
+
+contspline <- RegBsplineAsPiecePoly(modelcont, "bs(eduyears, degree = 1)")
+
+tibble(eduyears = seq(11, 19, by=0.1)) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = "Years of education",
+    y = "Salary"
+  )
+```
+
+## Health care managers
+
+```{r, echo = FALSE}
+tibble(eduyears = seq(11, 19, by=0.1)) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = "Years of education",
+    y = "Salary difference (%)"
+  )
+```
+
+## Creative and performing artists
+
+```{r, echo = FALSE} 
+temp <- tbnum %>% 
+  filter(`occuptional  (SSYK 2012)` == "265 Creative and performing artists")
+
+temp %>%
+  ggplot () +
+    geom_point (mapping = aes(x = year_n,y = salary, colour = eduyears)) +
+    facet_grid(. ~ sex) +   
+    labs(
+      x = "Year",
+      y = "Salary (SEK/month)"
+    ) 
+```
+
+## Creative and performing artists
+
+```{r, echo = FALSE}
+modelcont <- lm (log(salary) ~ year_n + bs(eduyears, degree = 1), data = temp)
+
+contspline <- RegBsplineAsPiecePoly(modelcont, "bs(eduyears, degree = 1)")
+
+tibble(eduyears = seq(11, 15, by=0.1)) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = predict(contspline, eduyears))) +
+  labs(
+    x = "Years of education",
+    y = "Salary"
+  )
+```
+
+## Creative and performing artists
+
+```{r, echo = FALSE}
+tibble(eduyears = seq(11, 15, by=0.1)) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = eduyears,y = (exp(predict(contspline, eduyears, deriv = 1)) - 1) * 100)) +
+  labs(
+    x = "Years of education",
+    y = "Salary difference (%)"
+  )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}   
+tb <- readfile("00000031.csv") %>% 
+  rowwise() %>% 
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+  rowwise() %>% 
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age_n = (age_l + age_h) / 2) 
+   
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age, shape = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}  
+model <- lm (log(salary) ~ year_n + sex * age, data = tb)
+
+plot_model(model, type = "pred", terms = c("age", "sex"))
+	
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}
+model <- lm (log(salary) ~ year_n + sex * bs(age_n, knots = c(35, 50)), data = tb)
+
+plot_model(model, type = "pred", terms = c("age_n", "sex"))
+
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE}  
+
+model <- lm (log(salary) ~ year_n * sex + bs(age_n, knots = c(35, 50)), data = tb)
+
+plot_model(model, type = "pred", terms = c("year_n", "sex"))
+
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE} 
+tb <- readfile("000000CY.csv") %>% 
+  filter(`occuptional  (SSYK 2012)` == "214 Engineering professionals") %>%    
+  mutate(edulevel = `level of education`)
+
+numedulevel <- read.csv("edulevel.csv") 
+
+tbnum <- tb %>% 
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears))
+
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = `level of education`, shape = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE} 
+model <- lm(log(salary) ~ sex * edulevel + year_n, data = tbnum)
+
+plot_model(model, type = "pred", terms = c("edulevel", "sex"))
+```
+
+## Engineering professionals
+
+```{r, echo = FALSE} 
+
+model <- lm(log(salary) ~ sex * bs(eduyears, knots = c(14)) + year_n, data = tbnum)
+
+plot_model(model, type = "pred", terms = c("eduyears", "sex"))
+
+```

@@ -1,0 +1,13 @@
+---
+title: The significance of gender on the salary in Sweden, a comparison between different
+  occupational groups
+author: Mikael Lundqvist
+date: '2020-01-07'
+slug: the-significance-of-gender-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
