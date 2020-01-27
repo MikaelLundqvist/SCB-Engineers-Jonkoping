@@ -1,0 +1,210 @@
+---
+title: "The significance of experience on the salary of engineers in Sweden"
+author: "Mikael Lundqvist"
+date: '2019-11-22'
+slug: the-significance-of-experience-on-the-salary-of-engineers-in-sweden
+tags:
+- plot
+- regression
+- R Markdown
+categories: R
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+```
+
+
+What causes the salary to change during the working life of engineers in Sweden?
+
+I will examine data from Statistics Sweden to see what information you can interpret from it.
+
+Statistics Sweden is the Swedish government agency responsible for producing official statistics regarding Sweden, https://www.scb.se/en/.
+
+"Everybody should have the opportunity to find facts and break the myths with our statistics!" Statistics Sweden twitter account, sverigeisiffror.
+
+Salaries are reported for every occupational group SSYK (Standard for Swedish occupational classification). I will examine SSYK 214, architects, engineers and related professionals. 
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse) 
+library (broom) 
+library (car)
+library (splines)
+#install_github("ZheyuanLi/SplinesUtils")
+library(SplinesUtils)
+
+readfile <- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  
+	drop_na() %>%  
+    mutate (year_n = parse_number (year))
+}
+
+```
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 00000031.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The table:
+Average monthly pay (total pay), non-manual workers private sector (SLP), SEK 
+by occupational group (SSYK), age, sex and year.  Year 2014 - 2018
+
+The average age within each age group is used as a numeric value for graphical presentation and the linear model.
+
+As the salary increases exponentially each year, I have used the logarithm for years in my model.
+
+As a proxy for experience years since graduation can be used. I will simplify by using age as a proxy for experience. I will use a B-spline function to approximate the increase in salaries over age. Spline function is used instead of a polynomial to avoid oscillation.
+
+We expect that both years and age are important factors on the salary. As a null hypothesis, we assume that years and age is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.
+
+Every year the annual salary negotiation will increase the salaries.
+As age increases, we acquire more skill at work. 
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}   
+tb <- readfile("00000031.csv") %>% 
+  rowwise() %>% 
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+  rowwise() %>% 
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age_n = (age_l + age_h) / 2) 
+   
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = salary, colour = age, shape=sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+	
+model <- lm (log(salary) ~ year_n + sex + bs(age_n, knots = c(30, 40, 50, 60)), data = tb)
+
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+```
+
+From the summary table of the linear model, we can see that the wages have increased by 1,91 % +/- 0,35 % per year with 95 % confidence, holding age as constant. The R-value from the Anova table for years is 120, sufficient for rejecting the null hypothesis that years has no effect on the salary.
+Holding year as constant, the p values for age are small (< 2e-16) and the R-value from the Anova table value for age is 703, sufficient for rejecting the null hypothesis that experience has no effect on the salary.
+The adjusted R-squared value is 0,984 implying a good fit of the model.
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'}
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = age, shape=sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+	
+summary(model) %>%	
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+
+summary(model)$r.squared   
+  
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')
+```
+
+
+Let's have a look at the spline function from the regression model. I use the package SplineUtils to extract the polynomial train from the model coefficients.
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Correlation between age and salary'}
+myspline <- RegBsplineAsPiecePoly(model, "bs(age_n, knots = c(30, 40, 50, 60))")
+
+tibble(age_n = 21:65) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n,y = predict(myspline, age_n))) +
+  labs(
+    x = "Age",
+    y = "Salary"
+  )
+```
+
+
+The derivative of the spline function for age is equal to the annual salary raise that comes from experience. I also add the salary raise that comes from the annual salary negotiation resulting in the total salary increase distributed over age.
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, The derivative for age'}
+summod <- tidy(summary (model))
+
+myfun <- function(x){
+  return (predict(myspline, x, deriv = 1) + summod$estimate[2])
+}
+
+tibble(age_n = 21:65) %>%
+  ggplot () + 
+    geom_point (mapping = aes(x = age_n,y = myfun(age_n))) +
+  labs(
+    x = "Age",
+    y = "Salary raise (%)"
+  )
+```
+
+
+Now. let´s perform some diagnostics on the model. First, a look at the residuals for the model shows no apparent problem.
+
+ 
+```{r, echo = TRUE, fig.cap = 'Residuals vs Fitted of model fit'}
+
+plot(model, which = 1)
+
+```
+
+
+The Normal Q-Q shows some possible outliers.
+  
+
+```{r, echo = TRUE, fig.cap = 'Normal Q-Q'}
+
+plot(model, which = 2)
+
+```
+
+Again, the Standardised residuals show some possible outliers.
+ 
+
+```{r, echo = TRUE, fig.cap = 'Scale-Location'}
+
+plot(model, which = 3)
+
+```
+
+The outliers are also found in the Leverage plot.
+
+  
+```{r, echo = TRUE, fig.cap = 'Residuals vs Leverage'}
+
+plot(model, which = 5)
+
+```
+
+The outliers 38, 56 and 75 are small groups with larger variance at either end of the age spectrum. Record 72 are women age 55-59.
+
+```{r, echo = TRUE, fig.cap = 'Residuals vs Leverage'}
+tb[38,]$age
+tb[56,]$age
+tb[75,]$age
+
+tb[72,]
+```
+
+Wage statistics
+
+The Mediation Institute is responsible for Sweden's official salary statistics. This applies to three types of statistics: cyclical wage statistics, wage structure statistics and statistics supplied to the European statistical body Eurostat, https://www.mi.se/other-languages/about-the-mediation-office-the-swedish-model-and-wage-statistics-in-english/.
+
+The statistics are collected and processed by Statistics Sweden. It is reported both on Statistics Sweden's website and the Mediation Institute's website.
+
+https://www.r-bloggers.com/
+
+https://rweekly.org
+
+Last edited: 2019-12-10
