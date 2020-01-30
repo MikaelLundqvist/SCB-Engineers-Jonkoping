@@ -1,0 +1,1070 @@
+---
+title: The significance of the region on the salary of engineers in Sweden
+author: Mikael Lundqvist
+date: '2020-01-29'
+slug: the-significance-of-the-region-on-the-salary-of-engineers-in-sweden
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+
+
+<p>So far I have analysed the effect of experience, education, gender and year on the salary of engineers in Sweden. In this post, I will have a look at the effect of the region on the salary of engineers in Sweden.</p>
+<p>Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse) </code></pre>
+<pre><code>## -- Attaching packages --------------------- tidyverse 1.3.0 --</code></pre>
+<pre><code>## v ggplot2 3.2.1     v purrr   0.3.3
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   1.0.2     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts ------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library (broom) 
+library (car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre class="r"><code>library (swemaps) # devtools::install_github(&#39;reinholdsson/swemaps&#39;)
+library(sjPlot)</code></pre>
+<pre><code>## Registered S3 methods overwritten by &#39;lme4&#39;:
+##   method                          from
+##   cooks.distance.influence.merMod car 
+##   influence.merMod                car 
+##   dfbeta.influence.merMod         car 
+##   dfbetas.influence.merMod        car</code></pre>
+<pre><code>## Install package &quot;strengejacke&quot; from GitHub (`devtools::install_github(&quot;strengejacke/strengejacke&quot;)`) to load all sj-packages at once!</code></pre>
+<pre class="r"><code>readfile &lt;- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%  
+    gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = salary) %&gt;%  
+    drop_na() %&gt;%  
+    mutate (year_n = parse_number (year))
+}
+nuts &lt;- read.csv(&quot;nuts.csv&quot;) %&gt;%
+  mutate(NUTS2_sh = substr(NUTS2, 1, 4))
+
+map_ln_n &lt;- map_ln %&gt;%
+  mutate(lnkod_n = as.numeric(lnkod)) </code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CG.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary All sectors</p>
+<p>We expect that the region is an important factor in salaries. As a null hypothesis, we assume that the region is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.</p>
+<pre class="r"><code>tb &lt;- readfile (&quot;000000CG.csv&quot;) %&gt;%
+  filter (`occuptional  (SSYK 2012)` == &quot;214 Engineering professionals&quot;) %&gt;% 
+  left_join(nuts %&gt;% distinct (NUTS2_en, NUTS2_sh), by = c(&quot;region&quot; = &quot;NUTS2_en&quot;)) </code></pre>
+<pre><code>## Warning: Column `region`/`NUTS2_en` joining character vector and factor,
+## coercing into character vector</code></pre>
+<pre class="r"><code>tb_map &lt;- readfile (&quot;000000CG.csv&quot;) %&gt;%
+  filter (`occuptional  (SSYK 2012)` == &quot;214 Engineering professionals&quot;) %&gt;%
+  left_join(nuts, by = c(&quot;region&quot; = &quot;NUTS2_en&quot;)) </code></pre>
+<pre><code>## Warning: Column `region`/`NUTS2_en` joining character vector and factor,
+## coercing into character vector</code></pre>
+<pre class="r"><code>tb_map %&gt;%
+  filter (sex == &quot;men&quot;) %&gt;%
+  right_join(map_ln_n, by = c(&quot;Länskod&quot; = &quot;lnkod_n&quot;)) %&gt;%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-2"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png" alt="SSYK 214, Architects, engineers and related professionals, men, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 1: SSYK 214, Architects, engineers and related professionals, men, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb_map %&gt;%
+  filter (sex == &quot;women&quot;) %&gt;%
+  right_join(map_ln_n, by = c(&quot;Länskod&quot; = &quot;lnkod_n&quot;)) %&gt;%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-3"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png" alt="SSYK 214, Architects, engineers and related professionals, women, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 2: SSYK 214, Architects, engineers and related professionals, women, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n, y = salary, colour = region, shape=sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-4"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 3: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>The F-value from the Anova table for the region is 40 (Pr(&gt;F) &lt; 2.2e-16), sufficient for rejecting the null hypothesis that the region has no effect on the salary holding year as constant. The adjusted R-squared value is 0,882 implying a good fit of the model.</p>
+<pre class="r"><code>model &lt;-lm (log(salary) ~ year_n + sex + region , data = tb)
+
+tb &lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &quot;confidence&quot;))))
+
+tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = region, shape=sex)) + 
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-5"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-5-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 4: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 1: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-29.2269335</td>
+<td align="right">3.7348614</td>
+<td align="right">-7.825440</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0198303</td>
+<td align="right">0.0018526</td>
+<td align="right">10.703985</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0587056</td>
+<td align="right">0.0052400</td>
+<td align="right">-11.203449</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="even">
+<td align="left">regionSE12 East-Central Sweden</td>
+<td align="right">-0.0574855</td>
+<td align="right">0.0104799</td>
+<td align="right">-5.485297</td>
+<td align="right">6.00e-07</td>
+</tr>
+<tr class="odd">
+<td align="left">regionSE21 Småland and islands</td>
+<td align="right">-0.1286385</td>
+<td align="right">0.0104799</td>
+<td align="right">-12.274762</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="even">
+<td align="left">regionSE22 South Sweden</td>
+<td align="right">-0.0457725</td>
+<td align="right">0.0104799</td>
+<td align="right">-4.367642</td>
+<td align="right">4.26e-05</td>
+</tr>
+<tr class="odd">
+<td align="left">regionSE23 West Sweden</td>
+<td align="right">-0.0513546</td>
+<td align="right">0.0104799</td>
+<td align="right">-4.900285</td>
+<td align="right">6.00e-06</td>
+</tr>
+<tr class="even">
+<td align="left">regionSE31 North-Central Sweden</td>
+<td align="right">-0.0948080</td>
+<td align="right">0.0104799</td>
+<td align="right">-9.046630</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="odd">
+<td align="left">regionSE32 Central Norrland</td>
+<td align="right">-0.1099716</td>
+<td align="right">0.0104799</td>
+<td align="right">-10.493550</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="even">
+<td align="left">regionSE33 Upper Norrland</td>
+<td align="right">-0.1360235</td>
+<td align="right">0.0104799</td>
+<td align="right">-12.979443</td>
+<td align="right">0.00e+00</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$r.squared</code></pre>
+<pre><code>## [1] 0.8817871</code></pre>
+<pre class="r"><code>Anova(model, type=2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 1: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0629183</td>
+<td align="right">1</td>
+<td align="right">114.57530</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="right">0.0689270</td>
+<td align="right">1</td>
+<td align="right">125.51728</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">region</td>
+<td align="right">0.1548911</td>
+<td align="right">7</td>
+<td align="right">40.29419</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Residuals</td>
+<td align="right">0.0384401</td>
+<td align="right">70</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s check what we have found.</p>
+<pre class="r"><code>model &lt;-lm (log(salary) ~ year_n + sex + NUTS2_sh , data = tb) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-61"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 5: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-62"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-6-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 6: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[38,]</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   region sector `occuptional  (~ sex   year  salary year_n NUTS2_sh    fit
+##   &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1 SE21 ~ 0 all~ 214 Engineering~ women 2016   34700   2016 SE21     38698.
+## # ... with 2 more variables: lwr &lt;dbl&gt;, upr &lt;dbl&gt;</code></pre>
+<pre class="r"><code>tb[27,]</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   region sector `occuptional  (~ sex   year  salary year_n NUTS2_sh    fit
+##   &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1 SE31 ~ 0 all~ 214 Engineering~ men   2015   38100   2015 SE31     41616.
+## # ... with 2 more variables: lwr &lt;dbl&gt;, upr &lt;dbl&gt;</code></pre>
+<pre class="r"><code>tb[5,]</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   region sector `occuptional  (~ sex   year  salary year_n NUTS2_sh    fit
+##   &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1 SE21 ~ 0 all~ 214 Engineering~ men   2014   41500   2014 SE21     39442.
+## # ... with 2 more variables: lwr &lt;dbl&gt;, upr &lt;dbl&gt;</code></pre>
+<p>Also examine the interaction between gender and region. The F-value from the Anova table for the interaction is 2,7 (Pr(&gt;F) &lt; 0.017) implying a relation to 95 % significance.</p>
+<pre class="r"><code>model &lt;-lm (log(salary) ~ year_n + sex * NUTS2_sh , data = tb) 
+
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-7">Table 2: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-29.2212864</td>
+<td align="right">3.4559410</td>
+<td align="right">-8.4553776</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0198303</td>
+<td align="right">0.0017142</td>
+<td align="right">11.5678970</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0699998</td>
+<td align="right">0.0137140</td>
+<td align="right">-5.1042618</td>
+<td align="right">0.0000033</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE12</td>
+<td align="right">-0.0755067</td>
+<td align="right">0.0137140</td>
+<td align="right">-5.5058132</td>
+<td align="right">0.0000007</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE21</td>
+<td align="right">-0.1161490</td>
+<td align="right">0.0137140</td>
+<td align="right">-8.4693756</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE22</td>
+<td align="right">-0.0520542</td>
+<td align="right">0.0137140</td>
+<td align="right">-3.7957018</td>
+<td align="right">0.0003332</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE23</td>
+<td align="right">-0.0535387</td>
+<td align="right">0.0137140</td>
+<td align="right">-3.9039471</td>
+<td align="right">0.0002331</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE31</td>
+<td align="right">-0.1099009</td>
+<td align="right">0.0137140</td>
+<td align="right">-8.0137791</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE32</td>
+<td align="right">-0.1293018</td>
+<td align="right">0.0137140</td>
+<td align="right">-9.4284543</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE33</td>
+<td align="right">-0.1327796</td>
+<td align="right">0.0137140</td>
+<td align="right">-9.6820490</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:NUTS2_shSE12</td>
+<td align="right">0.0360425</td>
+<td align="right">0.0193945</td>
+<td align="right">1.8583838</td>
+<td align="right">0.0677877</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:NUTS2_shSE21</td>
+<td align="right">-0.0249791</td>
+<td align="right">0.0193945</td>
+<td align="right">-1.2879441</td>
+<td align="right">0.2024762</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:NUTS2_shSE22</td>
+<td align="right">0.0125634</td>
+<td align="right">0.0193945</td>
+<td align="right">0.6477815</td>
+<td align="right">0.5194801</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:NUTS2_shSE23</td>
+<td align="right">0.0043683</td>
+<td align="right">0.0193945</td>
+<td align="right">0.2252313</td>
+<td align="right">0.8225283</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:NUTS2_shSE31</td>
+<td align="right">0.0301860</td>
+<td align="right">0.0193945</td>
+<td align="right">1.5564170</td>
+<td align="right">0.1246186</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen:NUTS2_shSE32</td>
+<td align="right">0.0386605</td>
+<td align="right">0.0193945</td>
+<td align="right">1.9933706</td>
+<td align="right">0.0505553</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen:NUTS2_shSE33</td>
+<td align="right">-0.0064879</td>
+<td align="right">0.0193945</td>
+<td align="right">-0.3345206</td>
+<td align="right">0.7390979</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$r.squared</code></pre>
+<pre><code>## [1] 0.908906</code></pre>
+<pre class="r"><code>Anova(model, type=2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-7">Table 2: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0629183</td>
+<td align="right">1</td>
+<td align="right">133.816241</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="right">0.0689270</td>
+<td align="right">1</td>
+<td align="right">146.595736</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_sh</td>
+<td align="right">0.1548911</td>
+<td align="right">7</td>
+<td align="right">47.060909</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">sex:NUTS2_sh</td>
+<td align="right">0.0088184</td>
+<td align="right">7</td>
+<td align="right">2.679327</td>
+<td align="right">0.0170929</td>
+</tr>
+<tr class="odd">
+<td align="left">Residuals</td>
+<td align="right">0.0296216</td>
+<td align="right">63</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-71"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 7: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-72"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 8: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[37,]</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   region sector `occuptional  (~ sex   year  salary year_n NUTS2_sh    fit
+##   &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1 SE21 ~ 0 all~ 214 Engineering~ men   2016   40100   2016 SE21     41037.
+## # ... with 2 more variables: lwr &lt;dbl&gt;, upr &lt;dbl&gt;</code></pre>
+<p>And the interaction between year and region. The F-value from the Anova table for the region is 0,57 (Pr(&gt;F) &lt; 0,77) implying no significant relation.</p>
+<pre class="r"><code>model &lt;-lm (log(salary) ~ year_n * NUTS2_sh + sex , data = tb) 
+ 
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-8">Table 3: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-32.1955668</td>
+<td align="right">10.7951966</td>
+<td align="right">-2.9823975</td>
+<td align="right">0.0040635</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0213028</td>
+<td align="right">0.0053548</td>
+<td align="right">3.9782933</td>
+<td align="right">0.0001818</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE12</td>
+<td align="right">-4.0204905</td>
+<td align="right">15.2667129</td>
+<td align="right">-0.2633501</td>
+<td align="right">0.7931402</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE21</td>
+<td align="right">0.6481345</td>
+<td align="right">15.2667129</td>
+<td align="right">0.0424541</td>
+<td align="right">0.9662710</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE22</td>
+<td align="right">18.2873103</td>
+<td align="right">15.2667129</td>
+<td align="right">1.1978551</td>
+<td align="right">0.2354607</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE23</td>
+<td align="right">7.7565167</td>
+<td align="right">15.2667129</td>
+<td align="right">0.5080672</td>
+<td align="right">0.6131806</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE31</td>
+<td align="right">-5.4895464</td>
+<td align="right">15.2667129</td>
+<td align="right">-0.3595762</td>
+<td align="right">0.7203666</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE32</td>
+<td align="right">-3.2845607</td>
+<td align="right">15.2667129</td>
+<td align="right">-0.2151452</td>
+<td align="right">0.8303490</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE33</td>
+<td align="right">9.2276482</td>
+<td align="right">15.2667129</td>
+<td align="right">0.6044293</td>
+<td align="right">0.5477290</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">-0.0587056</td>
+<td align="right">0.0053548</td>
+<td align="right">-10.9632632</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE12</td>
+<td align="right">0.0019658</td>
+<td align="right">0.0075728</td>
+<td align="right">0.2595848</td>
+<td align="right">0.7960305</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE21</td>
+<td align="right">-0.0003853</td>
+<td align="right">0.0075728</td>
+<td align="right">-0.0508802</td>
+<td align="right">0.9595820</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE22</td>
+<td align="right">-0.0090938</td>
+<td align="right">0.0075728</td>
+<td align="right">-1.2008536</td>
+<td align="right">0.2343036</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE23</td>
+<td align="right">-0.0038730</td>
+<td align="right">0.0075728</td>
+<td align="right">-0.5114312</td>
+<td align="right">0.6108371</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE31</td>
+<td align="right">0.0026760</td>
+<td align="right">0.0075728</td>
+<td align="right">0.3533662</td>
+<td align="right">0.7249937</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE32</td>
+<td align="right">0.0015747</td>
+<td align="right">0.0075728</td>
+<td align="right">0.2079419</td>
+<td align="right">0.8359451</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE33</td>
+<td align="right">-0.0046447</td>
+<td align="right">0.0075728</td>
+<td align="right">-0.6133392</td>
+<td align="right">0.5418602</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$r.squared</code></pre>
+<pre><code>## [1] 0.8888956</code></pre>
+<pre class="r"><code>Anova(model, type=2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-8">Table 3: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0629183</td>
+<td align="right">1</td>
+<td align="right">109.7152945</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_sh</td>
+<td align="right">0.1548911</td>
+<td align="right">7</td>
+<td align="right">38.5850132</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sex</td>
+<td align="right">0.0689270</td>
+<td align="right">1</td>
+<td align="right">120.1931409</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_sh</td>
+<td align="right">0.0023115</td>
+<td align="right">7</td>
+<td align="right">0.5758246</td>
+<td align="right">0.7728945</td>
+</tr>
+<tr class="odd">
+<td align="left">Residuals</td>
+<td align="right">0.0361285</td>
+<td align="right">63</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;, &quot;year_n&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-81"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 9: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-82"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 10: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Finally the interaction between gender, year and region, the only significant interaction is between the region and gender, F-value from the Anova table for the interaction is 2,4 (Pr(&gt;F) &lt; 0.033)</p>
+<pre class="r"><code>model &lt;-lm (log(salary) ~ year_n * NUTS2_sh * sex , data = tb) 
+ 
+summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-9">Table 4: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-34.6715204</td>
+<td align="right">14.5497427</td>
+<td align="right">-2.3829645</td>
+<td align="right">0.0211805</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0225338</td>
+<td align="right">0.0072171</td>
+<td align="right">3.1222585</td>
+<td align="right">0.0030380</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE12</td>
+<td align="right">5.2021839</td>
+<td align="right">20.5764435</td>
+<td align="right">0.2528223</td>
+<td align="right">0.8014851</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE21</td>
+<td align="right">5.5082002</td>
+<td align="right">20.5764435</td>
+<td align="right">0.2676945</td>
+<td align="right">0.7900815</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE22</td>
+<td align="right">25.5308721</td>
+<td align="right">20.5764435</td>
+<td align="right">1.2407816</td>
+<td align="right">0.2207168</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE23</td>
+<td align="right">16.1162328</td>
+<td align="right">20.5764435</td>
+<td align="right">0.7832370</td>
+<td align="right">0.4373355</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE31</td>
+<td align="right">-18.4371634</td>
+<td align="right">20.5764435</td>
+<td align="right">-0.8960326</td>
+<td align="right">0.3747072</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE32</td>
+<td align="right">7.6855067</td>
+<td align="right">20.5764435</td>
+<td align="right">0.3735100</td>
+<td align="right">0.7104136</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE33</td>
+<td align="right">5.0530040</td>
+<td align="right">20.5764435</td>
+<td align="right">0.2455723</td>
+<td align="right">0.8070603</td>
+</tr>
+<tr class="even">
+<td align="left">sexwomen</td>
+<td align="right">4.8932017</td>
+<td align="right">20.5764435</td>
+<td align="right">0.2378060</td>
+<td align="right">0.8130438</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE12</td>
+<td align="right">-0.0026179</td>
+<td align="right">0.0102066</td>
+<td align="right">-0.2564919</td>
+<td align="right">0.7986672</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE21</td>
+<td align="right">-0.0027899</td>
+<td align="right">0.0102066</td>
+<td align="right">-0.2733393</td>
+<td align="right">0.7857651</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE22</td>
+<td align="right">-0.0126899</td>
+<td align="right">0.0102066</td>
+<td align="right">-1.2433117</td>
+<td align="right">0.2197916</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE23</td>
+<td align="right">-0.0080207</td>
+<td align="right">0.0102066</td>
+<td align="right">-0.7858392</td>
+<td align="right">0.4358239</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE31</td>
+<td align="right">0.0090909</td>
+<td align="right">0.0102066</td>
+<td align="right">0.8906917</td>
+<td align="right">0.3775375</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE32</td>
+<td align="right">-0.0038764</td>
+<td align="right">0.0102066</td>
+<td align="right">-0.3797940</td>
+<td align="right">0.7057736</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE33</td>
+<td align="right">-0.0025723</td>
+<td align="right">0.0102066</td>
+<td align="right">-0.2520253</td>
+<td align="right">0.8020975</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sexwomen</td>
+<td align="right">-0.0024619</td>
+<td align="right">0.0102066</td>
+<td align="right">-0.2412080</td>
+<td align="right">0.8104213</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE12:sexwomen</td>
+<td align="right">-18.4453487</td>
+<td align="right">29.0994854</td>
+<td align="right">-0.6338720</td>
+<td align="right">0.5291736</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE21:sexwomen</td>
+<td align="right">-9.7201315</td>
+<td align="right">29.0994854</td>
+<td align="right">-0.3340310</td>
+<td align="right">0.7398112</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE22:sexwomen</td>
+<td align="right">-14.4871236</td>
+<td align="right">29.0994854</td>
+<td align="right">-0.4978481</td>
+<td align="right">0.6208644</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE23:sexwomen</td>
+<td align="right">-16.7194322</td>
+<td align="right">29.0994854</td>
+<td align="right">-0.5745611</td>
+<td align="right">0.5682714</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE31:sexwomen</td>
+<td align="right">25.8952341</td>
+<td align="right">29.0994854</td>
+<td align="right">0.8898863</td>
+<td align="right">0.3779654</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE32:sexwomen</td>
+<td align="right">-21.9401348</td>
+<td align="right">29.0994854</td>
+<td align="right">-0.7539699</td>
+<td align="right">0.4545502</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE33:sexwomen</td>
+<td align="right">8.3492884</td>
+<td align="right">29.0994854</td>
+<td align="right">0.2869222</td>
+<td align="right">0.7754068</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE12:sexwomen</td>
+<td align="right">0.0091674</td>
+<td align="right">0.0144343</td>
+<td align="right">0.6351107</td>
+<td align="right">0.5283723</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE21:sexwomen</td>
+<td align="right">0.0048091</td>
+<td align="right">0.0144343</td>
+<td align="right">0.3331727</td>
+<td align="right">0.7404549</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE22:sexwomen</td>
+<td align="right">0.0071923</td>
+<td align="right">0.0144343</td>
+<td align="right">0.4982800</td>
+<td align="right">0.6205623</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE23:sexwomen</td>
+<td align="right">0.0082955</td>
+<td align="right">0.0144343</td>
+<td align="right">0.5747113</td>
+<td align="right">0.5681705</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE31:sexwomen</td>
+<td align="right">-0.0128299</td>
+<td align="right">0.0144343</td>
+<td align="right">-0.8888492</td>
+<td align="right">0.3785170</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_shSE32:sexwomen</td>
+<td align="right">0.0109022</td>
+<td align="right">0.0144343</td>
+<td align="right">0.7552986</td>
+<td align="right">0.4537602</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_shSE33:sexwomen</td>
+<td align="right">-0.0041447</td>
+<td align="right">0.0144343</td>
+<td align="right">-0.2871452</td>
+<td align="right">0.7752371</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$r.squared</code></pre>
+<pre><code>## [1] 0.9231133</code></pre>
+<pre class="r"><code>Anova(model, type=2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-9">Table 4: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.0629183</td>
+<td align="right">1</td>
+<td align="right">120.7946290</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_sh</td>
+<td align="right">0.1637127</td>
+<td align="right">14</td>
+<td align="right">22.4504512</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sex</td>
+<td align="right">0.0777463</td>
+<td align="right">8</td>
+<td align="right">18.6578050</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_sh</td>
+<td align="right">0.0023115</td>
+<td align="right">7</td>
+<td align="right">0.6339728</td>
+<td align="right">0.7254512</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sex</td>
+<td align="right">0.0000085</td>
+<td align="right">1</td>
+<td align="right">0.0163969</td>
+<td align="right">0.8986442</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_sh:sex</td>
+<td align="right">0.0088184</td>
+<td align="right">7</td>
+<td align="right">2.4186030</td>
+<td align="right">0.0332038</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:NUTS2_sh:sex</td>
+<td align="right">0.0022998</td>
+<td align="right">7</td>
+<td align="right">0.6307550</td>
+<td align="right">0.7280524</td>
+</tr>
+<tr class="even">
+<td align="left">Residuals</td>
+<td align="right">0.0250018</td>
+<td align="right">48</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;, &quot;year_n&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-91"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-9-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 11: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-92"></span>
+<img src="/post/2020-01-29-the-significance-of-the-region-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-9-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 12: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
