@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.59.1" />
+
+
+<title>The significance of the sector on the salary of engineers in Sweden - R Analystatistics Sweden</title>
+<meta property="og:title" content="The significance of the sector on the salary of engineers in Sweden - R Analystatistics Sweden">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/MikaelLundqvist">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/MikaelLundqvist">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">11 min read</span>
+    
+
+    <h1 class="article-title">The significance of the sector on the salary of engineers in Sweden</h1>
+
+    
+    <span class="article-date">2020-02-09</span>
+    
+
+    <div class="article-content">
+      
+
+
+<p>So far I have analysed the effect of experience, education, gender, year and region on the salary of engineers in Sweden. In this post, I will have a look at the effect of the sector on the salary of engineers in Sweden.</p>
+<p>Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse) </code></pre>
+<pre><code>## -- Attaching packages -------------------------------------- tidyverse 1.3.0 --</code></pre>
+<pre><code>## v ggplot2 3.2.1     v purrr   0.3.3
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   1.0.2     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts ----------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library (broom) 
+library (car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre class="r"><code>library (swemaps) # devtools::install_github(&#39;reinholdsson/swemaps&#39;)
+library(sjPlot)</code></pre>
+<pre><code>## Registered S3 methods overwritten by &#39;lme4&#39;:
+##   method                          from
+##   cooks.distance.influence.merMod car 
+##   influence.merMod                car 
+##   dfbeta.influence.merMod         car 
+##   dfbetas.influence.merMod        car</code></pre>
+<pre><code>## Install package &quot;strengejacke&quot; from GitHub (`devtools::install_github(&quot;strengejacke/strengejacke&quot;)`) to load all sj-packages at once!</code></pre>
+<pre class="r"><code>library(leaps)
+library(MASS)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;MASS&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     select</code></pre>
+<pre class="r"><code>readfile &lt;- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%  
+    gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = salary) %&gt;%  
+    drop_na() %&gt;%  
+    mutate (year_n = parse_number (year))
+}
+nuts &lt;- read.csv(&quot;nuts.csv&quot;) %&gt;%
+  mutate(NUTS2_sh = substr(NUTS2, 1, 4))
+map_ln_n &lt;- map_ln %&gt;%
+  mutate(lnkod_n = as.numeric(lnkod)) </code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CG.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>I have renamed the file to 000000CG_sector.csv because the filename 000000CG.csv was used in a previous post.</p>
+<p>The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary 1-3 public sector 4-5 private sector</p>
+<p>We expect that the sector is an important factor in salaries. As a null hypothesis, we assume that the sector is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.</p>
+<pre class="r"><code>tb &lt;- readfile (&quot;000000CG_sector.csv&quot;) %&gt;%
+  filter (`occuptional  (SSYK 2012)` == &quot;214 Engineering professionals&quot;) %&gt;% 
+  left_join(nuts %&gt;% distinct (NUTS2_en, NUTS2_sh), by = c(&quot;region&quot; = &quot;NUTS2_en&quot;)) </code></pre>
+<pre><code>## Warning: Column `region`/`NUTS2_en` joining character vector and factor,
+## coercing into character vector</code></pre>
+<pre class="r"><code>tb_map &lt;- readfile (&quot;000000CG_sector.csv&quot;) %&gt;%
+  filter (`occuptional  (SSYK 2012)` == &quot;214 Engineering professionals&quot;) %&gt;%
+  left_join(nuts, by = c(&quot;region&quot; = &quot;NUTS2_en&quot;)) </code></pre>
+<pre><code>## Warning: Column `region`/`NUTS2_en` joining character vector and factor,
+## coercing into character vector</code></pre>
+<pre class="r"><code>tb_map %&gt;%
+  filter (sector == &quot;1-3 public sector&quot;) %&gt;%
+  right_join(map_ln_n, by = c(&quot;Länskod&quot; = &quot;lnkod_n&quot;)) %&gt;%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+    facet_grid(. ~ year) + 
+    coord_equal() </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-2"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-2-1.png" alt="SSYK 214, Architects, engineers and related professionals, public sector, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 1: SSYK 214, Architects, engineers and related professionals, public sector, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb_map %&gt;%
+  filter (sector == &quot;4-5 private sector&quot;) %&gt;%
+  right_join(map_ln_n, by = c(&quot;Länskod&quot; = &quot;lnkod_n&quot;)) %&gt;%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+    facet_grid(. ~ year) + 
+    coord_equal() </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-3"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-3-1.png" alt="SSYK 214, Architects, engineers and related professionals, private sector, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 2: SSYK 214, Architects, engineers and related professionals, private sector, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n, y = salary, colour = region, shape=sex)) + 
+    facet_grid(. ~ sector) +
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-4"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-4-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 3: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Before I investigate all possible combinations of the sector and the other factors I shall see if there is some way to predict what factors and interactions that are most significant.</p>
+<p>First, use regsubsets to find the model which minimises AIC (Akaike information criterion). Regsubsets is a generic function for regression subset selection with methods for formula and matrix arguments.</p>
+<pre class="r"><code>b &lt;- regsubsets (log(salary) ~ sector * (year_n + sex + NUTS2_sh), data = tb,  nvmax = 20)
+rs &lt;- summary(b)
+AIC &lt;- 50 * log (rs$rss / 50) + (2:20) * 2
+which.min (AIC)</code></pre>
+<pre><code>## [1] 13</code></pre>
+<pre class="r"><code>names (rs$which[13,])[rs$which[13,]]</code></pre>
+<pre><code>##  [1] &quot;(Intercept)&quot;                          
+##  [2] &quot;sector4-5 private sector&quot;             
+##  [3] &quot;year_n&quot;                               
+##  [4] &quot;sexwomen&quot;                             
+##  [5] &quot;NUTS2_shSE12&quot;                         
+##  [6] &quot;NUTS2_shSE21&quot;                         
+##  [7] &quot;NUTS2_shSE22&quot;                         
+##  [8] &quot;NUTS2_shSE33&quot;                         
+##  [9] &quot;sector4-5 private sector:year_n&quot;      
+## [10] &quot;sector4-5 private sector:NUTS2_shSE21&quot;
+## [11] &quot;sector4-5 private sector:NUTS2_shSE23&quot;
+## [12] &quot;sector4-5 private sector:NUTS2_shSE31&quot;
+## [13] &quot;sector4-5 private sector:NUTS2_shSE32&quot;
+## [14] &quot;sector4-5 private sector:NUTS2_shSE33&quot;</code></pre>
+<p>As a complement, I use stepwise model selection to find the model which fits the data best. StepAIC performs stepwise model selection by AIC.</p>
+<pre class="r"><code>model &lt;-lm (log(salary) ~ year_n * sex * NUTS2_sh * sector, data = tb) 
+b &lt;- stepAIC(model, direction = c(&quot;both&quot;))</code></pre>
+<pre><code>## Start:  AIC=-1200.79
+## log(salary) ~ year_n * sex * NUTS2_sh * sector
+## 
+##                              Df Sum of Sq      RSS     AIC
+## - year_n:sex:NUTS2_sh:sector  7  0.001441 0.041008 -1209.1
+## &lt;none&gt;                                    0.039567 -1200.8
+## 
+## Step:  AIC=-1209.07
+## log(salary) ~ year_n + sex + NUTS2_sh + sector + year_n:sex + 
+##     year_n:NUTS2_sh + sex:NUTS2_sh + year_n:sector + sex:sector + 
+##     NUTS2_sh:sector + year_n:sex:NUTS2_sh + year_n:sex:sector + 
+##     year_n:NUTS2_sh:sector + sex:NUTS2_sh:sector
+## 
+##                              Df Sum of Sq      RSS     AIC
+## &lt;none&gt;                                    0.041008 -1209.1
+## - year_n:sex:NUTS2_sh         7 0.0047401 0.045748 -1205.6
+## - year_n:sex:sector           1 0.0022478 0.043256 -1202.5
+## - year_n:NUTS2_sh:sector      7 0.0058131 0.046821 -1201.9
+## + year_n:sex:NUTS2_sh:sector  7 0.0014410 0.039567 -1200.8
+## - sex:NUTS2_sh:sector         7 0.0080176 0.049026 -1194.5</code></pre>
+<pre class="r"><code>model &lt;- lm(log(salary) ~ year_n + sex + NUTS2_sh + sector + 
+    year_n:sex + year_n:NUTS2_sh + sex:NUTS2_sh + year_n:sector + 
+    sex:sector + NUTS2_sh:sector + year_n:sex:NUTS2_sh + year_n:sex:sector + 
+    year_n:NUTS2_sh:sector + sex:NUTS2_sh:sector, data = tb)
+summary(model)$adj.r.squared </code></pre>
+<pre><code>## [1] 0.9135882</code></pre>
+<pre class="r"><code>Anova(model, type = 2) %&gt;% 
+  tidy() %&gt;% 
+  arrange (desc (statistic)) %&gt;% 
+  filter(p.value &lt; 0.05) %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-6">Table 1: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.2069351</td>
+<td align="right">1</td>
+<td align="right">519.760278</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="right">0.1113983</td>
+<td align="right">2</td>
+<td align="right">139.899908</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sector</td>
+<td align="right">0.0952663</td>
+<td align="right">2</td>
+<td align="right">119.640560</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_sh</td>
+<td align="right">0.2322097</td>
+<td align="right">14</td>
+<td align="right">41.660196</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sector</td>
+<td align="right">0.0120669</td>
+<td align="right">1</td>
+<td align="right">30.308411</td>
+<td align="right">0.0000003</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_sh:sector</td>
+<td align="right">0.0523275</td>
+<td align="right">7</td>
+<td align="right">18.775900</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sex</td>
+<td align="right">0.0023493</td>
+<td align="right">1</td>
+<td align="right">5.900761</td>
+<td align="right">0.0168659</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sex:sector</td>
+<td align="right">0.0022478</td>
+<td align="right">1</td>
+<td align="right">5.645699</td>
+<td align="right">0.0193467</td>
+</tr>
+<tr class="odd">
+<td align="left">sex:sector</td>
+<td align="right">0.0018231</td>
+<td align="right">1</td>
+<td align="right">4.579079</td>
+<td align="right">0.0347260</td>
+</tr>
+<tr class="even">
+<td align="left">sex:NUTS2_sh</td>
+<td align="right">0.0106289</td>
+<td align="right">7</td>
+<td align="right">3.813803</td>
+<td align="right">0.0010092</td>
+</tr>
+<tr class="odd">
+<td align="left">sex:NUTS2_sh:sector</td>
+<td align="right">0.0080176</td>
+<td align="right">7</td>
+<td align="right">2.876825</td>
+<td align="right">0.0087375</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:NUTS2_sh</td>
+<td align="right">0.0078670</td>
+<td align="right">7</td>
+<td align="right">2.822810</td>
+<td align="right">0.0098854</td>
+</tr>
+</tbody>
+</table>
+<p>There are interactions between the different factors that are significant, i.e. have a p-value less than 0,05 but does not qualify because it´s inclusion in the model does not imply that it lowers the AIC value. The tradeoff between the goodness of fit of the model and the simplicity of the model leads me to exclude those interactions from the model we will examine further.</p>
+<p>The model I chose from based on the AIC results is: log(salary) ~ year_n * sector + NUTS2_sh * sector + sex</p>
+<p>From this model, the F-value from the Anova table for the sector is 146 (Pr(&gt;F) &lt; 2.2e-16), sufficient for rejecting the null hypothesis that the sector has no effect on the salary holding year as constant. The adjusted R-squared value is 0,870 implying a good fit of the model.</p>
+<pre class="r"><code>model &lt;- model &lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+tb &lt;- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = &quot;confidence&quot;))))
+tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = region, shape=sex)) + 
+    facet_grid(. ~ sector) +
+  labs(
+    x = &quot;Year&quot;,
+    y = &quot;Salary (SEK/month)&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-71"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-1.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 4: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>summary(model) %&gt;%  
+  tidy() %&gt;%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Summary from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-7">Table 2: </span>Summary from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-52.8857464</td>
+<td align="right">3.9015473</td>
+<td align="right">-13.5550700</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n</td>
+<td align="right">0.0315705</td>
+<td align="right">0.0019353</td>
+<td align="right">16.3130867</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sector4-5 private sector</td>
+<td align="right">24.7466021</td>
+<td align="right">5.5176204</td>
+<td align="right">4.4850135</td>
+<td align="right">0.0000150</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE12</td>
+<td align="right">-0.0633886</td>
+<td align="right">0.0109476</td>
+<td align="right">-5.7901587</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE21</td>
+<td align="right">-0.0951854</td>
+<td align="right">0.0109476</td>
+<td align="right">-8.6946021</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE22</td>
+<td align="right">-0.0542415</td>
+<td align="right">0.0109476</td>
+<td align="right">-4.9546264</td>
+<td align="right">0.0000020</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE23</td>
+<td align="right">-0.0304669</td>
+<td align="right">0.0109476</td>
+<td align="right">-2.7829655</td>
+<td align="right">0.0061252</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE31</td>
+<td align="right">-0.0213974</td>
+<td align="right">0.0109476</td>
+<td align="right">-1.9545201</td>
+<td align="right">0.0526182</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_shSE32</td>
+<td align="right">-0.0304128</td>
+<td align="right">0.0109476</td>
+<td align="right">-2.7780207</td>
+<td align="right">0.0062142</td>
+</tr>
+<tr class="even">
+<td align="left">NUTS2_shSE33</td>
+<td align="right">-0.0700399</td>
+<td align="right">0.0109476</td>
+<td align="right">-6.3977139</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">sexwomen</td>
+<td align="right">-0.0523393</td>
+<td align="right">0.0038706</td>
+<td align="right">-13.5223569</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">year_n:sector4-5 private sector</td>
+<td align="right">-0.0122815</td>
+<td align="right">0.0027369</td>
+<td align="right">-4.4873679</td>
+<td align="right">0.0000149</td>
+</tr>
+<tr class="odd">
+<td align="left">sector4-5 private sector:NUTS2_shSE12</td>
+<td align="right">0.0069109</td>
+<td align="right">0.0154823</td>
+<td align="right">0.4463758</td>
+<td align="right">0.6560106</td>
+</tr>
+<tr class="even">
+<td align="left">sector4-5 private sector:NUTS2_shSE21</td>
+<td align="right">-0.0344624</td>
+<td align="right">0.0154823</td>
+<td align="right">-2.2259214</td>
+<td align="right">0.0276066</td>
+</tr>
+<tr class="odd">
+<td align="left">sector4-5 private sector:NUTS2_shSE22</td>
+<td align="right">0.0089387</td>
+<td align="right">0.0154823</td>
+<td align="right">0.5773509</td>
+<td align="right">0.5646232</td>
+</tr>
+<tr class="even">
+<td align="left">sector4-5 private sector:NUTS2_shSE23</td>
+<td align="right">-0.0206495</td>
+<td align="right">0.0154823</td>
+<td align="right">-1.3337474</td>
+<td align="right">0.1844371</td>
+</tr>
+<tr class="odd">
+<td align="left">sector4-5 private sector:NUTS2_shSE31</td>
+<td align="right">-0.0765503</td>
+<td align="right">0.0154823</td>
+<td align="right">-4.9443769</td>
+<td align="right">0.0000021</td>
+</tr>
+<tr class="even">
+<td align="left">sector4-5 private sector:NUTS2_shSE32</td>
+<td align="right">-0.0832467</td>
+<td align="right">0.0154823</td>
+<td align="right">-5.3768944</td>
+<td align="right">0.0000003</td>
+</tr>
+<tr class="odd">
+<td align="left">sector4-5 private sector:NUTS2_shSE33</td>
+<td align="right">-0.0711249</td>
+<td align="right">0.0154823</td>
+<td align="right">-4.5939480</td>
+<td align="right">0.0000096</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>summary(model)$adj.r.squared </code></pre>
+<pre><code>## [1] 0.8699372</code></pre>
+<pre class="r"><code>Anova(model, type=2) %&gt;% 
+  tidy() %&gt;% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = &#39;Anova report from linear model fit&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-7">Table 2: </span>Anova report from linear model fit</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">sumsq</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="right">0.2069351</td>
+<td align="right">1</td>
+<td align="right">345.32122</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="even">
+<td align="left">sector</td>
+<td align="right">0.0872899</td>
+<td align="right">1</td>
+<td align="right">145.66429</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="odd">
+<td align="left">NUTS2_sh</td>
+<td align="right">0.1798897</td>
+<td align="right">7</td>
+<td align="right">42.88421</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="even">
+<td align="left">sex</td>
+<td align="right">0.1095761</td>
+<td align="right">1</td>
+<td align="right">182.85414</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n:sector</td>
+<td align="right">0.0120669</td>
+<td align="right">1</td>
+<td align="right">20.13647</td>
+<td align="right">1.49e-05</td>
+</tr>
+<tr class="even">
+<td align="left">sector:NUTS2_sh</td>
+<td align="right">0.0523275</td>
+<td align="right">7</td>
+<td align="right">12.47444</td>
+<td align="right">0.00e+00</td>
+</tr>
+<tr class="odd">
+<td align="left">Residuals</td>
+<td align="right">0.0844948</td>
+<td align="right">141</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>plot(model, which = 1)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-72"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-7-2.png" alt="Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 5: Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tb[38,]</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   region sector `occuptional  (~ sex   year  salary year_n NUTS2_sh    fit
+##   &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1 SE12 ~ 1-3 p~ 214 Engineering~ women 2015   37600   2015 SE12     40664.
+## # ... with 2 more variables: lwr &lt;dbl&gt;, upr &lt;dbl&gt;</code></pre>
+<pre class="r"><code>tb[55,]</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   region sector `occuptional  (~ sex   year  salary year_n NUTS2_sh    fit
+##   &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1 SE31 ~ 4-5 p~ 214 Engineering~ men   2015   37900   2015 SE31     41366.
+## # ... with 2 more variables: lwr &lt;dbl&gt;, upr &lt;dbl&gt;</code></pre>
+<pre class="r"><code>tb[76,]</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   region sector `occuptional  (~ sex   year  salary year_n NUTS2_sh    fit
+##   &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;            &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+## 1 SE21 ~ 4-5 p~ 214 Engineering~ women 2016   34600   2016 SE21     38773.
+## # ... with 2 more variables: lwr &lt;dbl&gt;, upr &lt;dbl&gt;</code></pre>
+<p>Let’s check what we have found.</p>
+<p>For the sake of comparison, a model with no interactions.</p>
+<pre class="r"><code>model &lt;-lm (log(salary) ~ year_n + sex + NUTS2_sh + sector, data = tb) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;, &quot;year_n&quot;, &quot;sex&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<pre><code>## Warning: Package `see` needed to plot multiple panels in one integrated figure.
+## Please install it by typing `install.packages(&quot;see&quot;, dependencies = TRUE)` into
+## the console.</code></pre>
+<pre><code>## [[1]]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-81"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 6: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## 
+## [[2]]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-82"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-8-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 7: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>First, we investigate the interaction between region and sector. All plots below are done with the model which minimised the AIC.</p>
+<pre class="r"><code>model &lt;- model &lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-9"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-9-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 8: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>Also, examine the relationship between gender and sector.</p>
+<pre class="r"><code>model &lt;- model &lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;sector&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-10"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-10-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 9: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>And the interaction between year and sector.</p>
+<pre class="r"><code>model &lt;- model &lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-11"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-11-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 10: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>The relationship between gender, sector and region.</p>
+<pre class="r"><code>model &lt;- model &lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;, &quot;sector&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-12"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-12-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 11: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>The relationship between gender, sector and year.</p>
+<pre class="r"><code>model &lt;- model &lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;year_n&quot;, &quot;sector&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-13"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-13-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 12: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>The relationship between region, sector and year.</p>
+<pre class="r"><code>model &lt;- model &lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;, &quot;year_n&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-14"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-14-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 13: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<p>The relationship between gender, region, sector and year.</p>
+<pre class="r"><code>model &lt;- model &lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;NUTS2_sh&quot;, &quot;year_n&quot;, &quot;sector&quot;, &quot;sex&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<pre><code>## Warning: Package `see` needed to plot multiple panels in one integrated figure.
+## Please install it by typing `install.packages(&quot;see&quot;, dependencies = TRUE)` into
+## the console.</code></pre>
+<pre><code>## [[1]]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-151"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-15-1.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 14: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## 
+## [[2]]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-152"></span>
+<img src="/post/2020-02-09-the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden_files/figure-html/unnamed-chunk-15-2.png" alt="SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 15: SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018
+</p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+          <li>
+            <a href="https://www.r-bloggers.com/" class="footer-links-kudos">R-bloggers</a>
+          </li>	
+          <li>
+            <a href="https://rweekly.org/" class="footer-links-kudos">R Weekly</a>
+          </li>			  
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

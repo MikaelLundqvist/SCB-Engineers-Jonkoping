@@ -1,0 +1,244 @@
+---
+title: The significance of the sector on the salary of engineers in Sweden
+author: Mikael Lundqvist
+date: '2020-02-09'
+slug: the-significance-of-the-sector-on-the-salary-of-engineers-in-sweden
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+So far I have analysed the effect of experience, education, gender, year and region on the salary of engineers in Sweden. In this post, I will have a look at the effect of the sector on the salary of engineers in Sweden.
+
+Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU's hierarchical regional division, to specify the regions.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse) 
+library (broom) 
+library (car)
+library (swemaps) # devtools::install_github('reinholdsson/swemaps')
+library(sjPlot)
+library(leaps)
+library(MASS)
+readfile <- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  
+	drop_na() %>%  
+    mutate (year_n = parse_number (year))
+}
+nuts <- read.csv("nuts.csv") %>%
+  mutate(NUTS2_sh = substr(NUTS2, 1, 4))
+map_ln_n <- map_ln %>%
+  mutate(lnkod_n = as.numeric(lnkod)) 
+``` 
+
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CG.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+I have renamed the file to 000000CG_sector.csv because the filename 000000CG.csv was used in a previous post. 
+
+The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary 1-3 public sector 4-5 private sector
+
+We expect that the sector is an important factor in salaries. As a null hypothesis, we assume that the sector is not related to the salary and examine if we can reject this hypothesis with the data from Statistics Sweden.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, public sector, Year 2014 - 2018'} 
+tb <- readfile ("000000CG_sector.csv") %>%
+  filter (`occuptional  (SSYK 2012)` == "214 Engineering professionals") %>% 
+  left_join(nuts %>% distinct (NUTS2_en, NUTS2_sh), by = c("region" = "NUTS2_en")) 
+  
+tb_map <- readfile ("000000CG_sector.csv") %>%
+  filter (`occuptional  (SSYK 2012)` == "214 Engineering professionals") %>%
+  left_join(nuts, by = c("region" = "NUTS2_en")) 
+tb_map %>%
+  filter (sector == "1-3 public sector") %>%
+  right_join(map_ln_n, by = c("Länskod" = "lnkod_n")) %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+    facet_grid(. ~ year) + 
+    coord_equal() 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, private sector, Year 2014 - 2018'} 
+tb_map %>%
+  filter (sector == "4-5 private sector") %>%
+  right_join(map_ln_n, by = c("Länskod" = "lnkod_n")) %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+    facet_grid(. ~ year) + 
+    coord_equal() 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n, y = salary, colour = region, shape=sex)) + 
+    facet_grid(. ~ sector) +
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+```
+
+
+Before I investigate all possible combinations of the sector and the other factors I shall see if there is some way to predict what factors and interactions that are most significant.
+
+First, use regsubsets to find the model which minimises AIC (Akaike information criterion). Regsubsets is a generic function for regression subset selection with methods for formula and matrix arguments.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+b <- regsubsets (log(salary) ~ sector * (year_n + sex + NUTS2_sh), data = tb,  nvmax = 20)
+rs <- summary(b)
+AIC <- 50 * log (rs$rss / 50) + (2:20) * 2
+which.min (AIC)
+names (rs$which[13,])[rs$which[13,]]
+```
+
+
+As a complement, I use stepwise model selection to find the model which fits the data best. StepAIC performs stepwise model selection by AIC.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <-lm (log(salary) ~ year_n * sex * NUTS2_sh * sector, data = tb) 
+b <- stepAIC(model, direction = c("both"))
+model <- lm(log(salary) ~ year_n + sex + NUTS2_sh + sector + 
+    year_n:sex + year_n:NUTS2_sh + sex:NUTS2_sh + year_n:sector + 
+    sex:sector + NUTS2_sh:sector + year_n:sex:NUTS2_sh + year_n:sex:sector + 
+    year_n:NUTS2_sh:sector + sex:NUTS2_sh:sector, data = tb)
+summary(model)$adj.r.squared 
+Anova(model, type = 2) %>% 
+  tidy() %>% 
+  arrange (desc (statistic)) %>% 
+  filter(p.value < 0.05) %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')
+```
+
+
+There are interactions between the different factors that are significant, i.e. have a p-value less than 0,05 but does not qualify because it´s inclusion in the model does not imply that it lowers the AIC value. The tradeoff between the goodness of fit of the model and the simplicity of the model leads me to exclude those interactions from the model we will examine further.
+
+The model I chose from based on the AIC results is: log(salary) ~ year_n * sector + NUTS2_sh * sector + sex
+
+From this model, the F-value from the Anova table for the sector is 146 (Pr(>F) < 2.2e-16), sufficient for rejecting the null hypothesis that the sector has no effect on the salary holding year as constant. The adjusted R-squared value is 0,870 implying a good fit of the model.
+
+
+```{r, echo = TRUE, fig.cap = 'Model fit, SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- model <-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+tb <- bind_cols(tb, as_tibble(exp(predict(model, tb, interval = "confidence"))))
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = year_n,y = fit, colour = region, shape=sex)) + 
+    facet_grid(. ~ sector) +
+  labs(
+    x = "Year",
+    y = "Salary (SEK/month)"
+  )
+
+summary(model) %>%  
+  tidy() %>%
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Summary from linear model fit')
+summary(model)$adj.r.squared 
+Anova(model, type=2) %>% 
+  tidy() %>% 
+  knitr::kable( 
+  booktabs = TRUE,
+  caption = 'Anova report from linear model fit')
+
+plot(model, which = 1)
+tb[38,]
+tb[55,]
+tb[76,]
+```
+
+
+Let's check what we have found. 
+
+For the sake of comparison, a model with no interactions.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <-lm (log(salary) ~ year_n + sex + NUTS2_sh + sector, data = tb) 
+ 
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "year_n", "sex", "sector"))
+```
+
+
+First, we investigate the interaction between region and sector. All plots below are done with the model which minimised the AIC. 
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- model <-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+ 
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "sector"))
+```
+
+
+Also, examine the relationship between gender and sector. 
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- model <-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+
+plot_model(model, type = "pred", terms = c("sector", "sex"))
+```
+
+
+And the interaction between year and sector. 
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- model <-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+
+plot_model(model, type = "pred", terms = c("year_n", "sector"))
+```
+
+
+The relationship between gender, sector and region.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- model <-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "sector", "sex"))
+```
+
+
+The relationship between gender, sector and year.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- model <-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+ 
+plot_model(model, type = "pred", terms = c("year_n", "sector", "sex"))
+```
+
+
+The relationship between region, sector and year.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- model <-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+ 
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "year_n", "sector"))
+```
+
+
+The relationship between gender, region, sector and year.
+
+
+```{r, echo = TRUE, fig.cap = 'SSYK 214, Architects, engineers and related professionals, Year 2014 - 2018'} 
+model <- model <-lm (log(salary) ~ year_n * sector + NUTS2_sh * sector + sex, data = tb)
+ 
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "year_n", "sector", "sex"))
+```
