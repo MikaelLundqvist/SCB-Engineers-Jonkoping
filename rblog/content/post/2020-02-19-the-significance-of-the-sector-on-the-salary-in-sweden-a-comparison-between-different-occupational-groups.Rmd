@@ -1,0 +1,393 @@
+---
+title: The significance of the sector on the salary in Sweden, a comparison between different occupational groups
+author: Mikael Lundqvist
+date: '2020-02-19'
+slug: the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+In my last post, I found that the sector has a significant impact on the salary of engineers. Is the significance of the sector unique to engineers or are there similar correlations in other occupational groups?
+
+Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.
+
+The F-value from the Anova table is used as the single value to discriminate how much the region and salary correlates. For exploratory analysis, the Anova value seems good enough.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse) 
+library (broom) 
+library (car)
+library (swemaps) # devtools::install_github('reinholdsson/swemaps')
+library(sjPlot)
+readfile <- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%  
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%  
+	drop_na() %>%  
+    mutate (year_n = parse_number (year))
+}
+nuts <-read_csv ("nuts.csv", col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  mutate(NUTS2_sh = substr(NUTS2, 1, 4))
+nuts %>% 
+  distinct (NUTS2_en) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Nomenclature des Unités Territoriales Statistiques (NUTS)')
+
+map_ln_n <- map_ln %>%
+  mutate(lnkod_n = as.numeric(lnkod)) 
+``` 
+
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CG.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+I have renamed the file to 000000CG_sector.csv because the filename 000000CG.csv was used in a previous post. 
+
+The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary 1-3 public sector 4-5 private sector
+
+Only 17 occupational groups have employees in both the public and the private sector in all regions and both genders.
+
+In the plot and tables, you can also find information on how the increase in salaries per year for each occupational group is affected when the interactions are taken into account.
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the sector on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018'} 
+tb <- readfile ("000000CG_sector.csv") %>%
+  left_join(nuts %>% distinct (NUTS2_en, NUTS2_sh), by = c("region" = "NUTS2_en")) 
+  
+tb_map <- readfile ("000000CG_sector.csv") %>%
+  left_join(nuts, by = c("region" = "NUTS2_en")) %>%  
+  right_join(map_ln_n, by = c("Länskod" = "lnkod_n"))
+
+
+summary_table = vector()
+anova_table = vector()
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 150){
+    model <- lm(log(salary) ~ region + sex + year_n + sector, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "none"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "none"))  
+  
+    model <- lm(log(salary) ~ region + sex + year_n * sector, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "sector and year"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "sector and year"))
+    
+    model <- lm(log(salary) ~ region + year_n + sex * sector, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "sex and sector"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "sex and sector"))   
+    
+    model <- lm(log(salary) ~ region * sector + year_n + sex, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "region and sector"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "region and sector"))
+    
+    model <- lm(log(salary) ~ region * sector * year_n * sex, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "region, sector, year and sex"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "region, sector, year and sex"))    
+  }
+}
+
+anova_table <- anova_table %>% rowwise() %>% mutate(contcol = str_count(term, ":")) 
+
+summary_table <- summary_table %>% rowwise() %>% mutate(contcol = str_count(term, ":"))
+
+merge(summary_table, anova_table, by = c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (term.y == "sector") %>%    
+  filter (interaction == "none") %>%
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = "Increase in salaries (% / year)",
+      y = "F-value for sector"
+    )  	
+```
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the interaction between sector, region, year and sex on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018'}
+merge(summary_table, anova_table, by = c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 0) %>%    
+  # only look at the interactions between all four variables in the case with interaction region, sector, year and sex
+  filter (!(contcol.y < 3 & interaction == "region, sector, year and sex")) %>% 
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = "Increase in salaries (% / year)",
+      y = "F-value for interaction"
+    ) 	
+```
+
+
+The tables with all occupational groups sorted by F-value in descending order.
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (term.y == "sector") %>%   
+  filter (interaction == "none") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (sector) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 0) %>%   
+  filter (interaction == "sector and year") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (sector and year) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 0) %>%   
+  filter (interaction == "sex and sector") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (sex and sector) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 0) %>%   
+  filter (interaction == "region and sector") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (region and sector) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 1) %>%   
+  filter (interaction == "region and sector") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (region, year and sex) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 1) %>%   
+  filter (interaction == "region, sector, year and sex") %>%
+  filter (!(contcol.y < 3 & interaction == "region, sector, year and sex")) %>%  
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (region, year and sex) and the yearly increase in salaries')
+```
+
+
+Let's check what we have found.
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value sector, Newspaper distributors, janitors and other service workers'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "962 Newspaper distributors, janitors and other service workers")
+ 
+model <-lm (log(salary) ~ year_n + sex + NUTS2_sh + sector, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("sector"))
+
+tb_map %>%
+    filter(`occuptional  (SSYK 2012)` == "962 Newspaper distributors, janitors and other service workers") %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ sector) + 
+    coord_equal() 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value sector, Insurance advisers, sales and purchasing agents'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "332 Insurance advisers, sales and purchasing agents")
+ 
+model <-lm (log(salary) ~ year_n + sex + NUTS2_sh + sector, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value interaction gender and sector, Accountants, financial analysts and fund managers'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "241 Accountants, financial analysts and fund managers")
+ 
+model <-lm (log(salary) ~ year_n + sex * sector + NUTS2_sh, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("sector", "sex"))
+
+tb_map %>%
+    filter(`occuptional  (SSYK 2012)` == "241 Accountants, financial analysts and fund managers") %>%
+  filter (sector == "1-3 public sector") %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ sex) + 
+    coord_equal() 
+
+tb_map %>%
+    filter(`occuptional  (SSYK 2012)` == "241 Accountants, financial analysts and fund managers") %>%
+  filter (sector == "4-5 private sector") %>%  
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ sex) + 
+    coord_equal() 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value interaction gender and sector, Client information clerks'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "422 Client information clerks")
+ 
+model <-lm (log(salary) ~ year_n + sex * sector + NUTS2_sh, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("sector", "sex"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value interaction year and sector, Client information clerks'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "422 Client information clerks")
+ 
+model <-lm (log(salary) ~ year_n * sector + NUTS2_sh + sex , data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("year_n", "sector"))
+
+tb_map %>%
+  filter(`occuptional  (SSYK 2012)` == "422 Client information clerks") %>%
+  filter (sector == "1-3 public sector") %>%  
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() 
+
+tb_map %>%
+  filter(`occuptional  (SSYK 2012)` == "422 Client information clerks") %>%
+  filter (sector == "4-5 private sector") %>%  
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value interaction year and sector, Financial and accounting associate professionals'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "331 Financial and accounting associate professionals")
+ 
+model <-lm (log(salary) ~ year_n * sector + NUTS2_sh + sex , data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("year_n", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value interaction region and sector, Stores and transport clerks'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "432 Stores and transport clerks")
+ 
+model <-lm (log(salary) ~ year_n + sector * NUTS2_sh + sex , data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "sector"))
+
+tb_map %>%
+  filter(`occuptional  (SSYK 2012)` == "432 Stores and transport clerks") %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ sector) + 
+    coord_equal() 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value interaction sector and region, Fast-food workers, food preparation assistants'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "941 Fast-food workers, food preparation assistants")
+ 
+model <-lm (log(salary) ~ year_n + sector * NUTS2_sh + sex , data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians'} 
+temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "351 ICT operations and user support technicians")
+ 
+model <-lm (log(salary) ~ year_n * NUTS2_sh * sex * sector, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "year_n", "sector",  "sex"))
+
+tb_map %>%
+  filter(`occuptional  (SSYK 2012)` == "351 ICT operations and user support technicians") %>%
+  filter (sector == "1-3 public sector") %>%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() 
+
+tb_map %>%
+    filter(`occuptional  (SSYK 2012)` == "351 ICT operations and user support technicians") %>%
+  filter (sector == "4-5 private sector") %>%  
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() 
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value interaction sector, region, year and gender, Client information clerks'} 
+  temp <- tb %>%
+  filter(`occuptional  (SSYK 2012)` == "422 Client information clerks")
+ 
+model <-lm (log(salary) ~ year_n * NUTS2_sh * sex * sector, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("NUTS2_sh", "year_n", "sector",  "sex"))
+```

@@ -6,10 +6,1106 @@
     <description>Recent content in R on R Analystatistics Sweden</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 09 Feb 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 19 Feb 2020 00:00:00 +0000</lastBuildDate>
     
         <atom:link href="/categories/r/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>The significance of the sector on the salary in Sweden, a comparison between different occupational groups</title>
+      <link>/2020/02/19/the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups/</link>
+      <pubDate>Wed, 19 Feb 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/02/19/the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups/</guid>
+      <description>`
+
+
+&lt;p&gt;In my last post, I found that the sector has a significant impact on the salary of engineers. Is the significance of the sector unique to engineers or are there similar correlations in other occupational groups?&lt;/p&gt;
+&lt;p&gt;Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.&lt;/p&gt;
+&lt;p&gt;The F-value from the Anova table is used as the single value to discriminate how much the region and salary correlates. For exploratory analysis, the Anova value seems good enough.&lt;/p&gt;
+&lt;p&gt;First, define libraries and functions.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (tidyverse) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## -- Attaching packages ------------------------------------- tidyverse 1.3.0 --&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## v ggplot2 3.2.1     v purrr   0.3.3
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   1.0.2     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## -- Conflicts ---------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (broom) 
+library (car)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: carData&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;car&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:dplyr&amp;#39;:
+## 
+##     recode&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:purrr&amp;#39;:
+## 
+##     some&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (swemaps) # devtools::install_github(&amp;#39;reinholdsson/swemaps&amp;#39;)
+library(sjPlot)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Registered S3 methods overwritten by &amp;#39;lme4&amp;#39;:
+##   method                          from
+##   cooks.distance.influence.merMod car 
+##   influence.merMod                car 
+##   dfbeta.influence.merMod         car 
+##   dfbetas.influence.merMod        car&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## #refugeeswelcome&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;readfile &amp;lt;- function (file1){  
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &amp;quot;latin1&amp;quot;), na = c(&amp;quot;..&amp;quot;, &amp;quot;NA&amp;quot;)) %&amp;gt;%  
+    gather (starts_with(&amp;quot;19&amp;quot;), starts_with(&amp;quot;20&amp;quot;), key = &amp;quot;year&amp;quot;, value = salary) %&amp;gt;%  
+    drop_na() %&amp;gt;%  
+    mutate (year_n = parse_number (year))
+}
+nuts &amp;lt;-read_csv (&amp;quot;nuts.csv&amp;quot;, col_types = cols(), locale = readr::locale (encoding = &amp;quot;latin1&amp;quot;), na = c(&amp;quot;..&amp;quot;, &amp;quot;NA&amp;quot;)) %&amp;gt;%
+  mutate(NUTS2_sh = substr(NUTS2, 1, 4))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: Missing column names filled in: &amp;#39;X1&amp;#39; [1]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;nuts %&amp;gt;% 
+  distinct (NUTS2_en) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Nomenclature des Unités Territoriales Statistiques (NUTS)&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-1&#34;&gt;Table 1: &lt;/span&gt;Nomenclature des Unités Territoriales Statistiques (NUTS)&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;NUTS2_en&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE11 Stockholm&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE12 East-Central Sweden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE21 Småland and islands&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE22 South Sweden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE23 West Sweden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE31 North-Central Sweden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE32 Central Norrland&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE33 Upper Norrland&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;map_ln_n &amp;lt;- map_ln %&amp;gt;%
+  mutate(lnkod_n = as.numeric(lnkod)) &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CG.csv, &lt;a href=&#34;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&#34; class=&#34;uri&#34;&gt;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I have renamed the file to 000000CG_sector.csv because the filename 000000CG.csv was used in a previous post.&lt;/p&gt;
+&lt;p&gt;The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary 1-3 public sector 4-5 private sector&lt;/p&gt;
+&lt;p&gt;Only 17 occupational groups have employees in both the public and the private sector in all regions and both genders.&lt;/p&gt;
+&lt;p&gt;In the plot and tables, you can also find information on how the increase in salaries per year for each occupational group is affected when the interactions are taken into account.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb &amp;lt;- readfile (&amp;quot;000000CG_sector.csv&amp;quot;) %&amp;gt;%
+  left_join(nuts %&amp;gt;% distinct (NUTS2_en, NUTS2_sh), by = c(&amp;quot;region&amp;quot; = &amp;quot;NUTS2_en&amp;quot;)) 
+  
+tb_map &amp;lt;- readfile (&amp;quot;000000CG_sector.csv&amp;quot;) %&amp;gt;%
+  left_join(nuts, by = c(&amp;quot;region&amp;quot; = &amp;quot;NUTS2_en&amp;quot;)) %&amp;gt;%  
+  right_join(map_ln_n, by = c(&amp;quot;Länskod&amp;quot; = &amp;quot;lnkod_n&amp;quot;))
+
+
+summary_table = vector()
+anova_table = vector()
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp &amp;lt;- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] &amp;gt; 150){
+    model &amp;lt;- lm(log(salary) ~ region + sex + year_n + sector, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;none&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;none&amp;quot;))  
+  
+    model &amp;lt;- lm(log(salary) ~ region + sex + year_n * sector, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;sector and year&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;sector and year&amp;quot;))
+    
+    model &amp;lt;- lm(log(salary) ~ region + year_n + sex * sector, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;sex and sector&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;sex and sector&amp;quot;))   
+    
+    model &amp;lt;- lm(log(salary) ~ region * sector + year_n + sex, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;region and sector&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;region and sector&amp;quot;))
+    
+    model &amp;lt;- lm(log(salary) ~ region * sector * year_n * sex, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;region, sector, year and sex&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;region, sector, year and sex&amp;quot;))    
+  }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Note: model has aliased coefficients
+##       sums of squares computed by model comparison&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;anova_table &amp;lt;- anova_table %&amp;gt;% rowwise() %&amp;gt;% mutate(contcol = str_count(term, &amp;quot;:&amp;quot;)) 
+
+summary_table &amp;lt;- summary_table %&amp;gt;% rowwise() %&amp;gt;% mutate(contcol = str_count(term, &amp;quot;:&amp;quot;))
+
+merge(summary_table, anova_table, by = c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (term.y == &amp;quot;sector&amp;quot;) %&amp;gt;%    
+  filter (interaction == &amp;quot;none&amp;quot;) %&amp;gt;%
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = &amp;quot;Increase in salaries (% / year)&amp;quot;,
+      y = &amp;quot;F-value for sector&amp;quot;
+    )   &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-2&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-2-1.png&#34; alt=&#34;The significance of the sector on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 1: The significance of the sector on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, by = c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 0) %&amp;gt;%    
+  # only look at the interactions between all four variables in the case with interaction region, sector, year and sex
+  filter (!(contcol.y &amp;lt; 3 &amp;amp; interaction == &amp;quot;region, sector, year and sex&amp;quot;)) %&amp;gt;% 
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = &amp;quot;Increase in salaries (% / year)&amp;quot;,
+      y = &amp;quot;F-value for interaction&amp;quot;
+    )   &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-3&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-3-1.png&#34; alt=&#34;The significance of the interaction between sector, region, year and sex on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 2: The significance of the interaction between sector, region, year and sex on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The tables with all occupational groups sorted by F-value in descending order.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (term.y == &amp;quot;sector&amp;quot;) %&amp;gt;%   
+  filter (interaction == &amp;quot;none&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (sector) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-4&#34;&gt;Table 2: &lt;/span&gt;Correlation for F-value (sector) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.109153&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;606.2792907&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.994107&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;429.7668310&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.237594&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;350.7420490&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.316554&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;337.4390522&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.142349&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;325.6103179&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.609024&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;160.8870308&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.064925&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;160.8111547&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.310435&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;121.7693426&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.575584&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;87.3548855&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.391839&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;67.5617978&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.541572&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;62.6562426&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.850523&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;40.6132964&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.087753&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;28.9529104&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.743468&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;23.7179785&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.549989&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.7604793&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.144353&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.3115207&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.228746&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.9809486&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 0) %&amp;gt;%   
+  filter (interaction == &amp;quot;sector and year&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (sector and year) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-5&#34;&gt;Table 3: &lt;/span&gt;Correlation for F-value (sector and year) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.433516&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;33.8973413&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.307155&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;29.5467642&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.105104&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.0659029&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.207414&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;13.0526621&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.516074&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.1796329&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.006941&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5233548&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.574538&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3362535&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.274618&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1961501&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.451836&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8814544&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.373536&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.7836435&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.346673&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.7147906&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.419651&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4459847&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.331794&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1848832&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.194200&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1846190&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.022334&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1743591&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.161504&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0068543&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.969149&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0050259&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 0) %&amp;gt;%   
+  filter (interaction == &amp;quot;sex and sector&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (sex and sector) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-6&#34;&gt;Table 4: &lt;/span&gt;Correlation for F-value (sex and sector) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.133410&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;79.736907&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.228746&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;75.904108&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.087753&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;68.455216&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.994107&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;67.051008&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.279052&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;38.608554&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.592312&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;30.583657&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.144353&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;22.396698&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.383471&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;16.198924&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.083508&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.156166&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.541572&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;13.144544&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.850523&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.478531&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.316554&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.349359&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.234948&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.109736&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.109153&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.668667&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.743468&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.370694&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.575584&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.834672&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.549989&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.337874&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sex and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 0) %&amp;gt;%   
+  filter (interaction == &amp;quot;region and sector&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (region and sector) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-7&#34;&gt;Table 5: &lt;/span&gt;Correlation for F-value (region and sector) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.541572&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;16.7817739&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.316554&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.6603633&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.987167&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;14.5447961&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.575584&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.9929801&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.635986&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.9897434&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.994107&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.9608534&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.228746&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.3539434&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.238072&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.7558819&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.143390&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.6578803&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.376311&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.6423707&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.307531&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.8460603&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.737061&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.5329715&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.850523&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0881293&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.549989&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2991877&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.087753&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.4424330&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.109153&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.3179558&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.155241&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.8264589&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region and sector&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 1) %&amp;gt;%   
+  filter (interaction == &amp;quot;region and sector&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (region, year and sex) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-8&#34;&gt;Table 6: &lt;/span&gt;Correlation for F-value (region, year and sex) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 1) %&amp;gt;%   
+  filter (interaction == &amp;quot;region, sector, year and sex&amp;quot;) %&amp;gt;%
+  filter (!(contcol.y &amp;lt; 3 &amp;amp; interaction == &amp;quot;region, sector, year and sex&amp;quot;)) %&amp;gt;%  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (region, year and sex) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-9&#34;&gt;Table 7: &lt;/span&gt;Correlation for F-value (region, year and sex) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.218326&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7426159&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.276319&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6593769&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.629354&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4639758&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.364653&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2289954&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.629773&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2261226&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.036891&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0868544&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.867532&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8789097&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.147019&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.7672297&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.270852&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.6781257&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.594389&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.9665480&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.028698&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.7221792&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.067457&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6784005&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.885436&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.5793881&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.169526&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4994580&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.071111&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4768272&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.349001&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.3542025&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.489542&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.2528065&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;region, sector, year and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Let’s check what we have found.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;962 Newspaper distributors, janitors and other service workers&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n + sex + NUTS2_sh + sector, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-101&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-10-1.png&#34; alt=&#34;Highest F-value sector, Newspaper distributors, janitors and other service workers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 3: Highest F-value sector, Newspaper distributors, janitors and other service workers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb_map %&amp;gt;%
+    filter(`occuptional  (SSYK 2012)` == &amp;quot;962 Newspaper distributors, janitors and other service workers&amp;quot;) %&amp;gt;%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ sector) + 
+    coord_equal() &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-102&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-10-2.png&#34; alt=&#34;Highest F-value sector, Newspaper distributors, janitors and other service workers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 4: Highest F-value sector, Newspaper distributors, janitors and other service workers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;332 Insurance advisers, sales and purchasing agents&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n + sex + NUTS2_sh + sector, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-11&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-11-1.png&#34; alt=&#34;Lowest F-value sector, Insurance advisers, sales and purchasing agents&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 5: Lowest F-value sector, Insurance advisers, sales and purchasing agents
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;241 Accountants, financial analysts and fund managers&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n + sex * sector + NUTS2_sh, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;sector&amp;quot;, &amp;quot;sex&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-121&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-12-1.png&#34; alt=&#34;Highest F-value interaction gender and sector, Accountants, financial analysts and fund managers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 6: Highest F-value interaction gender and sector, Accountants, financial analysts and fund managers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb_map %&amp;gt;%
+    filter(`occuptional  (SSYK 2012)` == &amp;quot;241 Accountants, financial analysts and fund managers&amp;quot;) %&amp;gt;%
+  filter (sector == &amp;quot;1-3 public sector&amp;quot;) %&amp;gt;%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ sex) + 
+    coord_equal() &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-122&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-12-2.png&#34; alt=&#34;Highest F-value interaction gender and sector, Accountants, financial analysts and fund managers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 7: Highest F-value interaction gender and sector, Accountants, financial analysts and fund managers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb_map %&amp;gt;%
+    filter(`occuptional  (SSYK 2012)` == &amp;quot;241 Accountants, financial analysts and fund managers&amp;quot;) %&amp;gt;%
+  filter (sector == &amp;quot;4-5 private sector&amp;quot;) %&amp;gt;%  
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ sex) + 
+    coord_equal() &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-123&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-12-3.png&#34; alt=&#34;Highest F-value interaction gender and sector, Accountants, financial analysts and fund managers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 8: Highest F-value interaction gender and sector, Accountants, financial analysts and fund managers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;422 Client information clerks&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n + sex * sector + NUTS2_sh, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;sector&amp;quot;, &amp;quot;sex&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-13&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-13-1.png&#34; alt=&#34;Lowest F-value interaction gender and sector, Client information clerks&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 9: Lowest F-value interaction gender and sector, Client information clerks
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;422 Client information clerks&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh + sex , data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;year_n&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-141&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-14-1.png&#34; alt=&#34;Highest F-value interaction year and sector, Client information clerks&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 10: Highest F-value interaction year and sector, Client information clerks
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb_map %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;422 Client information clerks&amp;quot;) %&amp;gt;%
+  filter (sector == &amp;quot;1-3 public sector&amp;quot;) %&amp;gt;%  
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-142&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-14-2.png&#34; alt=&#34;Highest F-value interaction year and sector, Client information clerks&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 11: Highest F-value interaction year and sector, Client information clerks
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb_map %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;422 Client information clerks&amp;quot;) %&amp;gt;%
+  filter (sector == &amp;quot;4-5 private sector&amp;quot;) %&amp;gt;%  
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-143&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-14-3.png&#34; alt=&#34;Highest F-value interaction year and sector, Client information clerks&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 12: Highest F-value interaction year and sector, Client information clerks
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;331 Financial and accounting associate professionals&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n * sector + NUTS2_sh + sex , data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;year_n&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-15&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-15-1.png&#34; alt=&#34;Lowest F-value interaction year and sector, Financial and accounting associate professionals&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 13: Lowest F-value interaction year and sector, Financial and accounting associate professionals
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;432 Stores and transport clerks&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n + sector * NUTS2_sh + sex , data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;NUTS2_sh&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-161&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-16-1.png&#34; alt=&#34;Highest F-value interaction region and sector, Stores and transport clerks&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 14: Highest F-value interaction region and sector, Stores and transport clerks
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb_map %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;432 Stores and transport clerks&amp;quot;) %&amp;gt;%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ sector) + 
+    coord_equal() &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-162&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-16-2.png&#34; alt=&#34;Highest F-value interaction region and sector, Stores and transport clerks&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 15: Highest F-value interaction region and sector, Stores and transport clerks
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;941 Fast-food workers, food preparation assistants&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n + sector * NUTS2_sh + sex , data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;NUTS2_sh&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-17&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-17-1.png&#34; alt=&#34;Lowest F-value interaction sector and region, Fast-food workers, food preparation assistants&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 16: Lowest F-value interaction sector and region, Fast-food workers, food preparation assistants
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;351 ICT operations and user support technicians&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n * NUTS2_sh * sex * sector, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;NUTS2_sh&amp;quot;, &amp;quot;year_n&amp;quot;, &amp;quot;sector&amp;quot;,  &amp;quot;sex&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: Package `see` needed to plot multiple panels in one integrated figure.
+## Please install it by typing `install.packages(&amp;quot;see&amp;quot;, dependencies = TRUE)` into
+## the console.&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [[1]]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-181&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-18-1.png&#34; alt=&#34;Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 17: Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## [[2]]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-182&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-18-2.png&#34; alt=&#34;Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 18: Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb_map %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;351 ICT operations and user support technicians&amp;quot;) %&amp;gt;%
+  filter (sector == &amp;quot;1-3 public sector&amp;quot;) %&amp;gt;%
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-183&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-18-3.png&#34; alt=&#34;Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 19: Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb_map %&amp;gt;%
+    filter(`occuptional  (SSYK 2012)` == &amp;quot;351 ICT operations and user support technicians&amp;quot;) %&amp;gt;%
+  filter (sector == &amp;quot;4-5 private sector&amp;quot;) %&amp;gt;%  
+  ggplot() +
+    geom_polygon(mapping = aes(x = ggplot_long, y = ggplot_lat, group = lnkod, fill = salary)) +
+      facet_grid(. ~ year) + 
+    coord_equal() &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-184&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-18-4.png&#34; alt=&#34;Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 20: Highest F-value interaction sector, region, year and gender, ICT operations and user support technicians
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;  temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;422 Client information clerks&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n * NUTS2_sh * sex * sector, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;NUTS2_sh&amp;quot;, &amp;quot;year_n&amp;quot;, &amp;quot;sector&amp;quot;,  &amp;quot;sex&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: Package `see` needed to plot multiple panels in one integrated figure.
+## Please install it by typing `install.packages(&amp;quot;see&amp;quot;, dependencies = TRUE)` into
+## the console.&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [[1]]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-191&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-19-1.png&#34; alt=&#34;Lowest F-value interaction sector, region, year and gender, Client information clerks&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 21: Lowest F-value interaction sector, region, year and gender, Client information clerks
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## [[2]]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-192&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-19-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-19-2.png&#34; alt=&#34;Lowest F-value interaction sector, region, year and gender, Client information clerks&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 22: Lowest F-value interaction sector, region, year and gender, Client information clerks
+&lt;/p&gt;
+&lt;/div&gt;
+`</description>
+    </item>
     
     <item>
       <title>The significance of the sector on the salary of engineers in Sweden</title>
