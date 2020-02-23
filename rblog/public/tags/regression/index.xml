@@ -13,11 +13,1793 @@
     <language>en-us</language>
     
     
-    <lastBuildDate>Wed, 19 Feb 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 23 Feb 2020 00:00:00 +0000</lastBuildDate>
     
     
         <atom:link href="/tags/regression/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>The significance of the sector on the salary in Sweden, a comparison between different occupational groups, part 2</title>
+      <link>/2020/02/23/the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2/</link>
+      <pubDate>Sun, 23 Feb 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/02/23/the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2/</guid>
+      <description>
+
+
+&lt;p&gt;In my last post, I examined the significance of the sector on the salary for different occupational groups using statistics from different regions. In previous posts I have shown a correlation between the salary and experience and also salary and education, In this post, I will examine the correlation between salary and sector using statistics for age.&lt;/p&gt;
+&lt;p&gt;The F-value from the Anova table is used as the single value to discriminate how much the region and salary correlates. For exploratory analysis, the Anova value seems good enough.&lt;/p&gt;
+&lt;p&gt;First, define libraries and functions.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (tidyverse)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## -- Attaching packages --------------------------------------------------- tidyverse 1.3.0 --&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## v ggplot2 3.2.1     v purrr   0.3.3
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   1.0.2     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## -- Conflicts ------------------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (broom)
+library (car)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: carData&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;car&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:dplyr&amp;#39;:
+## 
+##     recode&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:purrr&amp;#39;:
+## 
+##     some&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (sjPlot)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Registered S3 methods overwritten by &amp;#39;lme4&amp;#39;:
+##   method                          from
+##   cooks.distance.influence.merMod car 
+##   influence.merMod                car 
+##   dfbeta.influence.merMod         car 
+##   dfbetas.influence.merMod        car&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;readfile &amp;lt;- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &amp;quot;latin1&amp;quot;), na = c(&amp;quot;..&amp;quot;, &amp;quot;NA&amp;quot;)) %&amp;gt;%
+  gather (starts_with(&amp;quot;19&amp;quot;), starts_with(&amp;quot;20&amp;quot;), key = &amp;quot;year&amp;quot;, value = salary) %&amp;gt;%
+  drop_na() %&amp;gt;%
+  mutate (year_n = parse_number (year))
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000D2.csv, &lt;a href=&#34;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&#34; class=&#34;uri&#34;&gt;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I have renamed the file to 000000D2_sector.csv because the filename 000000D2.csv was used in a previous post.&lt;/p&gt;
+&lt;p&gt;The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and age. Year 2014 - 2018 Monthly salary 1-3 public sector 4-5 private sector&lt;/p&gt;
+&lt;p&gt;In the plot and tables, you can also find information on how the increase in salaries per year for each occupational group is affected when the interactions are taken into account.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb &amp;lt;- readfile(&amp;quot;000000D2_sector.csv&amp;quot;) %&amp;gt;%
+  rowwise() %&amp;gt;%
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &amp;quot;-&amp;quot;), strtoi))[1]) %&amp;gt;%
+  rowwise() %&amp;gt;%
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), &amp;quot;-&amp;quot;), strtoi))[2]) %&amp;gt;%
+  mutate(age_n = (age_l + age_h) / 2)
+
+summary_table = 0
+anova_table = 0
+
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp &amp;lt;- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] &amp;gt; 90){
+    model &amp;lt;- lm(log(salary) ~ poly(age_n, 3) + sex + year_n + sector, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;none&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;none&amp;quot;))  
+  
+    model &amp;lt;- lm(log(salary) ~ poly(age_n, 3) * sector + sex + year_n, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;sector and age&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;sector and age&amp;quot;))  
+    
+    model &amp;lt;- lm(log(salary) ~ poly(age_n, 3) + sector * sex + year_n, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;sector and sex&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;sector and sex&amp;quot;))  
+    
+    model &amp;lt;- lm(log(salary) ~ poly(age_n, 3) +  year_n * sector + sex, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;sector and year&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;sector and year&amp;quot;))  
+    
+    model &amp;lt;- lm(log(salary) ~ poly(age_n, 3) * sector * sex * year_n, data = temp)
+    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &amp;quot;sector, year, age and sex&amp;quot;))
+    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &amp;quot;sector, year, age and sex&amp;quot;))      
+  }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Note: model has aliased coefficients
+##       sums of squares computed by model comparison
+## Note: model has aliased coefficients
+##       sums of squares computed by model comparison
+## Note: model has aliased coefficients
+##       sums of squares computed by model comparison
+## Note: model has aliased coefficients
+##       sums of squares computed by model comparison
+## Note: model has aliased coefficients
+##       sums of squares computed by model comparison&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;anova_table &amp;lt;- anova_table %&amp;gt;% rowwise() %&amp;gt;% mutate(contcol = str_count(term, &amp;quot;:&amp;quot;)) 
+
+summary_table &amp;lt;- summary_table %&amp;gt;% rowwise() %&amp;gt;% mutate(contcol = str_count(term, &amp;quot;:&amp;quot;))
+
+merge(summary_table, anova_table, by = c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (term.y == &amp;quot;sector&amp;quot;) %&amp;gt;%    
+  filter (interaction == &amp;quot;none&amp;quot;) %&amp;gt;%
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = &amp;quot;Increase in salaries (% / year)&amp;quot;,
+      y = &amp;quot;F-value for sector&amp;quot;
+    )   &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-2&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-2-1.png&#34; alt=&#34;The significance of the sector on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 1: The significance of the sector on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, by = c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 0) %&amp;gt;%    
+  # only look at the interactions between all four variables in the case with interaction sector, year, age and sex
+  filter (!(contcol.y &amp;lt; 3 &amp;amp; interaction == &amp;quot;sector, year, age and sex&amp;quot;)) %&amp;gt;% 
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = &amp;quot;Increase in salaries (% / year)&amp;quot;,
+      y = &amp;quot;F-value for interaction&amp;quot;
+    ) &lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-3&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-3-1.png&#34; alt=&#34;The significance of the interaction between sector, age, year and sex on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 2: The significance of the interaction between sector, age, year and sex on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The tables with all occupational groups sorted by F-value in descending order.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (term.y == &amp;quot;sector&amp;quot;) %&amp;gt;%   
+  filter (interaction == &amp;quot;none&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (sector) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-4&#34;&gt;Table 1: &lt;/span&gt;Correlation for F-value (sector) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;218 Specialists within environmental and health protection&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3966875&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;456.4704739&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;261 Legal professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6130221&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;304.1919940&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3419860&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;285.0349753&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;222 Nursing professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.6578230&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;280.4433905&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;515 Building caretakers and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2146338&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;270.0075297&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;819 Process control technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5350438&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;268.3445857&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0523696&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;259.5458010&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3512692&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;241.0997355&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5801263&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;237.2341857&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;333 Business services agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3936321&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;218.8431989&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;334 Administrative and specialized secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0432078&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;197.0091850&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;243 Marketing and public relations professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.7547524&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;188.6715597&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;335 Tax and related government associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4477931&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;179.6275210&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;342 Athletes, fitness instructors and recreational workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8086152&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;178.9426205&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9900356&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;178.5334093&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;213 Biologists, pharmacologists and specialists in agriculture and forestry&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8912397&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;161.3670379&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;265 Creative and performing artists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0992262&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;156.9400225&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4619072&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;134.7081954&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7045039&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;117.0092304&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1803329&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;111.0703889&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;264 Authors, journalists and linguists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2865429&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;93.9690111&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;211 Physicists and chemists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0010438&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;65.4196943&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9306757&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;64.9465316&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;231 University and higher education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3987358&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;58.9926983&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2500326&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;54.4430468&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;815 Machine operators, textile, fur and leather products&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.3517419&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;48.6411876&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;723 Machinery mechanics and fitters&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4251751&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;48.2416487&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;233 Secondary education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0390165&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;38.5627689&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4686744&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;37.8718779&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;228 Specialists in health care not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1589844&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;36.5601628&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9960527&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;18.6514673&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;216 Architects and surveyors&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.8323556&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.8227312&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;235 Teaching professionals not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.6582824&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;14.3745577&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;532 Personal care workers in health services&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0076073&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;12.2147525&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7704145&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;12.1641422&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;234 Primary- and pre-school teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.4774983&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.3900661&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;511 Cabin crew, guides and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.3443427&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6.9533625&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0233419&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.1208491&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;533 Health care assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2271720&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.8058895&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2044676&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.2832833&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;531 Child care workers and teachers aides&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9105637&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.0479235&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7995742&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1850611&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;341 Social work and religious associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5651458&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1164875&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9337354&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.7577500&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;611 Market gardeners and crop growers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8041743&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0643998&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;512 Cooks and cold-buffet managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7942944&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0197082&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;none&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 0) %&amp;gt;%   
+  filter (interaction == &amp;quot;sector and sex&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (sector and sex) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-5&#34;&gt;Table 2: &lt;/span&gt;Correlation for F-value (sector and sex) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9306757&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;109.1411280&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;335 Tax and related government associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4477931&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;70.7824355&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;815 Machine operators, textile, fur and leather products&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.3563289&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;31.8117555&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;333 Business services agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2899853&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;30.4752880&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2023600&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;25.9296892&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;342 Athletes, fitness instructors and recreational workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8086152&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;25.0203935&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4786358&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;24.2528951&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;264 Authors, journalists and linguists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2453619&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;21.8740576&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;533 Health care assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2271720&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;21.5539071&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;243 Marketing and public relations professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.7263442&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;19.6730093&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2044676&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;19.3664844&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;611 Market gardeners and crop growers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.7542849&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.6290927&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;532 Personal care workers in health services&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0076073&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;12.5499477&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;213 Biologists, pharmacologists and specialists in agriculture and forestry&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8973847&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.5413223&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5636636&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.5201918&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0388525&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.8030347&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7045039&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.5568275&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;211 Physicists and chemists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9926264&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.5217104&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;235 Teaching professionals not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.6228416&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.7033533&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;512 Cooks and cold-buffet managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7942944&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.4926902&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9960527&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.8523689&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9247904&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.3361868&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;218 Specialists within environmental and health protection&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3902920&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2726896&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;231 University and higher education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4049429&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.1968905&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;222 Nursing professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.6527974&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.8848508&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;265 Creative and performing artists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0908231&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4335097&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9900356&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3091055&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;233 Secondary education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0478812&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.6616950&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;228 Specialists in health care not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2271410&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.4295653&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;819 Process control technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5350438&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.1646979&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2500326&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.1488532&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0233419&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.1344410&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;261 Legal professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6014900&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.1208624&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;531 Child care workers and teachers aides&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9034289&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.0441681&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3419860&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.8053533&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7938330&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.7610648&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;341 Social work and religious associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5666541&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6898733&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4707255&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4188795&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3512692&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.2019761&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;234 Primary- and pre-school teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.4774983&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1910697&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;334 Administrative and specialized secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0473936&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1673844&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;723 Machinery mechanics and fitters&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4270025&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0946975&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;216 Architects and surveyors&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.8323370&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0480519&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;515 Building caretakers and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2148711&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0466927&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7695781&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0317138&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;511 Cabin crew, guides and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.3452668&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0263848&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 0) %&amp;gt;%   
+  filter (interaction == &amp;quot;sector and age&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (sector and age) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-6&#34;&gt;Table 3: &lt;/span&gt;Correlation for F-value (sector and age) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3512692&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;81.293931&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0233419&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;74.994233&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;234 Primary- and pre-school teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.4774983&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;50.554556&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;511 Cabin crew, guides and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.3214703&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;49.726047&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1760115&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;43.716282&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9372268&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;41.355837&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7045039&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;37.992660&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4925081&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;31.914364&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0984548&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;31.372391&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4763530&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;24.396462&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;342 Athletes, fitness instructors and recreational workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8086152&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;21.878170&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2044676&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;20.887588&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;333 Business services agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5711782&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;20.728956&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;261 Legal professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6542145&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;19.114710&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;233 Secondary education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.1089611&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;18.460571&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2500326&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;18.166197&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;243 Marketing and public relations professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8298739&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;16.372110&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;231 University and higher education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5000216&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.799814&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3419860&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.436701&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;235 Teaching professionals not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8467331&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.280487&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;211 Physicists and chemists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9949354&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.545117&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;213 Biologists, pharmacologists and specialists in agriculture and forestry&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8835767&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.142152&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;228 Specialists in health care not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0243679&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.920972&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;335 Tax and related government associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4477931&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.914843&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9960527&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.718505&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;341 Social work and religious associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5816295&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.475763&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;216 Architects and surveyors&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7872555&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.229637&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5872747&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.122166&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9306757&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.084293&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;815 Machine operators, textile, fur and leather products&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.3751133&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.636766&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;334 Administrative and specialized secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1355883&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.153296&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;218 Specialists within environmental and health protection&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4620357&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6.994422&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9900356&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6.838603&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;531 Child care workers and teachers aides&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9226126&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6.070516&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;515 Building caretakers and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2192760&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6.005165&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7875316&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.421210&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;723 Machinery mechanics and fitters&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4360682&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.406378&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;819 Process control technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5350438&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;5.043236&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;264 Authors, journalists and linguists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2247505&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.044872&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;512 Cooks and cold-buffet managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7942944&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.928362&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;533 Health care assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2271720&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.673529&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;265 Creative and performing artists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0786906&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.538964&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7863137&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.497814&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;532 Personal care workers in health services&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0076073&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.339712&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;222 Nursing professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.6262827&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.287950&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;611 Market gardeners and crop growers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8042107&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.716068&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and age&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 0) %&amp;gt;%   
+  filter (interaction == &amp;quot;sector and year&amp;quot;) %&amp;gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (sector and year) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-7&#34;&gt;Table 4: &lt;/span&gt;Correlation for F-value (sector and year) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;222 Nursing professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2821623&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;52.9080079&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;235 Teaching professionals not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7102815&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;24.3392922&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;334 Administrative and specialized secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6824704&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;15.9484068&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;531 Child care workers and teachers aides&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3704462&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;13.8844930&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2226939&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;12.4412439&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5465829&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.9472608&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3719311&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;10.1007673&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;532 Personal care workers in health services&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7590988&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.0616925&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;611 Market gardeners and crop growers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4285881&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9.0355793&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;233 Secondary education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.4681159&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.2187247&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;264 Authors, journalists and linguists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2488108&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6.2777560&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.4272576&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.8822064&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.4475215&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.3685520&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;723 Machinery mechanics and fitters&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7726800&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.0300820&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;511 Cabin crew, guides and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-1.4636615&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.9854827&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;243 Marketing and public relations professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4174309&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.9092911&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2975181&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.6534643&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;533 Health care assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0202998&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.4258034&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;216 Architects and surveyors&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2766321&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0286083&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;512 Cooks and cold-buffet managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4761796&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1189296&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;231 University and higher education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7564149&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9590690&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1080113&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.3375758&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;265 Creative and performing artists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8252102&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.3073089&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;341 Social work and religious associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7179780&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.1525106&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4698420&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.8846941&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;515 Building caretakers and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0896486&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.8721029&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1070969&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.8453000&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3074810&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.7627131&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;213 Biologists, pharmacologists and specialists in agriculture and forestry&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1515840&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.7217108&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;815 Machine operators, textile, fur and leather products&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.5169216&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.7021796&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;333 Business services agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6770984&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6948266&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4961111&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6866667&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;261 Legal professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.9024857&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6474976&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;342 Athletes, fitness instructors and recreational workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0356952&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.5210552&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1319348&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4764820&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1030085&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4107102&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1837720&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.3653365&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;335 Tax and related government associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2476351&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.3329319&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;228 Specialists in health care not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0215985&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1994037&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4986510&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1694097&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;234 Primary- and pre-school teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.5227087&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0566620&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;211 Physicists and chemists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0509288&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0256116&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;819 Process control technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5525388&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0089722&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9579284&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0058151&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1471390&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0023497&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;218 Specialists within environmental and health protection&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3896946&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0012880&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector and year&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, c(&amp;quot;ssyk&amp;quot;, &amp;quot;interaction&amp;quot;), all = TRUE) %&amp;gt;%
+  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
+  filter (contcol.y &amp;gt; 1) %&amp;gt;%   
+  filter (interaction == &amp;quot;sector, year, age and sex&amp;quot;) %&amp;gt;%
+  filter (!(contcol.y &amp;lt; 3 &amp;amp; interaction == &amp;quot;sector, year, age and sex&amp;quot;)) %&amp;gt;%  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&amp;gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&amp;gt;%
+  rename (`F-value` = statistic.y) %&amp;gt;%
+  rename (`Increase in salary` = estimate) %&amp;gt;%
+  arrange (desc (`F-value`)) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Correlation for F-value (sector, year, age and sex) and the yearly increase in salaries&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-8&#34;&gt;Table 5: &lt;/span&gt;Correlation for F-value (sector, year, age and sex) and the yearly increase in salaries&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
+&lt;th align=&#34;right&#34;&gt;F-value&lt;/th&gt;
+&lt;th align=&#34;left&#34;&gt;interaction&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4648855&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;11.6391393&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;342 Athletes, fitness instructors and recreational workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0991670&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8.9098726&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;216 Architects and surveyors&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2301466&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7.6322806&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;228 Specialists in health care not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.5176747&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;4.1043437&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2641978&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.9184148&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;218 Specialists within environmental and health protection&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4573789&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.6168903&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;261 Legal professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.7581752&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.2902539&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;235 Teaching professionals not elsewhere classified&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4011513&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0277439&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;335 Tax and related government associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0292874&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6128635&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;341 Social work and religious associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6319084&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6004044&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;233 Secondary education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.5273156&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2615012&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4662860&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9867325&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9900178&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9221016&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;512 Cooks and cold-buffet managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5222219&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9206611&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6603985&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.8150814&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;213 Biologists, pharmacologists and specialists in agriculture and forestry&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3962841&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.7496638&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1197350&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.5815397&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;511 Cabin crew, guides and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.6957497&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.5410098&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;211 Physicists and chemists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3310509&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.5257771&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;333 Business services agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.9306066&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.5169994&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;819 Process control technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5394398&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.4148181&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;723 Machinery mechanics and fitters&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.9145883&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.2913243&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;234 Primary- and pre-school teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.5373214&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.2588294&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;533 Health care assistants&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.0561764&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.1641262&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;222 Nursing professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.3141175&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.1593790&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;515 Building caretakers and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3554368&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.0916712&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;334 Administrative and specialized secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;-0.4841162&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.8627072&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;264 Authors, journalists and linguists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.8766371&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.8178463&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1959143&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.8087407&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;531 Child care workers and teachers aides&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4624435&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6787061&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;815 Machine operators, textile, fur and leather products&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.2558500&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6507638&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1412580&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.6425880&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.4063713&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.5077368&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1618484&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.5005162&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.3819183&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4079113&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;265 Creative and performing artists&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.7171084&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.4046591&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;1.9650332&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.3867492&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.0661705&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.3303477&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;611 Market gardeners and crop growers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1758845&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1794678&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;3.3472478&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1238188&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.2161856&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1214610&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1371036&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.1080593&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.3576411&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0748416&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;532 Personal care workers in health services&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.6448524&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0675532&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;231 University and higher education teachers&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.5212252&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0231719&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;243 Marketing and public relations professionals&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;2.1626640&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;0.0083390&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;sector, year, age and sex&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Let’s check what we have found.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;218 Specialists within environmental and health protection&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n + poly(age_n, 3) + sector + sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-9&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-9-1.png&#34; alt=&#34;Highest F-value sector, Specialists within environmental and health protection&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 3: Highest F-value sector, Specialists within environmental and health protection
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;512 Cooks and cold-buffet managers&amp;quot;)
+ 
+model &amp;lt;-lm (log(salary) ~ year_n + poly(age_n, 3) + sector + sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-10&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-10-1.png&#34; alt=&#34;Lowest F-value sector, Cooks and cold-buffet managers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 4: Lowest F-value sector, Cooks and cold-buffet managers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;911 Cleaners and helpers&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n + poly(age_n, 3) + sector * sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;sex&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-11&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-11-1.png&#34; alt=&#34;Highest F-value interaction sector and gender, Cleaners and helpers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 5: Highest F-value interaction sector and gender, Cleaners and helpers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;511 Cabin crew, guides and related workers&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n + poly(age_n, 3) + sector * sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;sex&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-12&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-12-1.png&#34; alt=&#34;Lowest F-value interaction sector and gender, Cabin crew, guides and related workers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 6: Lowest F-value interaction sector and gender, Cabin crew, guides and related workers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;251 ICT architects, systems analysts and test managers&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n + poly(age_n, 3) * sector + sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-13&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-13-1.png&#34; alt=&#34;Highest F-value interaction sector and age, ICT architects, systems analysts and test managers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 7: Highest F-value interaction sector and age, ICT architects, systems analysts and test managers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;611 Market gardeners and crop growers&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n + poly(age_n, 3) * sector + sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-14&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-14-1.png&#34; alt=&#34;Lowest F-value interaction sector and age, Market gardeners and crop growers&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 8: Lowest F-value interaction sector and age, Market gardeners and crop growers
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;222 Nursing professionals&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n * sector + poly(age_n, 3) + sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;year_n&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-15&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-15-1.png&#34; alt=&#34;Highest F-value interaction sector and year, Nursing professionals&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 9: Highest F-value interaction sector and year, Nursing professionals
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;218 Specialists within environmental and health protection&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n * sector + poly(age_n, 3) + sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;year_n&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-16&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-16-1.png&#34; alt=&#34;Lowest F-value interaction sector and year, Specialists within environmental and health protection&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 10: Lowest F-value interaction sector and year, Specialists within environmental and health protection
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;214 Engineering professionals&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n * poly(age_n, 3) * sector * sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;year_n&amp;quot;, &amp;quot;sex&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-17&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-17-1.png&#34; alt=&#34;Highest F-value interaction sector, age, year and gender, Engineering professionals&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 11: Highest F-value interaction sector, age, year and gender, Engineering professionals
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 1) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (2-2,1-1) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;243 Marketing and public relations professionals&amp;quot;)
+ 
+model &amp;lt;- lm (log(salary) ~ year_n * poly(age_n, 3) * sector * sex, data = temp) 
+ 
+plot_model(model, type = &amp;quot;pred&amp;quot;, terms = c(&amp;quot;age_n&amp;quot;, &amp;quot;year_n&amp;quot;, &amp;quot;sex&amp;quot;, &amp;quot;sector&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-18&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-18-1.png&#34; alt=&#34;Lowest F-value interaction sector, age, year and gender, Marketing and public relations professionals&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 12: Lowest F-value interaction sector, age, year and gender, Marketing and public relations professionals
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 1) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (2-2,1-1) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
     
     <item>
       <title>The significance of the sector on the salary in Sweden, a comparison between different occupational groups</title>

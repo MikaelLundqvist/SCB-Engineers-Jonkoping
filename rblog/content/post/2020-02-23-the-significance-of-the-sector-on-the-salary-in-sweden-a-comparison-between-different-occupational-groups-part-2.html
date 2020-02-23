@@ -1,0 +1,1786 @@
+---
+title: The significance of the sector on the salary in Sweden, a comparison between
+  different occupational groups, part 2
+author: Mikael Lundqvist
+date: '2020-02-23'
+slug: the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+
+
+<p>In my last post, I examined the significance of the sector on the salary for different occupational groups using statistics from different regions. In previous posts I have shown a correlation between the salary and experience and also salary and education, In this post, I will examine the correlation between salary and sector using statistics for age.</p>
+<p>The F-value from the Anova table is used as the single value to discriminate how much the region and salary correlates. For exploratory analysis, the Anova value seems good enough.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------------------- tidyverse 1.3.0 --</code></pre>
+<pre><code>## v ggplot2 3.2.1     v purrr   0.3.3
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   1.0.2     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library (broom)
+library (car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre class="r"><code>library (sjPlot)</code></pre>
+<pre><code>## Registered S3 methods overwritten by &#39;lme4&#39;:
+##   method                          from
+##   cooks.distance.influence.merMod car 
+##   influence.merMod                car 
+##   dfbeta.influence.merMod         car 
+##   dfbetas.influence.merMod        car</code></pre>
+<pre class="r"><code>readfile &lt;- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%
+  gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = salary) %&gt;%
+  drop_na() %&gt;%
+  mutate (year_n = parse_number (year))
+}</code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000D2.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>I have renamed the file to 000000D2_sector.csv because the filename 000000D2.csv was used in a previous post.</p>
+<p>The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and age. Year 2014 - 2018 Monthly salary 1-3 public sector 4-5 private sector</p>
+<p>In the plot and tables, you can also find information on how the increase in salaries per year for each occupational group is affected when the interactions are taken into account.</p>
+<pre class="r"><code>tb &lt;- readfile(&quot;000000D2_sector.csv&quot;) %&gt;%
+  rowwise() %&gt;%
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[1]) %&gt;%
+  rowwise() %&gt;%
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[2]) %&gt;%
+  mutate(age_n = (age_l + age_h) / 2)
+
+summary_table = 0
+anova_table = 0
+
+for (i in unique(tb$`occuptional  (SSYK 2012)`)){
+  temp &lt;- filter(tb, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] &gt; 90){
+    model &lt;- lm(log(salary) ~ poly(age_n, 3) + sex + year_n + sector, data = temp)
+    summary_table &lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &quot;none&quot;))
+    anova_table &lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &quot;none&quot;))  
+  
+    model &lt;- lm(log(salary) ~ poly(age_n, 3) * sector + sex + year_n, data = temp)
+    summary_table &lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &quot;sector and age&quot;))
+    anova_table &lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &quot;sector and age&quot;))  
+    
+    model &lt;- lm(log(salary) ~ poly(age_n, 3) + sector * sex + year_n, data = temp)
+    summary_table &lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &quot;sector and sex&quot;))
+    anova_table &lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &quot;sector and sex&quot;))  
+    
+    model &lt;- lm(log(salary) ~ poly(age_n, 3) +  year_n * sector + sex, data = temp)
+    summary_table &lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &quot;sector and year&quot;))
+    anova_table &lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &quot;sector and year&quot;))  
+    
+    model &lt;- lm(log(salary) ~ poly(age_n, 3) * sector * sex * year_n, data = temp)
+    summary_table &lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = &quot;sector, year, age and sex&quot;))
+    anova_table &lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = &quot;sector, year, age and sex&quot;))      
+  }
+}</code></pre>
+<pre><code>## Note: model has aliased coefficients
+##       sums of squares computed by model comparison
+## Note: model has aliased coefficients
+##       sums of squares computed by model comparison
+## Note: model has aliased coefficients
+##       sums of squares computed by model comparison
+## Note: model has aliased coefficients
+##       sums of squares computed by model comparison
+## Note: model has aliased coefficients
+##       sums of squares computed by model comparison</code></pre>
+<pre class="r"><code>anova_table &lt;- anova_table %&gt;% rowwise() %&gt;% mutate(contcol = str_count(term, &quot;:&quot;)) 
+
+summary_table &lt;- summary_table %&gt;% rowwise() %&gt;% mutate(contcol = str_count(term, &quot;:&quot;))
+
+merge(summary_table, anova_table, by = c(&quot;ssyk&quot;, &quot;interaction&quot;), all = TRUE) %&gt;%
+  filter (term.x == &quot;year_n&quot;) %&gt;%
+  filter (term.y == &quot;sector&quot;) %&gt;%    
+  filter (interaction == &quot;none&quot;) %&gt;%
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = &quot;Increase in salaries (% / year)&quot;,
+      y = &quot;F-value for sector&quot;
+    )   </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-2"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-2-1.png" alt="The significance of the sector on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 1: The significance of the sector on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>merge(summary_table, anova_table, by = c(&quot;ssyk&quot;, &quot;interaction&quot;), all = TRUE) %&gt;%
+  filter (term.x == &quot;year_n&quot;) %&gt;%
+  filter (contcol.y &gt; 0) %&gt;%    
+  # only look at the interactions between all four variables in the case with interaction sector, year, age and sex
+  filter (!(contcol.y &lt; 3 &amp; interaction == &quot;sector, year, age and sex&quot;)) %&gt;% 
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = &quot;Increase in salaries (% / year)&quot;,
+      y = &quot;F-value for interaction&quot;
+    ) </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-3"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-3-1.png" alt="The significance of the interaction between sector, age, year and sex on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 2: The significance of the interaction between sector, age, year and sex on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018
+</p>
+</div>
+<p>The tables with all occupational groups sorted by F-value in descending order.</p>
+<pre class="r"><code>merge(summary_table, anova_table, c(&quot;ssyk&quot;, &quot;interaction&quot;), all = TRUE) %&gt;%
+  filter (term.x == &quot;year_n&quot;) %&gt;%
+  filter (term.y == &quot;sector&quot;) %&gt;%   
+  filter (interaction == &quot;none&quot;) %&gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&gt;%
+  rename (`F-value` = statistic.y) %&gt;%
+  rename (`Increase in salary` = estimate) %&gt;%
+  arrange (desc (`F-value`)) %&gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &#39;Correlation for F-value (sector) and the yearly increase in salaries&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 1: </span>Correlation for F-value (sector) and the yearly increase in salaries</caption>
+<thead>
+<tr class="header">
+<th align="left">ssyk</th>
+<th align="right">Increase in salary</th>
+<th align="right">F-value</th>
+<th align="left">interaction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">218 Specialists within environmental and health protection</td>
+<td align="right">2.3966875</td>
+<td align="right">456.4704739</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">261 Legal professionals</td>
+<td align="right">2.6130221</td>
+<td align="right">304.1919940</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">411 Office assistants and other secretaries</td>
+<td align="right">2.3419860</td>
+<td align="right">285.0349753</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">222 Nursing professionals</td>
+<td align="right">4.6578230</td>
+<td align="right">280.4433905</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">515 Building caretakers and related workers</td>
+<td align="right">2.2146338</td>
+<td align="right">270.0075297</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">819 Process control technicians</td>
+<td align="right">2.5350438</td>
+<td align="right">268.3445857</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">242 Organisation analysts, policy administrators and human resource specialists</td>
+<td align="right">2.0523696</td>
+<td align="right">259.5458010</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">251 ICT architects, systems analysts and test managers</td>
+<td align="right">2.3512692</td>
+<td align="right">241.0997355</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">321 Medical and pharmaceutical technicians</td>
+<td align="right">2.5801263</td>
+<td align="right">237.2341857</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">333 Business services agents</td>
+<td align="right">2.3936321</td>
+<td align="right">218.8431989</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">334 Administrative and specialized secretaries</td>
+<td align="right">2.0432078</td>
+<td align="right">197.0091850</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">243 Marketing and public relations professionals</td>
+<td align="right">1.7547524</td>
+<td align="right">188.6715597</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">335 Tax and related government associate professionals</td>
+<td align="right">2.4477931</td>
+<td align="right">179.6275210</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">342 Athletes, fitness instructors and recreational workers</td>
+<td align="right">1.8086152</td>
+<td align="right">178.9426205</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">962 Newspaper distributors, janitors and other service workers</td>
+<td align="right">1.9900356</td>
+<td align="right">178.5334093</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">213 Biologists, pharmacologists and specialists in agriculture and forestry</td>
+<td align="right">1.8912397</td>
+<td align="right">161.3670379</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">265 Creative and performing artists</td>
+<td align="right">2.0992262</td>
+<td align="right">156.9400225</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">241 Accountants, financial analysts and fund managers</td>
+<td align="right">2.4619072</td>
+<td align="right">134.7081954</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">351 ICT operations and user support technicians</td>
+<td align="right">2.7045039</td>
+<td align="right">117.0092304</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">331 Financial and accounting associate professionals</td>
+<td align="right">2.1803329</td>
+<td align="right">111.0703889</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">264 Authors, journalists and linguists</td>
+<td align="right">2.2865429</td>
+<td align="right">93.9690111</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">211 Physicists and chemists</td>
+<td align="right">2.0010438</td>
+<td align="right">65.4196943</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">911 Cleaners and helpers</td>
+<td align="right">1.9306757</td>
+<td align="right">64.9465316</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">231 University and higher education teachers</td>
+<td align="right">2.3987358</td>
+<td align="right">58.9926983</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">541 Other surveillance and security workers</td>
+<td align="right">2.2500326</td>
+<td align="right">54.4430468</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">815 Machine operators, textile, fur and leather products</td>
+<td align="right">1.3517419</td>
+<td align="right">48.6411876</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">723 Machinery mechanics and fitters</td>
+<td align="right">2.4251751</td>
+<td align="right">48.2416487</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">233 Secondary education teachers</td>
+<td align="right">3.0390165</td>
+<td align="right">38.5627689</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">422 Client information clerks</td>
+<td align="right">2.4686744</td>
+<td align="right">37.8718779</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">228 Specialists in health care not elsewhere classified</td>
+<td align="right">2.1589844</td>
+<td align="right">36.5601628</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">941 Fast-food workers, food preparation assistants</td>
+<td align="right">1.9960527</td>
+<td align="right">18.6514673</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">216 Architects and surveyors</td>
+<td align="right">2.8323556</td>
+<td align="right">15.8227312</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">235 Teaching professionals not elsewhere classified</td>
+<td align="right">1.6582824</td>
+<td align="right">14.3745577</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">532 Personal care workers in health services</td>
+<td align="right">3.0076073</td>
+<td align="right">12.2147525</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">311 Physical and engineering science technicians</td>
+<td align="right">2.7704145</td>
+<td align="right">12.1641422</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">234 Primary- and pre-school teachers</td>
+<td align="right">3.4774983</td>
+<td align="right">7.3900661</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">511 Cabin crew, guides and related workers</td>
+<td align="right">-0.3443427</td>
+<td align="right">6.9533625</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">534 Attendants, personal assistants and related workers</td>
+<td align="right">2.0233419</td>
+<td align="right">5.1208491</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">533 Health care assistants</td>
+<td align="right">2.2271720</td>
+<td align="right">4.8058895</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">332 Insurance advisers, sales and purchasing agents</td>
+<td align="right">2.2044676</td>
+<td align="right">4.2832833</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">531 Child care workers and teachers aides</td>
+<td align="right">1.9105637</td>
+<td align="right">4.0479235</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">214 Engineering professionals</td>
+<td align="right">2.7995742</td>
+<td align="right">2.1850611</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">341 Social work and religious associate professionals</td>
+<td align="right">2.5651458</td>
+<td align="right">2.1164875</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">432 Stores and transport clerks</td>
+<td align="right">1.9337354</td>
+<td align="right">0.7577500</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">611 Market gardeners and crop growers</td>
+<td align="right">1.8041743</td>
+<td align="right">0.0643998</td>
+<td align="left">none</td>
+</tr>
+<tr class="even">
+<td align="left">512 Cooks and cold-buffet managers</td>
+<td align="right">2.7942944</td>
+<td align="right">0.0197082</td>
+<td align="left">none</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>merge(summary_table, anova_table, c(&quot;ssyk&quot;, &quot;interaction&quot;), all = TRUE) %&gt;%
+  filter (term.x == &quot;year_n&quot;) %&gt;%
+  filter (contcol.y &gt; 0) %&gt;%   
+  filter (interaction == &quot;sector and sex&quot;) %&gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&gt;%
+  rename (`F-value` = statistic.y) %&gt;%
+  rename (`Increase in salary` = estimate) %&gt;%
+  arrange (desc (`F-value`)) %&gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &#39;Correlation for F-value (sector and sex) and the yearly increase in salaries&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 2: </span>Correlation for F-value (sector and sex) and the yearly increase in salaries</caption>
+<thead>
+<tr class="header">
+<th align="left">ssyk</th>
+<th align="right">Increase in salary</th>
+<th align="right">F-value</th>
+<th align="left">interaction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">911 Cleaners and helpers</td>
+<td align="right">1.9306757</td>
+<td align="right">109.1411280</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">335 Tax and related government associate professionals</td>
+<td align="right">2.4477931</td>
+<td align="right">70.7824355</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">815 Machine operators, textile, fur and leather products</td>
+<td align="right">1.3563289</td>
+<td align="right">31.8117555</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">333 Business services agents</td>
+<td align="right">2.2899853</td>
+<td align="right">30.4752880</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">331 Financial and accounting associate professionals</td>
+<td align="right">2.2023600</td>
+<td align="right">25.9296892</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">342 Athletes, fitness instructors and recreational workers</td>
+<td align="right">1.8086152</td>
+<td align="right">25.0203935</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">241 Accountants, financial analysts and fund managers</td>
+<td align="right">2.4786358</td>
+<td align="right">24.2528951</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">264 Authors, journalists and linguists</td>
+<td align="right">2.2453619</td>
+<td align="right">21.8740576</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">533 Health care assistants</td>
+<td align="right">2.2271720</td>
+<td align="right">21.5539071</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">243 Marketing and public relations professionals</td>
+<td align="right">1.7263442</td>
+<td align="right">19.6730093</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">332 Insurance advisers, sales and purchasing agents</td>
+<td align="right">2.2044676</td>
+<td align="right">19.3664844</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">611 Market gardeners and crop growers</td>
+<td align="right">1.7542849</td>
+<td align="right">15.6290927</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">532 Personal care workers in health services</td>
+<td align="right">3.0076073</td>
+<td align="right">12.5499477</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">213 Biologists, pharmacologists and specialists in agriculture and forestry</td>
+<td align="right">1.8973847</td>
+<td align="right">11.5413223</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">321 Medical and pharmaceutical technicians</td>
+<td align="right">2.5636636</td>
+<td align="right">9.5201918</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">242 Organisation analysts, policy administrators and human resource specialists</td>
+<td align="right">2.0388525</td>
+<td align="right">7.8030347</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">351 ICT operations and user support technicians</td>
+<td align="right">2.7045039</td>
+<td align="right">7.5568275</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">211 Physicists and chemists</td>
+<td align="right">1.9926264</td>
+<td align="right">7.5217104</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">235 Teaching professionals not elsewhere classified</td>
+<td align="right">1.6228416</td>
+<td align="right">5.7033533</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">512 Cooks and cold-buffet managers</td>
+<td align="right">2.7942944</td>
+<td align="right">5.4926902</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">941 Fast-food workers, food preparation assistants</td>
+<td align="right">1.9960527</td>
+<td align="right">3.8523689</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">432 Stores and transport clerks</td>
+<td align="right">1.9247904</td>
+<td align="right">3.3361868</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">218 Specialists within environmental and health protection</td>
+<td align="right">2.3902920</td>
+<td align="right">3.2726896</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">231 University and higher education teachers</td>
+<td align="right">2.4049429</td>
+<td align="right">3.1968905</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">222 Nursing professionals</td>
+<td align="right">4.6527974</td>
+<td align="right">2.8848508</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">265 Creative and performing artists</td>
+<td align="right">2.0908231</td>
+<td align="right">2.4335097</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">962 Newspaper distributors, janitors and other service workers</td>
+<td align="right">1.9900356</td>
+<td align="right">2.3091055</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">233 Secondary education teachers</td>
+<td align="right">3.0478812</td>
+<td align="right">1.6616950</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">228 Specialists in health care not elsewhere classified</td>
+<td align="right">2.2271410</td>
+<td align="right">1.4295653</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">819 Process control technicians</td>
+<td align="right">2.5350438</td>
+<td align="right">1.1646979</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">541 Other surveillance and security workers</td>
+<td align="right">2.2500326</td>
+<td align="right">1.1488532</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">534 Attendants, personal assistants and related workers</td>
+<td align="right">2.0233419</td>
+<td align="right">1.1344410</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">261 Legal professionals</td>
+<td align="right">2.6014900</td>
+<td align="right">1.1208624</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">531 Child care workers and teachers aides</td>
+<td align="right">1.9034289</td>
+<td align="right">1.0441681</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">411 Office assistants and other secretaries</td>
+<td align="right">2.3419860</td>
+<td align="right">0.8053533</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">214 Engineering professionals</td>
+<td align="right">2.7938330</td>
+<td align="right">0.7610648</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">341 Social work and religious associate professionals</td>
+<td align="right">2.5666541</td>
+<td align="right">0.6898733</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">422 Client information clerks</td>
+<td align="right">2.4707255</td>
+<td align="right">0.4188795</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">251 ICT architects, systems analysts and test managers</td>
+<td align="right">2.3512692</td>
+<td align="right">0.2019761</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">234 Primary- and pre-school teachers</td>
+<td align="right">3.4774983</td>
+<td align="right">0.1910697</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">334 Administrative and specialized secretaries</td>
+<td align="right">2.0473936</td>
+<td align="right">0.1673844</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">723 Machinery mechanics and fitters</td>
+<td align="right">2.4270025</td>
+<td align="right">0.0946975</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">216 Architects and surveyors</td>
+<td align="right">2.8323370</td>
+<td align="right">0.0480519</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">515 Building caretakers and related workers</td>
+<td align="right">2.2148711</td>
+<td align="right">0.0466927</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">311 Physical and engineering science technicians</td>
+<td align="right">2.7695781</td>
+<td align="right">0.0317138</td>
+<td align="left">sector and sex</td>
+</tr>
+<tr class="even">
+<td align="left">511 Cabin crew, guides and related workers</td>
+<td align="right">-0.3452668</td>
+<td align="right">0.0263848</td>
+<td align="left">sector and sex</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>merge(summary_table, anova_table, c(&quot;ssyk&quot;, &quot;interaction&quot;), all = TRUE) %&gt;%
+  filter (term.x == &quot;year_n&quot;) %&gt;%
+  filter (contcol.y &gt; 0) %&gt;%   
+  filter (interaction == &quot;sector and age&quot;) %&gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&gt;%
+  rename (`F-value` = statistic.y) %&gt;%
+  rename (`Increase in salary` = estimate) %&gt;%
+  arrange (desc (`F-value`)) %&gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &#39;Correlation for F-value (sector and age) and the yearly increase in salaries&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-6">Table 3: </span>Correlation for F-value (sector and age) and the yearly increase in salaries</caption>
+<thead>
+<tr class="header">
+<th align="left">ssyk</th>
+<th align="right">Increase in salary</th>
+<th align="right">F-value</th>
+<th align="left">interaction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">251 ICT architects, systems analysts and test managers</td>
+<td align="right">2.3512692</td>
+<td align="right">81.293931</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">534 Attendants, personal assistants and related workers</td>
+<td align="right">2.0233419</td>
+<td align="right">74.994233</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">234 Primary- and pre-school teachers</td>
+<td align="right">3.4774983</td>
+<td align="right">50.554556</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">511 Cabin crew, guides and related workers</td>
+<td align="right">-0.3214703</td>
+<td align="right">49.726047</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">331 Financial and accounting associate professionals</td>
+<td align="right">2.1760115</td>
+<td align="right">43.716282</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">432 Stores and transport clerks</td>
+<td align="right">1.9372268</td>
+<td align="right">41.355837</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">351 ICT operations and user support technicians</td>
+<td align="right">2.7045039</td>
+<td align="right">37.992660</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">241 Accountants, financial analysts and fund managers</td>
+<td align="right">2.4925081</td>
+<td align="right">31.914364</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">242 Organisation analysts, policy administrators and human resource specialists</td>
+<td align="right">2.0984548</td>
+<td align="right">31.372391</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">422 Client information clerks</td>
+<td align="right">2.4763530</td>
+<td align="right">24.396462</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">342 Athletes, fitness instructors and recreational workers</td>
+<td align="right">1.8086152</td>
+<td align="right">21.878170</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">332 Insurance advisers, sales and purchasing agents</td>
+<td align="right">2.2044676</td>
+<td align="right">20.887588</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">333 Business services agents</td>
+<td align="right">2.5711782</td>
+<td align="right">20.728956</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">261 Legal professionals</td>
+<td align="right">2.6542145</td>
+<td align="right">19.114710</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">233 Secondary education teachers</td>
+<td align="right">3.1089611</td>
+<td align="right">18.460571</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">541 Other surveillance and security workers</td>
+<td align="right">2.2500326</td>
+<td align="right">18.166197</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">243 Marketing and public relations professionals</td>
+<td align="right">1.8298739</td>
+<td align="right">16.372110</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">231 University and higher education teachers</td>
+<td align="right">2.5000216</td>
+<td align="right">15.799814</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">411 Office assistants and other secretaries</td>
+<td align="right">2.3419860</td>
+<td align="right">15.436701</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">235 Teaching professionals not elsewhere classified</td>
+<td align="right">1.8467331</td>
+<td align="right">15.280487</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">211 Physicists and chemists</td>
+<td align="right">1.9949354</td>
+<td align="right">11.545117</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">213 Biologists, pharmacologists and specialists in agriculture and forestry</td>
+<td align="right">1.8835767</td>
+<td align="right">11.142152</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">228 Specialists in health care not elsewhere classified</td>
+<td align="right">2.0243679</td>
+<td align="right">10.920972</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">335 Tax and related government associate professionals</td>
+<td align="right">2.4477931</td>
+<td align="right">10.914843</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">941 Fast-food workers, food preparation assistants</td>
+<td align="right">1.9960527</td>
+<td align="right">10.718505</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">341 Social work and religious associate professionals</td>
+<td align="right">2.5816295</td>
+<td align="right">9.475763</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">216 Architects and surveyors</td>
+<td align="right">2.7872555</td>
+<td align="right">9.229637</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">321 Medical and pharmaceutical technicians</td>
+<td align="right">2.5872747</td>
+<td align="right">8.122166</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">911 Cleaners and helpers</td>
+<td align="right">1.9306757</td>
+<td align="right">8.084293</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">815 Machine operators, textile, fur and leather products</td>
+<td align="right">1.3751133</td>
+<td align="right">7.636766</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">334 Administrative and specialized secretaries</td>
+<td align="right">2.1355883</td>
+<td align="right">7.153296</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">218 Specialists within environmental and health protection</td>
+<td align="right">2.4620357</td>
+<td align="right">6.994422</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">962 Newspaper distributors, janitors and other service workers</td>
+<td align="right">1.9900356</td>
+<td align="right">6.838603</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">531 Child care workers and teachers aides</td>
+<td align="right">1.9226126</td>
+<td align="right">6.070516</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">515 Building caretakers and related workers</td>
+<td align="right">2.2192760</td>
+<td align="right">6.005165</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">311 Physical and engineering science technicians</td>
+<td align="right">2.7875316</td>
+<td align="right">5.421210</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">723 Machinery mechanics and fitters</td>
+<td align="right">2.4360682</td>
+<td align="right">5.406378</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">819 Process control technicians</td>
+<td align="right">2.5350438</td>
+<td align="right">5.043236</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">264 Authors, journalists and linguists</td>
+<td align="right">2.2247505</td>
+<td align="right">4.044872</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">512 Cooks and cold-buffet managers</td>
+<td align="right">2.7942944</td>
+<td align="right">3.928362</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">533 Health care assistants</td>
+<td align="right">2.2271720</td>
+<td align="right">3.673529</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">265 Creative and performing artists</td>
+<td align="right">2.0786906</td>
+<td align="right">2.538964</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">214 Engineering professionals</td>
+<td align="right">2.7863137</td>
+<td align="right">2.497814</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">532 Personal care workers in health services</td>
+<td align="right">3.0076073</td>
+<td align="right">2.339712</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="odd">
+<td align="left">222 Nursing professionals</td>
+<td align="right">4.6262827</td>
+<td align="right">2.287950</td>
+<td align="left">sector and age</td>
+</tr>
+<tr class="even">
+<td align="left">611 Market gardeners and crop growers</td>
+<td align="right">1.8042107</td>
+<td align="right">1.716068</td>
+<td align="left">sector and age</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>merge(summary_table, anova_table, c(&quot;ssyk&quot;, &quot;interaction&quot;), all = TRUE) %&gt;%
+  filter (term.x == &quot;year_n&quot;) %&gt;%
+  filter (contcol.y &gt; 0) %&gt;%   
+  filter (interaction == &quot;sector and year&quot;) %&gt;%
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&gt;%
+  rename (`F-value` = statistic.y) %&gt;%
+  rename (`Increase in salary` = estimate) %&gt;%
+  arrange (desc (`F-value`)) %&gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &#39;Correlation for F-value (sector and year) and the yearly increase in salaries&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-7">Table 4: </span>Correlation for F-value (sector and year) and the yearly increase in salaries</caption>
+<thead>
+<tr class="header">
+<th align="left">ssyk</th>
+<th align="right">Increase in salary</th>
+<th align="right">F-value</th>
+<th align="left">interaction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">222 Nursing professionals</td>
+<td align="right">3.2821623</td>
+<td align="right">52.9080079</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">235 Teaching professionals not elsewhere classified</td>
+<td align="right">2.7102815</td>
+<td align="right">24.3392922</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">334 Administrative and specialized secretaries</td>
+<td align="right">0.6824704</td>
+<td align="right">15.9484068</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">531 Child care workers and teachers aides</td>
+<td align="right">2.3704462</td>
+<td align="right">13.8844930</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">422 Client information clerks</td>
+<td align="right">3.2226939</td>
+<td align="right">12.4412439</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">962 Newspaper distributors, janitors and other service workers</td>
+<td align="right">2.5465829</td>
+<td align="right">10.9472608</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">534 Attendants, personal assistants and related workers</td>
+<td align="right">2.3719311</td>
+<td align="right">10.1007673</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">532 Personal care workers in health services</td>
+<td align="right">2.7590988</td>
+<td align="right">9.0616925</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">611 Market gardeners and crop growers</td>
+<td align="right">2.4285881</td>
+<td align="right">9.0355793</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">233 Secondary education teachers</td>
+<td align="right">3.4681159</td>
+<td align="right">8.2187247</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">264 Authors, journalists and linguists</td>
+<td align="right">3.2488108</td>
+<td align="right">6.2777560</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">351 ICT operations and user support technicians</td>
+<td align="right">3.4272576</td>
+<td align="right">4.8822064</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">214 Engineering professionals</td>
+<td align="right">3.4475215</td>
+<td align="right">4.3685520</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">723 Machinery mechanics and fitters</td>
+<td align="right">2.7726800</td>
+<td align="right">4.0300820</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">511 Cabin crew, guides and related workers</td>
+<td align="right">-1.4636615</td>
+<td align="right">3.9854827</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">243 Marketing and public relations professionals</td>
+<td align="right">2.4174309</td>
+<td align="right">3.9092911</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">311 Physical and engineering science technicians</td>
+<td align="right">3.2975181</td>
+<td align="right">3.6534643</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">533 Health care assistants</td>
+<td align="right">2.0202998</td>
+<td align="right">3.4258034</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">216 Architects and surveyors</td>
+<td align="right">3.2766321</td>
+<td align="right">3.0286083</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">512 Cooks and cold-buffet managers</td>
+<td align="right">2.4761796</td>
+<td align="right">2.1189296</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">231 University and higher education teachers</td>
+<td align="right">2.7564149</td>
+<td align="right">1.9590690</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">911 Cleaners and helpers</td>
+<td align="right">2.1080113</td>
+<td align="right">1.3375758</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">265 Creative and performing artists</td>
+<td align="right">1.8252102</td>
+<td align="right">1.3073089</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">341 Social work and religious associate professionals</td>
+<td align="right">2.7179780</td>
+<td align="right">1.1525106</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">332 Insurance advisers, sales and purchasing agents</td>
+<td align="right">2.4698420</td>
+<td align="right">0.8846941</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">515 Building caretakers and related workers</td>
+<td align="right">2.0896486</td>
+<td align="right">0.8721029</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">251 ICT architects, systems analysts and test managers</td>
+<td align="right">2.1070969</td>
+<td align="right">0.8453000</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">242 Organisation analysts, policy administrators and human resource specialists</td>
+<td align="right">2.3074810</td>
+<td align="right">0.7627131</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">213 Biologists, pharmacologists and specialists in agriculture and forestry</td>
+<td align="right">2.1515840</td>
+<td align="right">0.7217108</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">815 Machine operators, textile, fur and leather products</td>
+<td align="right">1.5169216</td>
+<td align="right">0.7021796</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">333 Business services agents</td>
+<td align="right">2.6770984</td>
+<td align="right">0.6948266</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">411 Office assistants and other secretaries</td>
+<td align="right">2.4961111</td>
+<td align="right">0.6866667</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">261 Legal professionals</td>
+<td align="right">2.9024857</td>
+<td align="right">0.6474976</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">342 Athletes, fitness instructors and recreational workers</td>
+<td align="right">2.0356952</td>
+<td align="right">0.5210552</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">541 Other surveillance and security workers</td>
+<td align="right">2.1319348</td>
+<td align="right">0.4764820</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">941 Fast-food workers, food preparation assistants</td>
+<td align="right">2.1030085</td>
+<td align="right">0.4107102</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">241 Accountants, financial analysts and fund managers</td>
+<td align="right">2.1837720</td>
+<td align="right">0.3653365</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">335 Tax and related government associate professionals</td>
+<td align="right">2.2476351</td>
+<td align="right">0.3329319</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">228 Specialists in health care not elsewhere classified</td>
+<td align="right">2.0215985</td>
+<td align="right">0.1994037</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">321 Medical and pharmaceutical technicians</td>
+<td align="right">2.4986510</td>
+<td align="right">0.1694097</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">234 Primary- and pre-school teachers</td>
+<td align="right">3.5227087</td>
+<td align="right">0.0566620</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">211 Physicists and chemists</td>
+<td align="right">2.0509288</td>
+<td align="right">0.0256116</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">819 Process control technicians</td>
+<td align="right">2.5525388</td>
+<td align="right">0.0089722</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">432 Stores and transport clerks</td>
+<td align="right">1.9579284</td>
+<td align="right">0.0058151</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="odd">
+<td align="left">331 Financial and accounting associate professionals</td>
+<td align="right">2.1471390</td>
+<td align="right">0.0023497</td>
+<td align="left">sector and year</td>
+</tr>
+<tr class="even">
+<td align="left">218 Specialists within environmental and health protection</td>
+<td align="right">2.3896946</td>
+<td align="right">0.0012880</td>
+<td align="left">sector and year</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>merge(summary_table, anova_table, c(&quot;ssyk&quot;, &quot;interaction&quot;), all = TRUE) %&gt;%
+  filter (term.x == &quot;year_n&quot;) %&gt;%
+  filter (contcol.y &gt; 1) %&gt;%   
+  filter (interaction == &quot;sector, year, age and sex&quot;) %&gt;%
+  filter (!(contcol.y &lt; 3 &amp; interaction == &quot;sector, year, age and sex&quot;)) %&gt;%  
+  mutate (estimate = (exp(estimate) - 1) * 100) %&gt;%  
+  select (ssyk, estimate, statistic.y, interaction) %&gt;%
+  rename (`F-value` = statistic.y) %&gt;%
+  rename (`Increase in salary` = estimate) %&gt;%
+  arrange (desc (`F-value`)) %&gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &#39;Correlation for F-value (sector, year, age and sex) and the yearly increase in salaries&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-8">Table 5: </span>Correlation for F-value (sector, year, age and sex) and the yearly increase in salaries</caption>
+<thead>
+<tr class="header">
+<th align="left">ssyk</th>
+<th align="right">Increase in salary</th>
+<th align="right">F-value</th>
+<th align="left">interaction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">214 Engineering professionals</td>
+<td align="right">2.4648855</td>
+<td align="right">11.6391393</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">342 Athletes, fitness instructors and recreational workers</td>
+<td align="right">2.0991670</td>
+<td align="right">8.9098726</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">216 Architects and surveyors</td>
+<td align="right">3.2301466</td>
+<td align="right">7.6322806</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">228 Specialists in health care not elsewhere classified</td>
+<td align="right">1.5176747</td>
+<td align="right">4.1043437</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">321 Medical and pharmaceutical technicians</td>
+<td align="right">2.2641978</td>
+<td align="right">3.9184148</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">218 Specialists within environmental and health protection</td>
+<td align="right">2.4573789</td>
+<td align="right">3.6168903</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">261 Legal professionals</td>
+<td align="right">2.7581752</td>
+<td align="right">3.2902539</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">235 Teaching professionals not elsewhere classified</td>
+<td align="right">2.4011513</td>
+<td align="right">3.0277439</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">335 Tax and related government associate professionals</td>
+<td align="right">2.0292874</td>
+<td align="right">2.6128635</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">341 Social work and religious associate professionals</td>
+<td align="right">2.6319084</td>
+<td align="right">2.6004044</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">233 Secondary education teachers</td>
+<td align="right">3.5273156</td>
+<td align="right">2.2615012</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">331 Financial and accounting associate professionals</td>
+<td align="right">2.4662860</td>
+<td align="right">1.9867325</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">941 Fast-food workers, food preparation assistants</td>
+<td align="right">1.9900178</td>
+<td align="right">1.9221016</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">512 Cooks and cold-buffet managers</td>
+<td align="right">2.5222219</td>
+<td align="right">1.9206611</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">962 Newspaper distributors, janitors and other service workers</td>
+<td align="right">2.6603985</td>
+<td align="right">1.8150814</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">213 Biologists, pharmacologists and specialists in agriculture and forestry</td>
+<td align="right">2.3962841</td>
+<td align="right">1.7496638</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">911 Cleaners and helpers</td>
+<td align="right">2.1197350</td>
+<td align="right">1.5815397</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">511 Cabin crew, guides and related workers</td>
+<td align="right">-0.6957497</td>
+<td align="right">1.5410098</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">211 Physicists and chemists</td>
+<td align="right">2.3310509</td>
+<td align="right">1.5257771</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">333 Business services agents</td>
+<td align="right">2.9306066</td>
+<td align="right">1.5169994</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">819 Process control technicians</td>
+<td align="right">2.5394398</td>
+<td align="right">1.4148181</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">723 Machinery mechanics and fitters</td>
+<td align="right">2.9145883</td>
+<td align="right">1.2913243</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">234 Primary- and pre-school teachers</td>
+<td align="right">3.5373214</td>
+<td align="right">1.2588294</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">533 Health care assistants</td>
+<td align="right">2.0561764</td>
+<td align="right">1.1641262</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">222 Nursing professionals</td>
+<td align="right">3.3141175</td>
+<td align="right">1.1593790</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">515 Building caretakers and related workers</td>
+<td align="right">2.3554368</td>
+<td align="right">1.0916712</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">334 Administrative and specialized secretaries</td>
+<td align="right">-0.4841162</td>
+<td align="right">0.8627072</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">264 Authors, journalists and linguists</td>
+<td align="right">3.8766371</td>
+<td align="right">0.8178463</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">541 Other surveillance and security workers</td>
+<td align="right">2.1959143</td>
+<td align="right">0.8087407</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">531 Child care workers and teachers aides</td>
+<td align="right">2.4624435</td>
+<td align="right">0.6787061</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">815 Machine operators, textile, fur and leather products</td>
+<td align="right">1.2558500</td>
+<td align="right">0.6507638</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">242 Organisation analysts, policy administrators and human resource specialists</td>
+<td align="right">2.1412580</td>
+<td align="right">0.6425880</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">411 Office assistants and other secretaries</td>
+<td align="right">2.4063713</td>
+<td align="right">0.5077368</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">432 Stores and transport clerks</td>
+<td align="right">2.1618484</td>
+<td align="right">0.5005162</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">422 Client information clerks</td>
+<td align="right">3.3819183</td>
+<td align="right">0.4079113</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">265 Creative and performing artists</td>
+<td align="right">1.7171084</td>
+<td align="right">0.4046591</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">241 Accountants, financial analysts and fund managers</td>
+<td align="right">1.9650332</td>
+<td align="right">0.3867492</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">311 Physical and engineering science technicians</td>
+<td align="right">3.0661705</td>
+<td align="right">0.3303477</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">611 Market gardeners and crop growers</td>
+<td align="right">2.1758845</td>
+<td align="right">0.1794678</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">351 ICT operations and user support technicians</td>
+<td align="right">3.3472478</td>
+<td align="right">0.1238188</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">332 Insurance advisers, sales and purchasing agents</td>
+<td align="right">2.2161856</td>
+<td align="right">0.1214610</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">251 ICT architects, systems analysts and test managers</td>
+<td align="right">2.1371036</td>
+<td align="right">0.1080593</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">534 Attendants, personal assistants and related workers</td>
+<td align="right">2.3576411</td>
+<td align="right">0.0748416</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">532 Personal care workers in health services</td>
+<td align="right">2.6448524</td>
+<td align="right">0.0675532</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="odd">
+<td align="left">231 University and higher education teachers</td>
+<td align="right">2.5212252</td>
+<td align="right">0.0231719</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+<tr class="even">
+<td align="left">243 Marketing and public relations professionals</td>
+<td align="right">2.1626640</td>
+<td align="right">0.0083390</td>
+<td align="left">sector, year, age and sex</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s check what we have found.</p>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;218 Specialists within environmental and health protection&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n + poly(age_n, 3) + sector + sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-9"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-9-1.png" alt="Highest F-value sector, Specialists within environmental and health protection" width="672" />
+<p class="caption">
+Figure 3: Highest F-value sector, Specialists within environmental and health protection
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;512 Cooks and cold-buffet managers&quot;)
+ 
+model &lt;-lm (log(salary) ~ year_n + poly(age_n, 3) + sector + sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-10"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-10-1.png" alt="Lowest F-value sector, Cooks and cold-buffet managers" width="672" />
+<p class="caption">
+Figure 4: Lowest F-value sector, Cooks and cold-buffet managers
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;911 Cleaners and helpers&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n + poly(age_n, 3) + sector * sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sex&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-11"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-11-1.png" alt="Highest F-value interaction sector and gender, Cleaners and helpers" width="672" />
+<p class="caption">
+Figure 5: Highest F-value interaction sector and gender, Cleaners and helpers
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;511 Cabin crew, guides and related workers&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n + poly(age_n, 3) + sector * sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sex&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-12"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-12-1.png" alt="Lowest F-value interaction sector and gender, Cabin crew, guides and related workers" width="672" />
+<p class="caption">
+Figure 6: Lowest F-value interaction sector and gender, Cabin crew, guides and related workers
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;251 ICT architects, systems analysts and test managers&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n + poly(age_n, 3) * sector + sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-13"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-13-1.png" alt="Highest F-value interaction sector and age, ICT architects, systems analysts and test managers" width="672" />
+<p class="caption">
+Figure 7: Highest F-value interaction sector and age, ICT architects, systems analysts and test managers
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;611 Market gardeners and crop growers&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n + poly(age_n, 3) * sector + sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-14"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-14-1.png" alt="Lowest F-value interaction sector and age, Market gardeners and crop growers" width="672" />
+<p class="caption">
+Figure 8: Lowest F-value interaction sector and age, Market gardeners and crop growers
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;222 Nursing professionals&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n * sector + poly(age_n, 3) + sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;year_n&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-15"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-15-1.png" alt="Highest F-value interaction sector and year, Nursing professionals" width="672" />
+<p class="caption">
+Figure 9: Highest F-value interaction sector and year, Nursing professionals
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;218 Specialists within environmental and health protection&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n * sector + poly(age_n, 3) + sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;year_n&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-16"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-16-1.png" alt="Lowest F-value interaction sector and year, Specialists within environmental and health protection" width="672" />
+<p class="caption">
+Figure 10: Lowest F-value interaction sector and year, Specialists within environmental and health protection
+</p>
+</div>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;214 Engineering professionals&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n * poly(age_n, 3) * sector * sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;year_n&quot;, &quot;sex&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-17"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-17-1.png" alt="Highest F-value interaction sector, age, year and gender, Engineering professionals" width="672" />
+<p class="caption">
+Figure 11: Highest F-value interaction sector, age, year and gender, Engineering professionals
+</p>
+</div>
+<pre><code>## TableGrob (2 x 1) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (2-2,1-1) arrange gtable[layout]</code></pre>
+<pre class="r"><code>temp &lt;- tb %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;243 Marketing and public relations professionals&quot;)
+ 
+model &lt;- lm (log(salary) ~ year_n * poly(age_n, 3) * sector * sex, data = temp) 
+ 
+plot_model(model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;year_n&quot;, &quot;sex&quot;, &quot;sector&quot;))</code></pre>
+<pre><code>## Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the log-scale.</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-18"></span>
+<img src="/post/2020-02-23-the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-2_files/figure-html/unnamed-chunk-18-1.png" alt="Lowest F-value interaction sector, age, year and gender, Marketing and public relations professionals" width="672" />
+<p class="caption">
+Figure 12: Lowest F-value interaction sector, age, year and gender, Marketing and public relations professionals
+</p>
+</div>
+<pre><code>## TableGrob (2 x 1) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (2-2,1-1) arrange gtable[layout]</code></pre>
