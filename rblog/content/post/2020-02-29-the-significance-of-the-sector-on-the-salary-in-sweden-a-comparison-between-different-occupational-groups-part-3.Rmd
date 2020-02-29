@@ -1,0 +1,310 @@
+---
+title: The significance of the sector on the salary in Sweden, a comparison between
+  different occupational groups, part 3
+author: Mikael Lundqvist
+date: '2020-02-29'
+slug: the-significance-of-the-sector-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups-part-3
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+
+To complete the analysis on the significance of the sector on the salary for different occupational groups in Sweden I will in this post examine the correlation between salary and sector using statistics for education.
+
+The F-value from the Anova table is used as the single value to discriminate how much the region and salary correlates. For exploratory analysis, the Anova value seems good enough.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (broom)
+library (car)
+library (sjPlot)
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+```
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000CY.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+I have renamed the file to 000000CY_sector.csv because the filename 000000CY.csv was used in a previous post. 
+
+The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and educational level (SUN). Year 2014 - 2018 Monthly salary 1-3 public sector 4-5 private sector
+
+In the plot and tables, you can also find information on how the increase in salaries per year for each occupational group is affected when the interactions are taken into account.
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the sector on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018'} 
+tb <- readfile("000000CY_sector.csv") %>% 
+  mutate(edulevel = `level of education`)
+
+numedulevel <- read.csv("edulevel.csv") 
+
+numedulevel %>%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = 'Initial approach, length of education') 
+
+tbnum <- tb %>% 
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears)) %>%
+  mutate(eduyears = factor(eduyears))
+
+summary_table = vector()
+anova_table = vector()
+
+for (i in unique(tbnum$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tbnum, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 90){
+    model <- lm(log(salary) ~ edulevel + sex + year_n + sector, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "none"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "none"))  
+  
+    model <- lm(log(salary) ~ edulevel * sector + sex + year_n, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "sector and edulevel"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "sector and edulevel"))  
+    
+    model <- lm(log(salary) ~ edulevel + sector * sex + year_n, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "sector and sex"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "sector and sex"))  
+    
+    model <- lm(log(salary) ~ edulevel +  year_n * sector + sex, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "sector and year"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "sector and year"))  
+    
+    model <- lm(log(salary) ~ edulevel * sector * sex * year_n, data = temp)
+    summary_table <- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i, interaction = "sector, year, edulevel and sex"))
+    anova_table <- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i, interaction = "sector, year, edulevel and sex"))      
+  }
+}
+
+anova_table <- anova_table %>% rowwise() %>% mutate(contcol = str_count(term, ":")) 
+
+summary_table <- summary_table %>% rowwise() %>% mutate(contcol = str_count(term, ":"))
+
+merge(summary_table, anova_table, by = c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (term.y == "sector") %>%    
+  filter (interaction == "none") %>%
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = "Increase in salaries (% / year)",
+      y = "F-value for sector"
+    )  	
+```
+
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the interaction between sector, edulevel, year and sex on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018'}
+merge(summary_table, anova_table, by = c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 0) %>%    
+  # only look at the interactions between all four variables in the case with interaction sector, year, edulevel and sex
+  filter (!(contcol.y < 3 & interaction == "sector, year, edulevel and sex")) %>% 
+  
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  ggplot () +
+    geom_point (mapping = aes(x = estimate, y = statistic.y, colour = interaction)) +
+    labs(
+      x = "Increase in salaries (% / year)",
+      y = "F-value for interaction"
+    ) 
+```
+
+
+The tables with all occupational groups sorted by F-value in descending order.
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (term.y == "sector") %>%   
+  filter (interaction == "none") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (sector) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 0) %>%   
+  filter (interaction == "sector and sex") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (sector and sex) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 0) %>%   
+  filter (interaction == "sector and edulevel") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (sector and edulevel) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 0) %>%   
+  filter (interaction == "sector and year") %>%
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (sector and year) and the yearly increase in salaries')
+```
+
+
+```{r, echo = TRUE}
+merge(summary_table, anova_table, c("ssyk", "interaction"), all = TRUE) %>%
+  filter (term.x == "year_n") %>%
+  filter (contcol.y > 1) %>%   
+  filter (interaction == "sector, year, edulevel and sex") %>%
+  filter (!(contcol.y < 3 & interaction == "sector, year, edulevel and sex")) %>%  
+  mutate (estimate = (exp(estimate) - 1) * 100) %>%  
+  select (ssyk, estimate, statistic.y, interaction) %>%
+  rename (`F-value` = statistic.y) %>%
+  rename (`Increase in salary` = estimate) %>%
+  arrange (desc (`F-value`)) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Correlation for F-value (sector, year, edulevel and sex) and the yearly increase in salaries')
+```
+
+
+Let's check what we have found.
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value sector, Organisation analysts, policy administrators and human resource specialists'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "242 Organisation analysts, policy administrators and human resource specialists")
+ 
+model <- lm (log(salary) ~ year_n + eduyears + sector + sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value sector, Fast-food workers, food preparation assistants'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "941 Fast-food workers, food preparation assistants")
+ 
+model <-lm (log(salary) ~ year_n + eduyears + sector + sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value interaction sector and gender, Cleaners and helpers'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "911 Cleaners and helpers")
+ 
+model <- lm (log(salary) ~ year_n + eduyears + sector * sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "sex", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value interaction sector and gender, Office assistants and other secretaries'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "411 Office assistants and other secretaries")
+ 
+model <- lm (log(salary) ~ year_n + eduyears + sector * sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "sex", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value interaction sector and edulevel, Tax and related government associate professionals'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "335 Tax and related government associate professionals")
+ 
+model <- lm (log(salary) ~ year_n + eduyears * sector + sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value interaction sector and edulevel, Cleaners and helpers'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "911 Cleaners and helpers")
+ 
+model <- lm (log(salary) ~ year_n + eduyears * sector + sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value interaction sector and year, Administration and service managers not elsewhere classified'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "129 Administration and service managers not elsewhere classified")
+ 
+model <- lm (log(salary) ~ year_n * sector + eduyears + sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "year_n", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value interaction sector and year, Other social services managers'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "159 Other social services managers")
+ 
+model <- lm (log(salary) ~ year_n * sector + eduyears + sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "year_n", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Highest F-value interaction sector, edulevel, year and gender, Authors, journalists and linguists'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "264 Authors, journalists and linguists")
+ 
+model <- lm (log(salary) ~ year_n * eduyears * sector * sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "year_n", "sex", "sector"))
+```
+
+
+```{r, echo = TRUE, fig.cap = 'Lowest F-value interaction sector, edulevel, year and gender, Attendants, personal assistants and related workers'} 
+temp <- tbnum %>%
+  filter(`occuptional  (SSYK 2012)` == "534 Attendants, personal assistants and related workers")
+ 
+model <- lm (log(salary) ~ year_n * eduyears * sector * sex, data = temp) 
+ 
+plot_model(model, type = "pred", terms = c("eduyears", "year_n", "sex", "sector"))
+```
