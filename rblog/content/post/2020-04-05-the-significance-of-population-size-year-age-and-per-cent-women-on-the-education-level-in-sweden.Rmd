@@ -1,0 +1,384 @@
+---
+title: The significance of population size, year, age and per cent women on the education level in Sweden
+author: Mikael Lundqvist
+date: '2020-04-05'
+slug: the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+In my last post, I analysed how the level of education is affected by region, sex and year. In this post, I will continue with the same dataset but this time I will include age in the analysis. Please send suggestions for improvement of the analysis to ranalystatisticssweden@gmail.com.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (broom)
+library (car)
+library (sjPlot)
+library (leaps)
+library (MASS)
+library (earth)
+library (acepack)
+library (lspline)
+library (lme4)
+library (pROC)
+library (boot)
+library (faraway)
+library (arm)
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = groupsize) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women <- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts <- read.csv("nuts.csv") %>%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+```
+
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, UF0506A1.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+I will calculate the percentage of women in for the different education levels in the different regions for each year. In my later analysis, I will use the number of people in each education level, region, year and age.
+
+The table: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018 NUTS 2 level 2008- 10 year intervals (16-74)
+
+The data is aggregated, the size of each group is in the column groupsize.
+
+
+```{r, echo = TRUE, fig.cap = 'Population by region, level of education, percent women and year, Year 1985 - 2018'} 
+tb <- readfile("UF0506A1.csv") %>%  
+  mutate(edulevel = `level of education`) %>%
+  group_by(edulevel, region, year, sex, age) %>%
+  mutate(groupsize_age = sum(groupsize)) %>%  
+  group_by(edulevel, region, year, age) %>% 
+  mutate (sum_edu_region_year = sum(groupsize)) %>%  
+  mutate (perc_women = perc_women (groupsize_age)) %>% 
+  group_by(region, year) %>%
+  mutate (sum_pop = sum(groupsize)) %>% rowwise() %>%
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+  rowwise() %>% 
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age_n = (age_l + age_h) / 2) %>%
+  left_join(nuts %>% distinct (NUTS2_en, NUTS2_sh), by = c("region" = "NUTS2_en"))
+
+numedulevel <- read.csv("edulevel_1.csv") 
+
+numedulevel[, 2] <- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+numedulevel %>%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = 'Calculated in previous post, length of education') 
+
+tbnum <- tb %>% 
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears)) %>% 
+  drop_na()
+
+tbnum %>%
+  filter (year_n == 2018) %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = NUTS2_sh,y = perc_women, colour = age_n)) +
+  facet_grid(. ~ eduyears)
+
+tbnum %>%
+  filter (year_n == 2008) %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = NUTS2_sh,y = perc_women, colour = age_n)) +
+  facet_grid(. ~ eduyears)
+
+tbnum %>%
+  filter (year_n == 1998) %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = NUTS2_sh,y = perc_women, colour = age_n)) +
+  facet_grid(. ~ eduyears)
+
+tbnum %>%
+  filter (year_n == 1988) %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = NUTS2_sh,y = perc_women, colour = age_n)) +
+  facet_grid(. ~ eduyears)
+
+summary(tbnum)
+```
+
+
+Let's investigate the shape of the function for the response and predictors. The shape of the predictors has a great impact on the rest of the analysis. I use acepack to fit a model and plot both the response and the predictors.
+
+
+```{r, echo = TRUE, fig.cap = 'Plots of the response and predictors using acepack'}
+tbtest <- tbnum %>% dplyr::select(sum_pop, sum_edu_region_year, year_n, perc_women, age_n)
+
+tbtest <- data.frame(tbtest)
+
+acefit <- ace(tbtest, tbnum$eduyears, wt=tbtest$sum_edu_region_year)
+
+plot(tbnum$eduyears, acefit$ty, xlab = "Years of education", ylab = "transformed years of education")
+plot(tbtest[,1], acefit$tx[,1], xlab = "Population in region", ylab = "transformed population in region")
+plot(tbtest[,2], acefit$tx[,2], xlab = "# persons with same edulevel, region, year", ylab = "transformed # persons with same edulevel, region, year")
+plot(tbtest[,3], acefit$tx[,3], xlab = "Year", ylab = "transformed year")
+plot(tbtest[,4], acefit$tx[,4], xlab = "Percent women", ylab = "transformed percent women")
+plot(tbtest[,5], acefit$tx[,5], xlab = "Age", ylab = "transformed age")
+```
+
+
+I use MARS to fit hockey-stick functions for the predictors. I do not wish to overfit by using a better approximation at this point. I will include interactions of degree two. I will put more emphasis on groups with larger size by using the number of persons with same edulevel, region, year, age as weights in the regression. From the analysis with acepack, I will approximate the shape of the response with X^-1.
+
+
+```{r, echo = TRUE, fig.cap = 'Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018'} 
+tbtemp <- tbnum %>% dplyr::select(eduyears, sum_pop, sum_edu_region_year, year_n, perc_women, age_n)
+
+mmod <- earth(eduyears^-1 ~ ., weights = tbtest$sum_edu_region_year, data = tbtemp, nk = 9, degree = 2)
+
+summary (mmod)
+plot (mmod)
+plotmo (mmod)
+
+model_mmod <- lm (eduyears^-1 ~ 
+  lspline(sum_edu_region_year, c(68923)) + 
+  lspline(perc_women, c(0.402156)) +  
+  lspline(year_n, c(2004)):lspline(perc_women, c(0.402156)) +
+  lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)), 
+  weights = tbtest$sum_edu_region_year,
+  data = tbnum) 
+
+summary (model_mmod)$r.squared
+
+anova (model_mmod)
+```
+
+Since the predictors are on different scales I will also use MARS to fit hockey-stick functions to the standardised data.  Weights can not be negative.
+
+
+```{r, echo = TRUE, fig.cap = 'Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018'} 
+tbtemp <- tbnum %>% dplyr::select(eduyears, sum_pop, sum_edu_region_year, year_n, perc_women, age_n)
+
+tbtemp_scale <- data.frame(tbtemp %>% scale())
+
+mmod_scale <- earth(eduyears^-1 ~ ., weights = tbnum$sum_edu_region_year, data = tbtemp_scale, nk = 9, degree = 2)
+
+summary (mmod_scale)
+plot (mmod_scale)
+plotmo (mmod_scale)
+
+model_mmod_scale <- lm (eduyears^-1 ~ 
+  lspline(sum_pop, c(1.54673)) + 
+  lspline(sum_edu_region_year, c(2.48479)) +  
+  lspline(perc_women, c(0.589918)) +
+  lspline(age_n, c(-0.905736)), 
+  weights = tbtest$sum_edu_region_year,
+  data = tbtemp_scale) 
+
+summary (model_mmod_scale)$r.squared
+
+anova (model_mmod_scale)
+```
+
+
+I will use regsubsets to find the model which minimises the AIC using the standardised data. I will include some plots for diagnostic purposes. I have also included a bootstrap test since we can't count on the errors to be normally distributed.
+
+
+```{r, echo = TRUE, fig.cap = 'Find the model that minimises the AIC, Year 1985 - 2018'} 
+b <- regsubsets (eduyears^-1 ~ (lspline(sum_edu_region_year, c(2.48479)) + lspline(perc_women, c(0.589918)) + lspline(age_n, c(-0.905736)) + year_n + lspline(sum_pop, c(1.54673))) * (lspline(sum_edu_region_year, c(2.48479)) + lspline(perc_women, c(0.589918)) + lspline(age_n, c(-0.905736)) + year_n + lspline(sum_pop, c(1.54673))), weights = tbnum$sum_edu_region_year, data = tbtemp_scale, nvmax = 12)
+
+rs <- summary(b)
+AIC <- 50 * log (rs$rss / 50) + (2:13) * 2
+which.min (AIC)
+
+names (rs$which[4,])[rs$which[4,]]
+
+model <- lm (eduyears^-1 ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop,
+   weights = tbnum$sum_edu_region_year,
+   data = tbnum) 
+
+boxcox(model)
+
+summary (model)
+
+anova (model)
+
+plot (model)
+
+binnedplot(predict(model), resid(model))
+
+halfnorm(rstudent(model))
+
+tbnum %>% mutate(residuals = residuals(model)) %>% 
+  group_by(eduyears, region, year_n, age_n) %>% 
+  summarise(residuals = mean(residuals), count = sum(groupsize)) %>%
+    ggplot (aes(x = eduyears, y = residuals, size = sqrt(count), colour = year_n)) +
+    geom_point() + facet_grid(. ~ age_n)
+
+tbnumpred <- bind_cols(tbnum, as_tibble(predict(model, tbnum, interval = "confidence")))
+
+suppressWarnings(multiclass.roc(tbnumpred$eduyears, tbnumpred$fit))
+
+bs <- function(formula, data, indices) {
+  d <- data[indices,] # allows boot to select sample 
+  fit <- lm(formula, weights = sum_edu_region_year, data=d)
+  return(coef(fit)) 
+} 
+
+results <- boot(data = tbnum, statistic = bs, 
+   R = 1000, formula = eduyears^-1 ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop,
+   weights = tbnum$sum_edu_region_year)
+
+results
+
+plot(results, index=1) # intercept 
+```
+
+
+There are a few things I would like to investigate to improve the credibility of the analysis. I will assume that the data can be grouped by year of birth and region and investigate how this will affect the model. I have scaled the weights not to affect the residual standard deviation. I will include some plots for diagnostic purposes. I will assume that each year of birth and each region is a group and set them as random effects and the rest of the predictors as fixed effects. I use the mean age in each age group as the year of birth. 
+
+
+```{r, echo = TRUE, fig.cap = 'A diagnostic plot of the model with random effects components'}
+temp <- tbnum %>% mutate(yob = year_n - age_n) %>% mutate(region = tbnum$region)
+
+temp <- data.frame(temp)
+
+weights_scaled <- tbtest$sum_edu_region_year / max(tbtest$sum_edu_region_year)
+
+mmodel <- lmer (eduyears^-1 ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop +
+   (1|yob) + 
+   (1|region),       
+   weights = weights_scaled,
+   data = temp) 
+
+plot(mmodel)
+
+qqnorm (residuals(mmodel), main="")
+
+summary (mmodel)
+
+anova (mmodel)
+
+binnedplot(predict(mmodel), resid(mmodel))
+
+halfnorm(rstudent(mmodel))
+
+tbnum %>% mutate(residuals = residuals(mmodel)) %>% 
+  group_by(eduyears, region, year_n, age_n) %>% 
+  summarise(residuals = mean(residuals), count = sum(groupsize)) %>%
+    ggplot (aes(x = eduyears, y = residuals, size = sqrt(count), colour = year_n)) +
+    geom_point() + facet_grid(. ~ age_n)
+
+tbnumpred <- bind_cols(temp, as_tibble(predict(mmodel, temp, interval = "confidence")))
+
+suppressWarnings (multiclass.roc (tbnumpred$eduyears, tbnumpred$value))
+
+mySumm <- function(.) { s <- sigma(.)
+    c(beta =getME(., "beta"), sigma = s, sig01 = unname(s * getME(., "theta"))) }
+
+results <- bootMer(mmodel, mySumm, nsim = 1000)
+
+results
+
+plot(results)
+```
+
+
+Now let's see what we have found. I will plot all the models for comparison. I could not get the back transformation in sjPlot to work for the response variable so you will have to endure that the response is the inverse of years of education.
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the per cent women on the level of education, Year 1985 - 2018'}
+transformeddata <- tbnum %>%  mutate(eduyears = eduyears ^ -1)
+
+model <- lm (eduyears ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop,
+   weights = tbnum$sum_edu_region_year,
+   data = transformeddata)
+
+temp <- transformeddata %>% mutate(yob = year_n - age_n) %>% mutate(region = tbnum$region)
+
+temp <- data.frame(temp)
+
+mmodel <- lmer (eduyears ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop +
+   (1|yob) + 
+   (1|region),       
+   weights = weights_scaled,
+   data = temp) 
+
+plot_model (model, type = "pred", terms = c("perc_women"))
+plot_model (mmodel, type = "pred", terms = c("perc_women"))
+
+tbnum %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = perc_women, y = eduyears )) + 
+  labs(
+    x = "Per cent women",
+    y = "Years of education"
+  )
+```
+
+```{r, echo = TRUE, fig.cap = 'The significance of the interaction between the number of persons with the same level of education, region and year, age and age on the level of education, Year 1985 - 2018'}
+plot_model (model, type = "pred", terms = c("age_n", "sum_edu_region_year"))
+plot_model (mmodel, type = "pred", terms = c("age_n", "sum_edu_region_year"))
+
+tbnum %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = sum_edu_region_year, y = eduyears, colour = age_n)) + 
+  labs(
+    x = "# persons with same edulevel, region, year, age",
+    y = "Years of education"
+  )
+```
+
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the interaction between per cent women and age on the level of education, Year 1985 - 2018'}
+plot_model (model, type = "pred", terms = c("age_n", "perc_women"))
+plot_model (mmodel, type = "pred", terms = c("age_n", "perc_women"))
+
+tbnum %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = perc_women, y = eduyears, colour = age_n)) + 
+  labs(
+    x = "Age",
+    y = "Years of education"
+  )
+```
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the interaction between the age and population in the region on the level of education, Year 1985 - 2018'}
+plot_model (model, type = "pred", terms = c("age_n", "sum_pop"))
+plot_model (mmodel, type = "pred", terms = c("age_n", "sum_pop"))
+
+tbnum %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = age_n, y = eduyears, colour = sum_pop)) + 
+  labs(
+    x = "Age",
+    y = "Years of education"
+  )
+```

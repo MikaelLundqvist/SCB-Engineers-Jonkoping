@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.59.1" />
+
+
+<title>The significance of population size, year, age and per cent women on the education level in Sweden - R Analystatistics Sweden</title>
+<meta property="og:title" content="The significance of population size, year, age and per cent women on the education level in Sweden - R Analystatistics Sweden">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/MikaelLundqvist">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/MikaelLundqvist">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">24 min read</span>
+    
+
+    <h1 class="article-title">The significance of population size, year, age and per cent women on the education level in Sweden</h1>
+
+    
+    <span class="article-date">2020-04-05</span>
+    
+
+    <div class="article-content">
+      
+
+
+<p>In my last post, I analysed how the level of education is affected by region, sex and year. In this post, I will continue with the same dataset but this time I will include age in the analysis. Please send suggestions for improvement of the analysis to <a href="mailto:ranalystatisticssweden@gmail.com" class="email">ranalystatisticssweden@gmail.com</a>.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse)</code></pre>
+<pre><code>## -- Attaching packages -------------------------------------------------- tidyverse 1.3.0 --</code></pre>
+<pre><code>## v ggplot2 3.2.1     v purrr   0.3.3
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   1.0.2     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts ----------------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library (broom)
+library (car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre class="r"><code>library (sjPlot)</code></pre>
+<pre><code>## Registered S3 methods overwritten by &#39;lme4&#39;:
+##   method                          from
+##   cooks.distance.influence.merMod car 
+##   influence.merMod                car 
+##   dfbeta.influence.merMod         car 
+##   dfbetas.influence.merMod        car</code></pre>
+<pre class="r"><code>library (leaps)
+library (MASS)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;MASS&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     select</code></pre>
+<pre class="r"><code>library (earth)</code></pre>
+<pre><code>## Warning: package &#39;earth&#39; was built under R version 3.6.3</code></pre>
+<pre><code>## Loading required package: Formula</code></pre>
+<pre><code>## Loading required package: plotmo</code></pre>
+<pre><code>## Warning: package &#39;plotmo&#39; was built under R version 3.6.3</code></pre>
+<pre><code>## Loading required package: plotrix</code></pre>
+<pre><code>## Loading required package: TeachingDemos</code></pre>
+<pre><code>## Warning: package &#39;TeachingDemos&#39; was built under R version 3.6.3</code></pre>
+<pre class="r"><code>library (acepack)</code></pre>
+<pre><code>## Warning: package &#39;acepack&#39; was built under R version 3.6.3</code></pre>
+<pre class="r"><code>library (lspline)</code></pre>
+<pre><code>## Warning: package &#39;lspline&#39; was built under R version 3.6.3</code></pre>
+<pre class="r"><code>library (lme4)</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Matrix&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
+## 
+##     expand, pack, unpack</code></pre>
+<pre class="r"><code>library (pROC)</code></pre>
+<pre><code>## Warning: package &#39;pROC&#39; was built under R version 3.6.3</code></pre>
+<pre><code>## Type &#39;citation(&quot;pROC&quot;)&#39; for a citation.</code></pre>
+<pre><code>## 
+## Attaching package: &#39;pROC&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     cov, smooth, var</code></pre>
+<pre class="r"><code>library (boot)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;boot&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:car&#39;:
+## 
+##     logit</code></pre>
+<pre class="r"><code>library (faraway)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;faraway&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:boot&#39;:
+## 
+##     logit, melanoma</code></pre>
+<pre><code>## The following objects are masked from &#39;package:car&#39;:
+## 
+##     logit, vif</code></pre>
+<pre class="r"><code>library (arm)</code></pre>
+<pre><code>## Warning: package &#39;arm&#39; was built under R version 3.6.3</code></pre>
+<pre><code>## 
+## arm (Version 1.10-1, built: 2018-4-12)</code></pre>
+<pre><code>## Working directory is C:/R/rblog/content/post</code></pre>
+<pre><code>## 
+## Attaching package: &#39;arm&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:faraway&#39;:
+## 
+##     fround, logit, pfround</code></pre>
+<pre><code>## The following object is masked from &#39;package:boot&#39;:
+## 
+##     logit</code></pre>
+<pre><code>## The following object is masked from &#39;package:plotrix&#39;:
+## 
+##     rescale</code></pre>
+<pre><code>## The following object is masked from &#39;package:car&#39;:
+## 
+##     logit</code></pre>
+<pre class="r"><code>readfile &lt;- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%
+  gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = groupsize) %&gt;%
+  drop_na() %&gt;%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women &lt;- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts &lt;- read.csv(&quot;nuts.csv&quot;) %&gt;%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))</code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, UF0506A1.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>I will calculate the percentage of women in for the different education levels in the different regions for each year. In my later analysis, I will use the number of people in each education level, region, year and age.</p>
+<p>The table: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018 NUTS 2 level 2008- 10 year intervals (16-74)</p>
+<p>The data is aggregated, the size of each group is in the column groupsize.</p>
+<pre class="r"><code>tb &lt;- readfile(&quot;UF0506A1.csv&quot;) %&gt;%  
+  mutate(edulevel = `level of education`) %&gt;%
+  group_by(edulevel, region, year, sex, age) %&gt;%
+  mutate(groupsize_age = sum(groupsize)) %&gt;%  
+  group_by(edulevel, region, year, age) %&gt;% 
+  mutate (sum_edu_region_year = sum(groupsize)) %&gt;%  
+  mutate (perc_women = perc_women (groupsize_age)) %&gt;% 
+  group_by(region, year) %&gt;%
+  mutate (sum_pop = sum(groupsize)) %&gt;% rowwise() %&gt;%
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[1]) %&gt;%
+  rowwise() %&gt;% 
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[2]) %&gt;%
+  mutate(age_n = (age_l + age_h) / 2) %&gt;%
+  left_join(nuts %&gt;% distinct (NUTS2_en, NUTS2_sh), by = c(&quot;region&quot; = &quot;NUTS2_en&quot;))</code></pre>
+<pre><code>## Warning: Column `region`/`NUTS2_en` joining character vector and factor,
+## coercing into character vector</code></pre>
+<pre class="r"><code>numedulevel &lt;- read.csv(&quot;edulevel_1.csv&quot;) 
+
+numedulevel[, 2] &lt;- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+numedulevel %&gt;%
+  knitr::kable(
+  booktabs = TRUE,
+  caption = &#39;Calculated in previous post, length of education&#39;) </code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-2">Table 1: </span>Calculated in previous post, length of education</caption>
+<thead>
+<tr class="header">
+<th align="left">level.of.education</th>
+<th align="right">eduyears</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">primary and secondary education less than 9 years (ISCED97 1)</td>
+<td align="right">8</td>
+</tr>
+<tr class="even">
+<td align="left">primary and secondary education 9-10 years (ISCED97 2)</td>
+<td align="right">9</td>
+</tr>
+<tr class="odd">
+<td align="left">upper secondary education, 2 years or less (ISCED97 3C)</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">upper secondary education 3 years (ISCED97 3A)</td>
+<td align="right">12</td>
+</tr>
+<tr class="odd">
+<td align="left">post-secondary education, less than 3 years (ISCED97 4+5B)</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="left">post-secondary education 3 years or more (ISCED97 5A)</td>
+<td align="right">15</td>
+</tr>
+<tr class="odd">
+<td align="left">post-graduate education (ISCED97 6)</td>
+<td align="right">22</td>
+</tr>
+<tr class="even">
+<td align="left">no information about level of educational attainment</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>tbnum &lt;- tb %&gt;% 
+  right_join(numedulevel, by = c(&quot;level of education&quot; = &quot;level.of.education&quot;)) %&gt;%
+  filter(!is.na(eduyears)) %&gt;% 
+  drop_na()</code></pre>
+<pre><code>## Warning: Column `level of education`/`level.of.education` joining character
+## vector and factor, coercing into character vector</code></pre>
+<pre class="r"><code>tbnum %&gt;%
+  filter (year_n == 2018) %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = NUTS2_sh,y = perc_women, colour = age_n)) +
+  facet_grid(. ~ eduyears)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-21"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-2-1.png" alt="Population by region, level of education, percent women and year, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 1: Population by region, level of education, percent women and year, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;%
+  filter (year_n == 2008) %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = NUTS2_sh,y = perc_women, colour = age_n)) +
+  facet_grid(. ~ eduyears)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-22"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-2-2.png" alt="Population by region, level of education, percent women and year, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 2: Population by region, level of education, percent women and year, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;%
+  filter (year_n == 1998) %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = NUTS2_sh,y = perc_women, colour = age_n)) +
+  facet_grid(. ~ eduyears)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-23"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-2-3.png" alt="Population by region, level of education, percent women and year, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 3: Population by region, level of education, percent women and year, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;%
+  filter (year_n == 1988) %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = NUTS2_sh,y = perc_women, colour = age_n)) +
+  facet_grid(. ~ eduyears)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-24"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-2-4.png" alt="Population by region, level of education, percent women and year, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 4: Population by region, level of education, percent women and year, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>summary(tbnum)</code></pre>
+<pre><code>##     region              age            level of education     sex           
+##  Length:22660       Length:22660       Length:22660       Length:22660      
+##  Class :character   Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+##                                                                             
+##                                                                             
+##                                                                             
+##      year             groupsize         year_n       edulevel        
+##  Length:22660       Min.   :    0   Min.   :1985   Length:22660      
+##  Class :character   1st Qu.: 1713   1st Qu.:1993   Class :character  
+##  Mode  :character   Median : 5737   Median :2001   Mode  :character  
+##                     Mean   : 9638   Mean   :2001                     
+##                     3rd Qu.:14135   3rd Qu.:2010                     
+##                     Max.   :77163   Max.   :2018                     
+##  groupsize_age   sum_edu_region_year   perc_women        sum_pop       
+##  Min.   :    0   Min.   :     1      Min.   :0.0000   Min.   : 266057  
+##  1st Qu.: 1713   1st Qu.:  3566      1st Qu.:0.4090   1st Qu.: 560119  
+##  Median : 5737   Median : 11566      Median :0.4875   Median : 859794  
+##  Mean   : 9638   Mean   : 19276      Mean   :0.4707   Mean   : 824996  
+##  3rd Qu.:14135   3rd Qu.: 28287      3rd Qu.:0.5542   3rd Qu.:1200038  
+##  Max.   :77163   Max.   :134645      Max.   :1.0000   Max.   :1716160  
+##      age_l           age_h           age_n         NUTS2_sh        
+##  Min.   :16.00   Min.   :24.00   Min.   :20.00   Length:22660      
+##  1st Qu.:25.00   1st Qu.:34.00   1st Qu.:29.50   Class :character  
+##  Median :45.00   Median :54.00   Median :49.50   Mode  :character  
+##  Mean   :40.37   Mean   :49.21   Mean   :44.79                     
+##  3rd Qu.:55.00   3rd Qu.:64.00   3rd Qu.:59.50                     
+##  Max.   :65.00   Max.   :74.00   Max.   :69.50                     
+##     eduyears    
+##  Min.   : 8.00  
+##  1st Qu.: 9.00  
+##  Median :12.00  
+##  Mean   :12.64  
+##  3rd Qu.:15.00  
+##  Max.   :22.00</code></pre>
+<p>Let’s investigate the shape of the function for the response and predictors. The shape of the predictors has a great impact on the rest of the analysis. I use acepack to fit a model and plot both the response and the predictors.</p>
+<pre class="r"><code>tbtest &lt;- tbnum %&gt;% dplyr::select(sum_pop, sum_edu_region_year, year_n, perc_women, age_n)
+
+tbtest &lt;- data.frame(tbtest)
+
+acefit &lt;- ace(tbtest, tbnum$eduyears, wt=tbtest$sum_edu_region_year)
+
+plot(tbnum$eduyears, acefit$ty, xlab = &quot;Years of education&quot;, ylab = &quot;transformed years of education&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-31"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-3-1.png" alt="Plots of the response and predictors using acepack" width="672" />
+<p class="caption">
+Figure 5: Plots of the response and predictors using acepack
+</p>
+</div>
+<pre class="r"><code>plot(tbtest[,1], acefit$tx[,1], xlab = &quot;Population in region&quot;, ylab = &quot;transformed population in region&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-32"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-3-2.png" alt="Plots of the response and predictors using acepack" width="672" />
+<p class="caption">
+Figure 6: Plots of the response and predictors using acepack
+</p>
+</div>
+<pre class="r"><code>plot(tbtest[,2], acefit$tx[,2], xlab = &quot;# persons with same edulevel, region, year&quot;, ylab = &quot;transformed # persons with same edulevel, region, year&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-33"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-3-3.png" alt="Plots of the response and predictors using acepack" width="672" />
+<p class="caption">
+Figure 7: Plots of the response and predictors using acepack
+</p>
+</div>
+<pre class="r"><code>plot(tbtest[,3], acefit$tx[,3], xlab = &quot;Year&quot;, ylab = &quot;transformed year&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-34"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-3-4.png" alt="Plots of the response and predictors using acepack" width="672" />
+<p class="caption">
+Figure 8: Plots of the response and predictors using acepack
+</p>
+</div>
+<pre class="r"><code>plot(tbtest[,4], acefit$tx[,4], xlab = &quot;Percent women&quot;, ylab = &quot;transformed percent women&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-35"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-3-5.png" alt="Plots of the response and predictors using acepack" width="672" />
+<p class="caption">
+Figure 9: Plots of the response and predictors using acepack
+</p>
+</div>
+<pre class="r"><code>plot(tbtest[,5], acefit$tx[,5], xlab = &quot;Age&quot;, ylab = &quot;transformed age&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-36"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-3-6.png" alt="Plots of the response and predictors using acepack" width="672" />
+<p class="caption">
+Figure 10: Plots of the response and predictors using acepack
+</p>
+</div>
+<p>I use MARS to fit hockey-stick functions for the predictors. I do not wish to overfit by using a better approximation at this point. I will include interactions of degree two. I will put more emphasis on groups with larger size by using the number of persons with same edulevel, region, year, age as weights in the regression. From the analysis with acepack, I will approximate the shape of the response with X^-1.</p>
+<pre class="r"><code>tbtemp &lt;- tbnum %&gt;% dplyr::select(eduyears, sum_pop, sum_edu_region_year, year_n, perc_women, age_n)
+
+mmod &lt;- earth(eduyears^-1 ~ ., weights = tbtest$sum_edu_region_year, data = tbtemp, nk = 9, degree = 2)
+
+summary (mmod)</code></pre>
+<pre><code>## Call: earth(formula=eduyears^-1~., data=tbtemp,
+##             weights=tbtest$sum_edu_region_year, degree=2, nk=9)
+## 
+##                                         coefficients
+## (Intercept)                              0.109974110
+## h(68923-sum_edu_region_year)            -0.000000172
+## h(sum_edu_region_year-68923)            -0.000000071
+## h(0.402156-perc_women)                  -0.142039538
+## h(perc_women-0.402156)                  -0.216582584
+## h(2004-year_n) * h(perc_women-0.402156)  0.006151369
+## h(year_n-2004) * h(perc_women-0.402156) -0.003086559
+## h(perc_women-0.402156) * h(age_n-29.5)   0.004789032
+## h(perc_women-0.402156) * h(29.5-age_n)   0.007923485
+## 
+## Selected 9 of 9 terms, and 4 of 5 predictors
+## Termination condition: Reached nk 9
+## Importance: perc_women, age_n, year_n, sum_edu_region_year, sum_pop-unused
+## Weights: 160, 160, 2503, 2503, 27984, 27984, 41596, 41596, 57813, 57813,...
+## Number of terms at each degree of interaction: 1 4 4
+## GCV 4.263981    RSS 96442.81    GRSq 0.3866042    RSq 0.3876866</code></pre>
+<pre class="r"><code>plot (mmod)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-41"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-4-1.png" alt="Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 11: Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plotmo (mmod)</code></pre>
+<pre><code>##  plotmo grid:    sum_pop sum_edu_region_year year_n perc_women age_n
+##                   859794             11566.5   2001  0.4875054  49.5</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-42"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-4-2.png" alt="Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 12: Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>model_mmod &lt;- lm (eduyears^-1 ~ 
+  lspline(sum_edu_region_year, c(68923)) + 
+  lspline(perc_women, c(0.402156)) +  
+  lspline(year_n, c(2004)):lspline(perc_women, c(0.402156)) +
+  lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)), 
+  weights = tbtest$sum_edu_region_year,
+  data = tbnum) 
+
+summary (model_mmod)$r.squared</code></pre>
+<pre><code>## [1] 0.4067181</code></pre>
+<pre class="r"><code>anova (model_mmod)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Response: eduyears^-1
+##                                                              Df Sum Sq Mean Sq
+## lspline(sum_edu_region_year, c(68923))                        2   6429  3214.4
+## lspline(perc_women, c(0.402156))                              2  11182  5590.8
+## lspline(perc_women, c(0.402156)):lspline(year_n, c(2004))     4  18631  4657.7
+## lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5))      4  27819  6954.8
+## Residuals                                                 22647  93445     4.1
+##                                                           F value    Pr(&gt;F)    
+## lspline(sum_edu_region_year, c(68923))                     779.03 &lt; 2.2e-16 ***
+## lspline(perc_women, c(0.402156))                          1354.96 &lt; 2.2e-16 ***
+## lspline(perc_women, c(0.402156)):lspline(year_n, c(2004)) 1128.81 &lt; 2.2e-16 ***
+## lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5))  1685.54 &lt; 2.2e-16 ***
+## Residuals                                                                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>Since the predictors are on different scales I will also use MARS to fit hockey-stick functions to the standardised data. Weights can not be negative.</p>
+<pre class="r"><code>tbtemp &lt;- tbnum %&gt;% dplyr::select(eduyears, sum_pop, sum_edu_region_year, year_n, perc_women, age_n)
+
+tbtemp_scale &lt;- data.frame(tbtemp %&gt;% scale())
+
+mmod_scale &lt;- earth(eduyears^-1 ~ ., weights = tbnum$sum_edu_region_year, data = tbtemp_scale, nk = 9, degree = 2)
+
+summary (mmod_scale)</code></pre>
+<pre><code>## Call: earth(formula=eduyears^-1~., data=tbtemp_scale,
+##             weights=tbnum$sum_edu_region_year, degree=2, nk=9)
+## 
+##                                coefficients
+## (Intercept)                       1.4518768
+## h(1.54673-sum_pop)               -1.3123162
+## h(2.48479-sum_edu_region_year)    2.2482786
+## h(sum_edu_region_year-2.48479)    0.4668398
+## h(0.589918-perc_women)           -5.1021696
+## h(perc_women-0.589918)           -5.8909808
+## h(-0.905736-age_n)               -3.0330857
+## h(age_n- -0.905736)              -0.5385299
+## 
+## Selected 8 of 9 terms, and 4 of 5 predictors
+## Termination condition: Reached nk 9
+## Importance: perc_women, sum_edu_region_year, sum_pop, age_n, year_n-unused
+## Weights: 160, 160, 2503, 2503, 27984, 27984, 41596, 41596, 57813, 57813,...
+## Number of terms at each degree of interaction: 1 7 (additive model)
+## GCV 388811.6    RSS 8796089602    GRSq 0.2645814    RSq 0.2657169</code></pre>
+<pre class="r"><code>plot (mmod_scale)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-51"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-5-1.png" alt="Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 13: Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plotmo (mmod_scale)</code></pre>
+<pre><code>##  plotmo grid:    sum_pop sum_edu_region_year      year_n perc_women     age_n
+##               0.08635757          -0.3683495 -0.04979415  0.1299828 0.2792169</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-52"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-5-2.png" alt="Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 14: Hockey-stick functions fit with MARS for the predictors, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>model_mmod_scale &lt;- lm (eduyears^-1 ~ 
+  lspline(sum_pop, c(1.54673)) + 
+  lspline(sum_edu_region_year, c(2.48479)) +  
+  lspline(perc_women, c(0.589918)) +
+  lspline(age_n, c(-0.905736)), 
+  weights = tbtest$sum_edu_region_year,
+  data = tbtemp_scale) 
+
+summary (model_mmod_scale)$r.squared</code></pre>
+<pre><code>## [1] 0.2657429</code></pre>
+<pre class="r"><code>anova (model_mmod_scale)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Response: eduyears^-1
+##                                             Df     Sum Sq    Mean Sq  F value
+## lspline(sum_pop, c(1.54673))                 2   22976857   11488429   29.585
+## lspline(sum_edu_region_year, c(2.48479))     2  824771527  412385764 1061.981
+## lspline(perc_women, c(0.589918))             2 2195580032 1097790016 2827.043
+## lspline(age_n, c(-0.905736))                 2  140046090   70023045  180.324
+## Residuals                                22651 8795778088     388317         
+##                                             Pr(&gt;F)    
+## lspline(sum_pop, c(1.54673))             1.473e-13 ***
+## lspline(sum_edu_region_year, c(2.48479)) &lt; 2.2e-16 ***
+## lspline(perc_women, c(0.589918))         &lt; 2.2e-16 ***
+## lspline(age_n, c(-0.905736))             &lt; 2.2e-16 ***
+## Residuals                                             
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>I will use regsubsets to find the model which minimises the AIC using the standardised data. I will include some plots for diagnostic purposes. I have also included a bootstrap test since we can’t count on the errors to be normally distributed.</p>
+<pre class="r"><code>b &lt;- regsubsets (eduyears^-1 ~ (lspline(sum_edu_region_year, c(2.48479)) + lspline(perc_women, c(0.589918)) + lspline(age_n, c(-0.905736)) + year_n + lspline(sum_pop, c(1.54673))) * (lspline(sum_edu_region_year, c(2.48479)) + lspline(perc_women, c(0.589918)) + lspline(age_n, c(-0.905736)) + year_n + lspline(sum_pop, c(1.54673))), weights = tbnum$sum_edu_region_year, data = tbtemp_scale, nvmax = 12)
+
+rs &lt;- summary(b)
+AIC &lt;- 50 * log (rs$rss / 50) + (2:13) * 2
+which.min (AIC)</code></pre>
+<pre><code>## [1] 4</code></pre>
+<pre class="r"><code>names (rs$which[4,])[rs$which[4,]]</code></pre>
+<pre><code>## [1] &quot;(Intercept)&quot;                                                            
+## [2] &quot;lspline(perc_women, c(0.589918))1&quot;                                      
+## [3] &quot;lspline(sum_edu_region_year, c(2.48479))1:lspline(age_n, c(-0.905736))1&quot;
+## [4] &quot;lspline(perc_women, c(0.589918))2:lspline(age_n, c(-0.905736))2&quot;        
+## [5] &quot;lspline(age_n, c(-0.905736))1:lspline(sum_pop, c(1.54673))1&quot;</code></pre>
+<pre class="r"><code>model &lt;- lm (eduyears^-1 ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop,
+   weights = tbnum$sum_edu_region_year,
+   data = tbnum) 
+
+boxcox(model)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-61"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-1.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 15: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>summary (model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = eduyears^-1 ~ lspline(perc_women, c(0.402156)) + 
+##     lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) + 
+##     lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) + 
+##     lspline(age_n, c(29.5)):sum_pop, data = tbnum, weights = tbnum$sum_edu_region_year)
+## 
+## Weighted Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -7.7236 -1.3350 -0.2622  1.2344  6.2808 
+## 
+## Coefficients:
+##                                                                    Estimate
+## (Intercept)                                                       6.003e-02
+## lspline(perc_women, c(0.402156))1                                 1.614e-01
+## lspline(perc_women, c(0.402156))2                                -9.712e-02
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))1  1.680e-09
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))1 -9.445e-10
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))2  1.449e-08
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))2 -1.359e-10
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))1       -1.611e-03
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))1       -2.570e-03
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))2        1.802e-04
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))2        3.535e-03
+## lspline(age_n, c(29.5))1:sum_pop                                 -2.162e-10
+## lspline(age_n, c(29.5))2:sum_pop                                 -3.873e-10
+##                                                                  Std. Error
+## (Intercept)                                                       1.629e-03
+## lspline(perc_women, c(0.402156))1                                 6.578e-03
+## lspline(perc_women, c(0.402156))2                                 2.087e-02
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))1  3.435e-10
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))1  6.753e-10
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))2  4.415e-10
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))2  1.118e-09
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))1        1.893e-04
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))1        7.417e-04
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))2        6.717e-05
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))2        1.212e-04
+## lspline(age_n, c(29.5))1:sum_pop                                  1.854e-11
+## lspline(age_n, c(29.5))2:sum_pop                                  2.233e-11
+##                                                                  t value
+## (Intercept)                                                       36.838
+## lspline(perc_women, c(0.402156))1                                 24.541
+## lspline(perc_women, c(0.402156))2                                 -4.653
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))1   4.890
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))1  -1.399
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))2  32.817
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))2  -0.122
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))1        -8.510
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))1        -3.465
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))2         2.683
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))2        29.180
+## lspline(age_n, c(29.5))1:sum_pop                                 -11.660
+## lspline(age_n, c(29.5))2:sum_pop                                 -17.345
+##                                                                  Pr(&gt;|t|)    
+## (Intercept)                                                       &lt; 2e-16 ***
+## lspline(perc_women, c(0.402156))1                                 &lt; 2e-16 ***
+## lspline(perc_women, c(0.402156))2                                3.30e-06 ***
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))1 1.01e-06 ***
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))1 0.161945    
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))2  &lt; 2e-16 ***
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))2 0.903193    
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))1        &lt; 2e-16 ***
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))1       0.000531 ***
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))2       0.007309 ** 
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))2        &lt; 2e-16 ***
+## lspline(age_n, c(29.5))1:sum_pop                                  &lt; 2e-16 ***
+## lspline(age_n, c(29.5))2:sum_pop                                  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.069 on 22647 degrees of freedom
+## Multiple R-squared:  0.3847, Adjusted R-squared:  0.3844 
+## F-statistic:  1180 on 12 and 22647 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>anova (model)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Response: eduyears^-1
+##                                                                   Df Sum Sq
+## lspline(perc_women, c(0.402156))                                   2  13795
+## lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5))     4  29033
+## lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5))           4   8736
+## lspline(age_n, c(29.5)):sum_pop                                    2   9027
+## Residuals                                                      22647  96916
+##                                                                Mean Sq F value
+## lspline(perc_women, c(0.402156))                                6897.3 1611.75
+## lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5))  7258.3 1696.10
+## lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5))        2183.9  510.33
+## lspline(age_n, c(29.5)):sum_pop                                 4513.4 1054.67
+## Residuals                                                          4.3        
+##                                                                   Pr(&gt;F)    
+## lspline(perc_women, c(0.402156))                               &lt; 2.2e-16 ***
+## lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) &lt; 2.2e-16 ***
+## lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5))       &lt; 2.2e-16 ***
+## lspline(age_n, c(29.5)):sum_pop                                &lt; 2.2e-16 ***
+## Residuals                                                                   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>plot (model)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-62"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-2.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 16: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-63"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-3.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 17: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-64"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-4.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 18: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-65"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-5.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 19: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>binnedplot(predict(model), resid(model))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-66"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-6.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 20: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>halfnorm(rstudent(model))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-67"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-7.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 21: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;% mutate(residuals = residuals(model)) %&gt;% 
+  group_by(eduyears, region, year_n, age_n) %&gt;% 
+  summarise(residuals = mean(residuals), count = sum(groupsize)) %&gt;%
+    ggplot (aes(x = eduyears, y = residuals, size = sqrt(count), colour = year_n)) +
+    geom_point() + facet_grid(. ~ age_n)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-68"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-8.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 22: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnumpred &lt;- bind_cols(tbnum, as_tibble(predict(model, tbnum, interval = &quot;confidence&quot;)))
+
+suppressWarnings(multiclass.roc(tbnumpred$eduyears, tbnumpred$fit))</code></pre>
+<pre><code>## Setting direction: controls &gt; cases</code></pre>
+<pre><code>## Setting direction: controls &lt; cases</code></pre>
+<pre><code>## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases</code></pre>
+<pre><code>## Setting direction: controls &lt; cases</code></pre>
+<pre><code>## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases</code></pre>
+<pre><code>## 
+## Call:
+## multiclass.roc.default(response = tbnumpred$eduyears, predictor = tbnumpred$fit)
+## 
+## Data: tbnumpred$fit with 7 levels of tbnumpred$eduyears: 8, 9, 10, 12, 13, 15, 22.
+## Multi-class area under the curve: 0.6936</code></pre>
+<pre class="r"><code>bs &lt;- function(formula, data, indices) {
+  d &lt;- data[indices,] # allows boot to select sample 
+  fit &lt;- lm(formula, weights = sum_edu_region_year, data=d)
+  return(coef(fit)) 
+} 
+
+results &lt;- boot(data = tbnum, statistic = bs, 
+   R = 1000, formula = eduyears^-1 ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop,
+   weights = tbnum$sum_edu_region_year)
+
+results</code></pre>
+<pre><code>## 
+## WEIGHTED BOOTSTRAP
+## 
+## 
+## Call:
+## boot(data = tbnum, statistic = bs, R = 1000, weights = tbnum$sum_edu_region_year, 
+##     formula = eduyears^-1 ~ lspline(perc_women, c(0.402156)) + 
+##         lspline(sum_edu_region_year, c(68923)):lspline(age_n, 
+##             c(29.5)) + lspline(perc_women, c(0.402156)):lspline(age_n, 
+##         c(29.5)) + lspline(age_n, c(29.5)):sum_pop)
+## 
+## 
+## Bootstrap Statistics :
+##           original        bias     std. error      mean(t*)
+## t1*   6.002560e-02  6.282966e-03 1.487621e-03  6.630857e-02
+## t2*   1.614448e-01 -1.489491e-02 6.393635e-03  1.465499e-01
+## t3*  -9.712093e-02  7.221993e-02 1.927104e-02 -2.490101e-02
+## t4*   1.679729e-09  4.440291e-09 3.270648e-10  6.120020e-09
+## t5*  -9.444671e-10  1.440855e-10 3.744453e-10 -8.003816e-10
+## t6*   1.448852e-08 -3.952505e-09 4.193252e-10  1.053602e-08
+## t7*  -1.359400e-10  1.468111e-09 5.529310e-10  1.332171e-09
+## t8*  -1.610831e-03  6.882804e-05 1.801159e-04 -1.542003e-03
+## t9*  -2.570250e-03 -2.067477e-03 6.732789e-04 -4.637727e-03
+## t10*  1.801919e-04  7.229534e-04 6.282813e-05  9.031453e-04
+## t11*  3.535199e-03 -1.161393e-03 1.113341e-04  2.373805e-03
+## t12* -2.161738e-10 -2.930531e-10 1.634625e-11 -5.092269e-10
+## t13* -3.872669e-10  6.108726e-11 2.103217e-11 -3.261797e-10</code></pre>
+<pre class="r"><code>plot(results, index=1) # intercept </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-69"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-6-9.png" alt="Find the model that minimises the AIC, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 23: Find the model that minimises the AIC, Year 1985 - 2018
+</p>
+</div>
+<p>There are a few things I would like to investigate to improve the credibility of the analysis. I will assume that the data can be grouped by year of birth and region and investigate how this will affect the model. I have scaled the weights not to affect the residual standard deviation. I will include some plots for diagnostic purposes. I will assume that each year of birth and each region is a group and set them as random effects and the rest of the predictors as fixed effects. I use the mean age in each age group as the year of birth.</p>
+<pre class="r"><code>temp &lt;- tbnum %&gt;% mutate(yob = year_n - age_n) %&gt;% mutate(region = tbnum$region)
+
+temp &lt;- data.frame(temp)
+
+weights_scaled &lt;- tbtest$sum_edu_region_year / max(tbtest$sum_edu_region_year)
+
+mmodel &lt;- lmer (eduyears^-1 ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop +
+   (1|yob) + 
+   (1|region),       
+   weights = weights_scaled,
+   data = temp) </code></pre>
+<pre><code>## Warning: Some predictor variables are on very different scales: consider
+## rescaling</code></pre>
+<pre class="r"><code>plot(mmodel)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-71"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-7-1.png" alt="A diagnostic plot of the model with random effects components" width="672" />
+<p class="caption">
+Figure 24: A diagnostic plot of the model with random effects components
+</p>
+</div>
+<pre class="r"><code>qqnorm (residuals(mmodel), main=&quot;&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-72"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-7-2.png" alt="A diagnostic plot of the model with random effects components" width="672" />
+<p class="caption">
+Figure 25: A diagnostic plot of the model with random effects components
+</p>
+</div>
+<pre class="r"><code>summary (mmodel)</code></pre>
+<pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
+## Formula: 
+## eduyears^-1 ~ lspline(perc_women, c(0.402156)) + lspline(sum_edu_region_year,  
+##     c(68923)):lspline(age_n, c(29.5)) + lspline(perc_women, c(0.402156)):lspline(age_n,  
+##     c(29.5)) + lspline(age_n, c(29.5)):sum_pop + (1 | yob) +      (1 | region)
+##    Data: temp
+## Weights: weights_scaled
+## 
+## REML criterion at convergence: -107912.7
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -4.1769 -0.6147 -0.1003  0.6108  3.2800 
+## 
+## Random effects:
+##  Groups   Name        Variance  Std.Dev. 
+##  yob      (Intercept) 1.053e-04 0.0102603
+##  region   (Intercept) 8.113e-07 0.0009007
+##  Residual             2.753e-05 0.0052472
+## Number of obs: 22660, groups:  yob, 108; region, 8
+## 
+## Fixed effects:
+##                                                                    Estimate
+## (Intercept)                                                       3.382e-02
+## lspline(perc_women, c(0.402156))1                                 1.806e-01
+## lspline(perc_women, c(0.402156))2                                -1.222e-01
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))1  3.692e-10
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))1  1.706e-09
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))2  1.440e-08
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))2 -5.056e-09
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))1        8.518e-04
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))1       -1.818e-03
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))2       -1.046e-03
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))2        2.786e-03
+## lspline(age_n, c(29.5))1:sum_pop                                 -1.412e-10
+## lspline(age_n, c(29.5))2:sum_pop                                 -3.426e-10
+##                                                                  Std. Error
+## (Intercept)                                                       2.092e-03
+## lspline(perc_women, c(0.402156))1                                 1.757e-02
+## lspline(perc_women, c(0.402156))2                                 1.953e-02
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))1  3.244e-10
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))1  6.564e-10
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))2  4.148e-10
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))2  1.112e-09
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))1        5.885e-04
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))1        6.941e-04
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))2        6.737e-05
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))2        1.167e-04
+## lspline(age_n, c(29.5))1:sum_pop                                  3.051e-11
+## lspline(age_n, c(29.5))2:sum_pop                                  2.143e-11
+##                                                                  t value
+## (Intercept)                                                       16.167
+## lspline(perc_women, c(0.402156))1                                 10.280
+## lspline(perc_women, c(0.402156))2                                 -6.258
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))1   1.138
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))1   2.599
+## lspline(sum_edu_region_year, c(68923))1:lspline(age_n, c(29.5))2  34.716
+## lspline(sum_edu_region_year, c(68923))2:lspline(age_n, c(29.5))2  -4.549
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))1         1.448
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))1        -2.619
+## lspline(perc_women, c(0.402156))1:lspline(age_n, c(29.5))2       -15.525
+## lspline(perc_women, c(0.402156))2:lspline(age_n, c(29.5))2        23.876
+## lspline(age_n, c(29.5))1:sum_pop                                  -4.627
+## lspline(age_n, c(29.5))2:sum_pop                                 -15.987</code></pre>
+<pre><code>## 
+## Correlation matrix not shown by default, as p = 13 &gt; 12.
+## Use print(x, correlation=TRUE)  or
+##     vcov(x)        if you need it</code></pre>
+<pre><code>## fit warnings:
+## Some predictor variables are on very different scales: consider rescaling</code></pre>
+<pre class="r"><code>anova (mmodel)</code></pre>
+<pre><code>## Analysis of Variance Table
+##                                                                Df   Sum Sq
+## lspline(perc_women, c(0.402156))                                2 0.243294
+## lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5))  4 0.060730
+## lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5))        4 0.030402
+## lspline(age_n, c(29.5)):sum_pop                                 2 0.014060
+##                                                                 Mean Sq F value
+## lspline(perc_women, c(0.402156))                               0.121647 4418.15
+## lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) 0.015182  551.42
+## lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5))       0.007600  276.04
+## lspline(age_n, c(29.5)):sum_pop                                0.007030  255.32</code></pre>
+<pre class="r"><code>binnedplot(predict(mmodel), resid(mmodel))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-73"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-7-3.png" alt="A diagnostic plot of the model with random effects components" width="672" />
+<p class="caption">
+Figure 26: A diagnostic plot of the model with random effects components
+</p>
+</div>
+<pre class="r"><code>halfnorm(rstudent(mmodel))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-74"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-7-4.png" alt="A diagnostic plot of the model with random effects components" width="672" />
+<p class="caption">
+Figure 27: A diagnostic plot of the model with random effects components
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;% mutate(residuals = residuals(mmodel)) %&gt;% 
+  group_by(eduyears, region, year_n, age_n) %&gt;% 
+  summarise(residuals = mean(residuals), count = sum(groupsize)) %&gt;%
+    ggplot (aes(x = eduyears, y = residuals, size = sqrt(count), colour = year_n)) +
+    geom_point() + facet_grid(. ~ age_n)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-75"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-7-5.png" alt="A diagnostic plot of the model with random effects components" width="672" />
+<p class="caption">
+Figure 28: A diagnostic plot of the model with random effects components
+</p>
+</div>
+<pre class="r"><code>tbnumpred &lt;- bind_cols(temp, as_tibble(predict(mmodel, temp, interval = &quot;confidence&quot;)))</code></pre>
+<pre><code>## Warning in predict.merMod(mmodel, temp, interval = &quot;confidence&quot;): unused
+## arguments ignored</code></pre>
+<pre><code>## Warning: Calling `as_tibble()` on a vector is discouraged, because the behavior is likely to change in the future. Use `tibble::enframe(name = NULL)` instead.
+## This warning is displayed once per session.</code></pre>
+<pre class="r"><code>suppressWarnings (multiclass.roc (tbnumpred$eduyears, tbnumpred$value))</code></pre>
+<pre><code>## Setting direction: controls &gt; cases</code></pre>
+<pre><code>## Setting direction: controls &lt; cases</code></pre>
+<pre><code>## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases</code></pre>
+<pre><code>## Setting direction: controls &lt; cases</code></pre>
+<pre><code>## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases</code></pre>
+<pre><code>## Setting direction: controls &lt; cases</code></pre>
+<pre><code>## Setting direction: controls &gt; cases
+## Setting direction: controls &gt; cases</code></pre>
+<pre><code>## 
+## Call:
+## multiclass.roc.default(response = tbnumpred$eduyears, predictor = tbnumpred$value)
+## 
+## Data: tbnumpred$value with 7 levels of tbnumpred$eduyears: 8, 9, 10, 12, 13, 15, 22.
+## Multi-class area under the curve: 0.6939</code></pre>
+<pre class="r"><code>mySumm &lt;- function(.) { s &lt;- sigma(.)
+    c(beta =getME(., &quot;beta&quot;), sigma = s, sig01 = unname(s * getME(., &quot;theta&quot;))) }
+
+results &lt;- bootMer(mmodel, mySumm, nsim = 1000)
+
+results</code></pre>
+<pre><code>## 
+## PARAMETRIC BOOTSTRAP
+## 
+## 
+## Call:
+## bootMer(x = mmodel, FUN = mySumm, nsim = 1000)
+## 
+## 
+## Bootstrap Statistics :
+##           original        bias     std. error
+## t1*   3.382171e-02  3.204383e-05 1.370011e-03
+## t2*   1.806110e-01  5.656583e-04 1.586369e-02
+## t3*  -1.222301e-01 -1.200144e-04 7.545495e-03
+## t4*   3.692235e-10  1.574681e-11 1.758515e-10
+## t5*   1.705945e-09 -8.046354e-12 5.355611e-10
+## t6*   1.440064e-08 -1.696450e-11 2.268515e-10
+## t7*  -5.055769e-09  1.234462e-11 8.717959e-10
+## t8*   8.518246e-04 -2.117494e-05 5.396222e-04
+## t9*  -1.817991e-03  5.758882e-06 2.800208e-04
+## t10* -1.045953e-03  1.165115e-06 3.192411e-05
+## t11*  2.786456e-03 -8.257204e-08 6.151912e-05
+## t12* -1.411911e-10 -7.934184e-13 2.229494e-11
+## t13* -3.426241e-10  1.956803e-13 9.642223e-12
+## t14*  5.247231e-03 -3.268970e-03 1.377226e-05
+## t15*  1.026026e-02 -6.487712e-06 6.957391e-04
+## t16*  9.007187e-04 -1.190123e-05 2.607631e-04</code></pre>
+<pre><code>## 
+## 118 warning(s): Model failed to converge with max|grad| = 0.00200096 (tol = 0.002, component 1) (and others)</code></pre>
+<pre class="r"><code>plot(results)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-76"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-7-6.png" alt="A diagnostic plot of the model with random effects components" width="672" />
+<p class="caption">
+Figure 29: A diagnostic plot of the model with random effects components
+</p>
+</div>
+<p>Now let’s see what we have found. I will plot all the models for comparison. I could not get the back transformation in sjPlot to work for the response variable so you will have to endure that the response is the inverse of years of education.</p>
+<pre class="r"><code>transformeddata &lt;- tbnum %&gt;%  mutate(eduyears = eduyears ^ -1)
+
+model &lt;- lm (eduyears ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop,
+   weights = tbnum$sum_edu_region_year,
+   data = transformeddata)
+
+temp &lt;- transformeddata %&gt;% mutate(yob = year_n - age_n) %&gt;% mutate(region = tbnum$region)
+
+temp &lt;- data.frame(temp)
+
+mmodel &lt;- lmer (eduyears ~ 
+   lspline(perc_women, c(0.402156)) +                                    
+   lspline(sum_edu_region_year, c(68923)):lspline(age_n, c(29.5)) +
+   lspline(perc_women, c(0.402156)):lspline(age_n, c(29.5)) +       
+   lspline(age_n, c(29.5)):sum_pop +
+   (1|yob) + 
+   (1|region),       
+   weights = weights_scaled,
+   data = temp) </code></pre>
+<pre><code>## Warning: Some predictor variables are on very different scales: consider
+## rescaling</code></pre>
+<pre class="r"><code>plot_model (model, type = &quot;pred&quot;, terms = c(&quot;perc_women&quot;))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-81"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-8-1.png" alt="The significance of the per cent women on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 30: The significance of the per cent women on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plot_model (mmodel, type = &quot;pred&quot;, terms = c(&quot;perc_women&quot;))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-82"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-8-2.png" alt="The significance of the per cent women on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 31: The significance of the per cent women on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = perc_women, y = eduyears )) + 
+  labs(
+    x = &quot;Per cent women&quot;,
+    y = &quot;Years of education&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-83"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-8-3.png" alt="The significance of the per cent women on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 32: The significance of the per cent women on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plot_model (model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sum_edu_region_year&quot;))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-91"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-9-1.png" alt="The significance of the interaction between the number of persons with the same level of education, region and year, age and age on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 33: The significance of the interaction between the number of persons with the same level of education, region and year, age and age on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plot_model (mmodel, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sum_edu_region_year&quot;))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-92"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-9-2.png" alt="The significance of the interaction between the number of persons with the same level of education, region and year, age and age on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 34: The significance of the interaction between the number of persons with the same level of education, region and year, age and age on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = sum_edu_region_year, y = eduyears, colour = age_n)) + 
+  labs(
+    x = &quot;# persons with same edulevel, region, year, age&quot;,
+    y = &quot;Years of education&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-93"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-9-3.png" alt="The significance of the interaction between the number of persons with the same level of education, region and year, age and age on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 35: The significance of the interaction between the number of persons with the same level of education, region and year, age and age on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plot_model (model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;perc_women&quot;))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-101"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-10-1.png" alt="The significance of the interaction between per cent women and age on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 36: The significance of the interaction between per cent women and age on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plot_model (mmodel, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;perc_women&quot;))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-102"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-10-2.png" alt="The significance of the interaction between per cent women and age on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 37: The significance of the interaction between per cent women and age on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = perc_women, y = eduyears, colour = age_n)) + 
+  labs(
+    x = &quot;Age&quot;,
+    y = &quot;Years of education&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-103"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-10-3.png" alt="The significance of the interaction between per cent women and age on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 38: The significance of the interaction between per cent women and age on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plot_model (model, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sum_pop&quot;))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-111"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-11-1.png" alt="The significance of the interaction between the age and population in the region on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 39: The significance of the interaction between the age and population in the region on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>plot_model (mmodel, type = &quot;pred&quot;, terms = c(&quot;age_n&quot;, &quot;sum_pop&quot;))</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-112"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-11-2.png" alt="The significance of the interaction between the age and population in the region on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 40: The significance of the interaction between the age and population in the region on the level of education, Year 1985 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum %&gt;%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = age_n, y = eduyears, colour = sum_pop)) + 
+  labs(
+    x = &quot;Age&quot;,
+    y = &quot;Years of education&quot;
+  )</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-113"></span>
+<img src="/post/2020-04-05-the-significance-of-population-size-year-age-and-per-cent-women-on-the-education-level-in-sweden_files/figure-html/unnamed-chunk-11-3.png" alt="The significance of the interaction between the age and population in the region on the level of education, Year 1985 - 2018" width="672" />
+<p class="caption">
+Figure 41: The significance of the interaction between the age and population in the region on the level of education, Year 1985 - 2018
+</p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+          <li>
+            <a href="https://www.r-bloggers.com/" class="footer-links-kudos">R-bloggers</a>
+          </li>	
+          <li>
+            <a href="https://rweekly.org/" class="footer-links-kudos">R Weekly</a>
+          </li>			  
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+
