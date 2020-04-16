@@ -20,11 +20,11 @@
     
     
     <item>
-      <title>The significance of sex, year, per cent women in the region and the number of engineers in the region on the salary of engineers in Sweden</title>
-      <link>/2020/04/16/2020-04-16/</link>
+      <title>Engineering salaries revisited</title>
+      <link>/2020/04/16/engineering-salaries-revisited/</link>
       <pubDate>Thu, 16 Apr 2020 00:00:00 +0000</pubDate>
       
-      <guid>/2020/04/16/2020-04-16/</guid>
+      <guid>/2020/04/16/engineering-salaries-revisited/</guid>
       <description>
 
 
@@ -59,7 +59,6 @@ library (car)&lt;/code&gt;&lt;/pre&gt;
 ##   influence.merMod                car 
 ##   dfbeta.influence.merMod         car 
 ##   dfbetas.influence.merMod        car&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Install package &amp;quot;strengejacke&amp;quot; from GitHub (`devtools::install_github(&amp;quot;strengejacke/strengejacke&amp;quot;)`) to load all sj-packages at once!&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (leaps)
 library (MASS)&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## 
@@ -379,7 +378,7 @@ tbnum &amp;lt;- bake(prepare, new_data = tb_unique)&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;The correlation chart shows that many predictors are correlated with the response variable but also that many predictors are correlated between each other. The vif function also shows high multicollinearity. Some notable correlations are in a dedicated plot below.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;chart.Correlation(tbnum, histogram = TRUE, pch = 19)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-41&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-4-1.png&#34; alt=&#34;Correlation between response and predictors and between predictors, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-4-1.png&#34; alt=&#34;Correlation between response and predictors and between predictors, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 1: Correlation between response and predictors and between predictors, Year 2014 - 2018
 &lt;/p&gt;
@@ -420,7 +419,7 @@ p4 &amp;lt;- tb %&amp;gt;%
 
 gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-42&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-4-2.png&#34; alt=&#34;Correlation between response and predictors and between predictors, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-4-2.png&#34; alt=&#34;Correlation between response and predictors and between predictors, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 2: Correlation between response and predictors and between predictors, Year 2014 - 2018
 &lt;/p&gt;
@@ -445,7 +444,7 @@ cv_glmnet &amp;lt;- train(
 ## There were missing values in resampled performance measures.&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;vip(cv_glmnet, num_features = 20, geom = &amp;quot;point&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-51&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-5-1.png&#34; alt=&#34;Elastic net search on the data using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-5-1.png&#34; alt=&#34;Elastic net search on the data using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 3: Elastic net search on the data using no interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -461,7 +460,7 @@ Figure 3: Elastic net search on the data using no interactions, Year 2014 - 2018
 
 plot(elastic_min, xvar = &amp;quot;lambda&amp;quot;, main = &amp;quot;Elastic net penalty\n\n&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-52&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-5-2.png&#34; alt=&#34;Elastic net search on the data using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-5-2.png&#34; alt=&#34;Elastic net search on the data using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 4: Elastic net search on the data using no interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -492,7 +491,7 @@ cv_glmnet &amp;lt;- train(
 ## &amp;quot;glmnet&amp;quot;, : missing values found in aggregated results&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;vip(cv_glmnet, num_features = 20, geom = &amp;quot;point&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-61&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-6-1.png&#34; alt=&#34;Elastic net search on the data including interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-6-1.png&#34; alt=&#34;Elastic net search on the data including interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 5: Elastic net search on the data including interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -508,7 +507,7 @@ Figure 5: Elastic net search on the data including interactions, Year 2014 - 201
 
 plot(elastic_min, xvar = &amp;quot;lambda&amp;quot;, main = &amp;quot;Elastic net penalty\n\n&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-62&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-6-2.png&#34; alt=&#34;Elastic net search on the data including interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-6-2.png&#34; alt=&#34;Elastic net search on the data including interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 6: Elastic net search on the data including interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -538,7 +537,7 @@ summary (mmod_scaled)&lt;/code&gt;&lt;/pre&gt;
 ## GCV 3373591806    RSS 176181393125    GRSq 0.9000639    RSq 0.9294851&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot (mmod_scaled)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-71&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-7-1.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-7-1.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 7: Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -547,7 +546,7 @@ Figure 7: Hockey-stick functions fit with MARS for the predictors using no inter
 &lt;pre&gt;&lt;code&gt;##  plotmo grid:    year_n sex_men perc_women_region     suming
 ##                       0     0.5         0.2069953 -0.4539968&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-72&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-7-2.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-7-2.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 8: Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -618,7 +617,7 @@ summary (model_mmod_scale) %&amp;gt;% tidy() %&amp;gt;%
 ## 8 lspline(~     603.      129.      4.66 1.52e- 5    603.    -42.0    204. TRUE&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(results, index=1) # intercept &lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-73&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-7-3.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-7-3.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 9: Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -728,7 +727,7 @@ summary (mmod_scaled)&lt;/code&gt;&lt;/pre&gt;
 ## GCV 2629100288    RSS 104645110144    GRSq 0.922118    RSq 0.9581168&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot (mmod_scaled)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-81&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-8-1.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors including interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-8-1.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors including interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 10: Hockey-stick functions fit with MARS for the predictors including interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -739,7 +738,7 @@ Figure 10: Hockey-stick functions fit with MARS for the predictors including int
 ##  regioneduyears
 ##      -0.1394781&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-82&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-8-2.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors including interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-8-2.png&#34; alt=&#34;Hockey-stick functions fit with MARS for the predictors including interactions, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 11: Hockey-stick functions fit with MARS for the predictors including interactions, Year 2014 - 2018
 &lt;/p&gt;
@@ -841,7 +840,7 @@ vip::vip(tbnum_bag, num_features = 20, bar = FALSE)&lt;/code&gt;&lt;/pre&gt;
 ## argument has been deprecated in favor of the new `geom` argument. It will be
 ## removed in version 0.3.0.&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-9&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-9-1.png&#34; alt=&#34;Data fit with decision tree bag, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-9-1.png&#34; alt=&#34;Data fit with decision tree bag, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 12: Data fit with decision tree bag, Year 2014 - 2018
 &lt;/p&gt;
@@ -916,39 +915,39 @@ summary (model)&lt;/code&gt;&lt;/pre&gt;
 ## Signif. codes:  0 &amp;#39;***&amp;#39; 0.001 &amp;#39;**&amp;#39; 0.01 &amp;#39;*&amp;#39; 0.05 &amp;#39;.&amp;#39; 0.1 &amp;#39; &amp;#39; 1&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot (model)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-101&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-10-1.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-10-1.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 13: Diagnostics on the model, Year 2014 - 2018
 &lt;/p&gt;
 &lt;/div&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-102&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-10-2.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-10-2.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 14: Diagnostics on the model, Year 2014 - 2018
 &lt;/p&gt;
 &lt;/div&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-103&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-10-3.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-10-3.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 15: Diagnostics on the model, Year 2014 - 2018
 &lt;/p&gt;
 &lt;/div&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-104&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-10-4.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-10-4.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 16: Diagnostics on the model, Year 2014 - 2018
 &lt;/p&gt;
 &lt;/div&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;binnedplot(predict(model), resid(model))&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-105&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-10-5.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-10-5.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 17: Diagnostics on the model, Year 2014 - 2018
 &lt;/p&gt;
 &lt;/div&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;halfnorm(rstudent(model))&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-106&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-10-6.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-10-6.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 18: Diagnostics on the model, Year 2014 - 2018
 &lt;/p&gt;
@@ -963,7 +962,7 @@ Figure 18: Diagnostics on the model, Year 2014 - 2018
 ## Warning in sqrt(count): NaNs produced&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## Warning: Removed 49 rows containing missing values (geom_point).&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-107&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-10-7.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-10-7.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 19: Diagnostics on the model, Year 2014 - 2018
 &lt;/p&gt;
@@ -995,7 +994,7 @@ summary (model) %&amp;gt;% tidy() %&amp;gt;%
 ## 9 sex_men:~    -516.      89.7    -5.75  2.44e- 7   -516.    12.3     246. TRUE&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot(results, index = 1) # intercept &lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-108&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-10-8.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-10-8.png&#34; alt=&#34;Diagnostics on the model, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 20: Diagnostics on the model, Year 2014 - 2018
 &lt;/p&gt;
@@ -1074,7 +1073,7 @@ p2 &amp;lt;- partial(tbnum_bag, pred.var = &amp;quot;perc_women_region&amp;quot;
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-121&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-12-1.png&#34; alt=&#34;The significance of the per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-12-1.png&#34; alt=&#34;The significance of the per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 21: The significance of the per cent women in the region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1087,7 +1086,7 @@ Figure 21: The significance of the per cent women in the region on the salary fo
     y = &amp;quot;Salary&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-122&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-12-2.png&#34; alt=&#34;The significance of the per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-12-2.png&#34; alt=&#34;The significance of the per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 22: The significance of the per cent women in the region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1098,7 +1097,7 @@ p2 &amp;lt;- partial(tbnum_bag, pred.var = &amp;quot;year_n&amp;quot;) %&amp;gt;
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-131&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-13-1.png&#34; alt=&#34;The significance of the year on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-13-1.png&#34; alt=&#34;The significance of the year on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 23: The significance of the year on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1111,7 +1110,7 @@ Figure 23: The significance of the year on the salary for engineers, Year 2014 -
     y = &amp;quot;Salary&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-132&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-13-2.png&#34; alt=&#34;The significance of the year on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-13-2.png&#34; alt=&#34;The significance of the year on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 24: The significance of the year on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1128,7 +1127,7 @@ p2 &amp;lt;- tb_unique %&amp;gt;%
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-14&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-14-1.png&#34; alt=&#34;The significance of gender on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-14-1.png&#34; alt=&#34;The significance of gender on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 25: The significance of gender on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1139,7 +1138,7 @@ p2 &amp;lt;- partial(tbnum_bag, pred.var = &amp;quot;suming&amp;quot;) %&amp;gt;
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-151&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-15-1.png&#34; alt=&#34;The significance of the number of engineers on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-15-1.png&#34; alt=&#34;The significance of the number of engineers on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 26: The significance of the number of engineers on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1152,7 +1151,7 @@ Figure 26: The significance of the number of engineers on the salary for enginee
     y = &amp;quot;Salary&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-152&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-15-2.png&#34; alt=&#34;The significance of the number of engineers on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-15-2.png&#34; alt=&#34;The significance of the number of engineers on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 27: The significance of the number of engineers on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1169,7 +1168,7 @@ p2 &amp;lt;- tb_unique %&amp;gt;%
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-16&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-16-1.png&#34; alt=&#34;The significance of the interaction between sex and the quotient between salary for men and women within each group defined by year and region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-16-1.png&#34; alt=&#34;The significance of the interaction between sex and the quotient between salary for men and women within each group defined by year and region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 28: The significance of the interaction between sex and the quotient between salary for men and women within each group defined by year and region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1186,7 +1185,7 @@ p2 &amp;lt;- tb_unique %&amp;gt;%
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-17&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-17-1.png&#34; alt=&#34;The combination of the year and sex on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-17-1.png&#34; alt=&#34;The combination of the year and sex on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 29: The combination of the year and sex on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1203,7 +1202,7 @@ p2 &amp;lt;- tb_unique %&amp;gt;%
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-18&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-18-1.png&#34; alt=&#34;The combination of the per cent women in the region and sex on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-18-1.png&#34; alt=&#34;The combination of the per cent women in the region and sex on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 30: The combination of the per cent women in the region and sex on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1220,7 +1219,7 @@ p2 &amp;lt;- tb_unique %&amp;gt;%
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-19&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-19-1.png&#34; alt=&#34;The combination of the number of engineers in the region and sex on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-19-1.png&#34; alt=&#34;The combination of the number of engineers in the region and sex on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 31: The combination of the number of engineers in the region and sex on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1233,7 +1232,7 @@ p2 &amp;lt;- partial(tbnum_bag, pred.var = c(&amp;quot;perc_women_region&amp;quo
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-201&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-20-1.png&#34; alt=&#34;The combination of the year and per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-20-1.png&#34; alt=&#34;The combination of the year and per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 32: The combination of the year and per cent women in the region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1246,7 +1245,7 @@ Figure 32: The combination of the year and per cent women in the region on the s
     y = &amp;quot;Salary&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-202&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-20-2.png&#34; alt=&#34;The combination of the year and per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-20-2.png&#34; alt=&#34;The combination of the year and per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 33: The combination of the year and per cent women in the region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1259,7 +1258,7 @@ p2 &amp;lt;- partial(tbnum_bag, pred.var = c(&amp;quot;suming&amp;quot;, &amp;qu
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-211&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-21-1.png&#34; alt=&#34;The combination of the year and number of engineers in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-21-1.png&#34; alt=&#34;The combination of the year and number of engineers in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 34: The combination of the year and number of engineers in the region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1272,7 +1271,7 @@ Figure 34: The combination of the year and number of engineers in the region on 
     y = &amp;quot;Salary&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-212&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-21-2.png&#34; alt=&#34;The combination of the year and number of engineers in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-21-2.png&#34; alt=&#34;The combination of the year and number of engineers in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 35: The combination of the year and number of engineers in the region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1285,7 +1284,7 @@ p2 &amp;lt;- partial(tbnum_bag, pred.var = c(&amp;quot;perc_women_region&amp;quo
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-221&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-22-1.png&#34; alt=&#34;The combination of the number of engineers in the region and per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-22-1.png&#34; alt=&#34;The combination of the number of engineers in the region and per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 36: The combination of the number of engineers in the region and per cent women in the region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;
@@ -1298,7 +1297,7 @@ Figure 36: The combination of the number of engineers in the region and per cent
     y = &amp;quot;Salary&amp;quot;
   )&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-222&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2020-04-16_files/figure-html/unnamed-chunk-22-2.png&#34; alt=&#34;The combination of the number of engineers in the region and per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;img src=&#34;/post/2020-04-16-engineering-salaries-revisited_files/figure-html/unnamed-chunk-22-2.png&#34; alt=&#34;The combination of the number of engineers in the region and per cent women in the region on the salary for engineers, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
 &lt;p class=&#34;caption&#34;&gt;
 Figure 37: The combination of the number of engineers in the region and per cent women in the region on the salary for engineers, Year 2014 - 2018
 &lt;/p&gt;

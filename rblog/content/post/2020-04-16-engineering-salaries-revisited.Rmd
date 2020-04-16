@@ -1,9 +1,8 @@
 ---
-title: The significance of sex, year, per cent women in the region and the number
-  of engineers in the region on the salary of engineers in Sweden
+title: Engineering salaries revisited
 author: Mikael Lundqvist
 date: '2020-04-16'
-slug: '2020-04-16'
+slug: engineering-salaries-revisited
 categories:
   - R
 tags:
