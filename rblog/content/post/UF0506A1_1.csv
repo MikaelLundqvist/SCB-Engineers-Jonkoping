@@ -1,0 +1,129 @@
+"region","age","level of education","sex","2014","2015","2016","2017","2018"
+"SE11 Stockholm","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","men",28314,27130,26311,25559,24693
+"SE11 Stockholm","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","women",28747,27826,27020,26121,25275
+"SE11 Stockholm","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","men",113898,113524,114547,115238,116549
+"SE11 Stockholm","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","women",88552,87158,87075,87078,87393
+"SE11 Stockholm","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","men",136384,135809,135695,134339,133326
+"SE11 Stockholm","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","women",134049,132368,130469,127022,124567
+"SE11 Stockholm","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","men",180917,183278,185251,189037,190342
+"SE11 Stockholm","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","women",161033,162964,164048,167095,167823
+"SE11 Stockholm","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","men",123046,126074,128887,131046,133398
+"SE11 Stockholm","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","women",130984,133315,135308,137005,138764
+"SE11 Stockholm","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","men",190037,195634,201412,206765,214381
+"SE11 Stockholm","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","women",237680,246562,255301,263154,271889
+"SE11 Stockholm","total 16-74 years","post-graduate education (ISCED97 6)","men",14406,14634,14864,15108,15251
+"SE11 Stockholm","total 16-74 years","post-graduate education (ISCED97 6)","women",9901,10303,10661,11124,11564
+"SE11 Stockholm","total 16-74 years","no information about level of educational attainment","men",26918,28751,31931,35831,37043
+"SE11 Stockholm","total 16-74 years","no information about level of educational attainment","women",19028,19541,20900,22662,23902
+"SE12 East-Central Sweden","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","men",35812,33954,32352,30370,28247
+"SE12 East-Central Sweden","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","women",32721,31247,29699,28214,26662
+"SE12 East-Central Sweden","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","men",90618,90465,91810,92900,94465
+"SE12 East-Central Sweden","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","women",73062,72217,72243,72331,72724
+"SE12 East-Central Sweden","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","men",139467,138899,138359,136835,135348
+"SE12 East-Central Sweden","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","women",128286,126311,124538,122046,119203
+"SE12 East-Central Sweden","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","men",149846,152605,155190,158577,160461
+"SE12 East-Central Sweden","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","women",124948,126996,128538,131445,133049
+"SE12 East-Central Sweden","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","men",77927,79260,80818,82474,83899
+"SE12 East-Central Sweden","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","women",83837,85121,86622,87900,89125
+"SE12 East-Central Sweden","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","men",86959,88671,91236,93125,95389
+"SE12 East-Central Sweden","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","women",127364,131314,135591,139642,144035
+"SE12 East-Central Sweden","total 16-74 years","post-graduate education (ISCED97 6)","men",9112,9230,9295,9494,9598
+"SE12 East-Central Sweden","total 16-74 years","post-graduate education (ISCED97 6)","women",5710,5956,6179,6408,6647
+"SE12 East-Central Sweden","total 16-74 years","no information about level of educational attainment","men",11027,11592,13683,15163,16570
+"SE12 East-Central Sweden","total 16-74 years","no information about level of educational attainment","women",9064,9339,10795,11319,11969
+"SE21 Småland and islands","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","men",23349,22186,21117,19554,18033
+"SE21 Småland and islands","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","women",18141,17286,16441,15409,14410
+"SE21 Småland and islands","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","men",50521,50298,50685,51184,51866
+"SE21 Småland and islands","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","women",36234,35781,35822,35739,36058
+"SE21 Småland and islands","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","men",74220,73837,73683,73113,72353
+"SE21 Småland and islands","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","women",69160,68024,67065,65709,64121
+"SE21 Småland and islands","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","men",77707,79146,80496,81971,83159
+"SE21 Småland and islands","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","women",65689,66605,67217,68253,68691
+"SE21 Småland and islands","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","men",37064,37972,39290,39954,40571
+"SE21 Småland and islands","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","women",40563,41190,42037,42874,43296
+"SE21 Småland and islands","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","men",35672,36655,37637,38346,39320
+"SE21 Småland and islands","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","women",56524,58516,60572,62323,64278
+"SE21 Småland and islands","total 16-74 years","post-graduate education (ISCED97 6)","men",1396,1433,1458,1487,1508
+"SE21 Småland and islands","total 16-74 years","post-graduate education (ISCED97 6)","women",902,938,986,1039,1086
+"SE21 Småland and islands","total 16-74 years","no information about level of educational attainment","men",5732,6064,7505,8231,8680
+"SE21 Småland and islands","total 16-74 years","no information about level of educational attainment","women",4320,4394,5383,5706,5832
+"SE22 South Sweden","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","men",31947,30352,29090,27648,25939
+"SE22 South Sweden","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","women",29281,27807,26520,25402,24090
+"SE22 South Sweden","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","men",78302,78355,79297,80201,80992
+"SE22 South Sweden","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","women",61875,61183,61399,61439,61934
+"SE22 South Sweden","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","men",110947,110509,110124,109170,107703
+"SE22 South Sweden","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","women",103924,102324,100833,98870,96385
+"SE22 South Sweden","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","men",125093,127630,129524,131454,133208
+"SE22 South Sweden","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","women",109636,111226,112690,114096,115160
+"SE22 South Sweden","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","men",72688,74234,76139,77381,78503
+"SE22 South Sweden","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","women",77728,79085,80145,81587,82615
+"SE22 South Sweden","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","men",88588,90819,93334,95035,97512
+"SE22 South Sweden","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","women",123939,127774,132348,135991,140197
+"SE22 South Sweden","total 16-74 years","post-graduate education (ISCED97 6)","men",7516,7612,7695,7754,7880
+"SE22 South Sweden","total 16-74 years","post-graduate education (ISCED97 6)","women",4529,4736,4918,5080,5301
+"SE22 South Sweden","total 16-74 years","no information about level of educational attainment","men",14626,14980,16624,18287,18789
+"SE22 South Sweden","total 16-74 years","no information about level of educational attainment","women",11072,11047,12010,12920,13518
+"SE23 West Sweden","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","men",43744,41344,39438,36851,34335
+"SE23 West Sweden","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","women",37292,35319,33659,31822,29902
+"SE23 West Sweden","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","men",108733,108514,109391,110036,111145
+"SE23 West Sweden","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","women",84130,82983,82559,82473,82928
+"SE23 West Sweden","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","men",154192,153058,152388,150822,149100
+"SE23 West Sweden","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","women",142469,140008,137822,134707,131706
+"SE23 West Sweden","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","men",179638,182748,185555,188947,191533
+"SE23 West Sweden","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","women",154828,156795,158404,160503,161520
+"SE23 West Sweden","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","men",96233,98380,100877,102603,103976
+"SE23 West Sweden","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","women",104704,106499,108554,109501,110988
+"SE23 West Sweden","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","men",113508,116897,120792,123883,127803
+"SE23 West Sweden","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","women",162307,168260,174296,179900,185776
+"SE23 West Sweden","total 16-74 years","post-graduate education (ISCED97 6)","men",8336,8525,8707,8868,9020
+"SE23 West Sweden","total 16-74 years","post-graduate education (ISCED97 6)","women",5043,5298,5489,5715,5993
+"SE23 West Sweden","total 16-74 years","no information about level of educational attainment","men",14090,15336,17425,19158,20531
+"SE23 West Sweden","total 16-74 years","no information about level of educational attainment","women",10952,11549,12898,13905,14314
+"SE31 North-Central Sweden","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","men",21352,20207,19042,17447,15801
+"SE31 North-Central Sweden","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","women",17204,16414,15349,14298,13202
+"SE31 North-Central Sweden","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","men",48667,48619,49177,49534,49578
+"SE31 North-Central Sweden","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","women",38098,37525,37648,37470,37411
+"SE31 North-Central Sweden","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","men",83135,82678,82149,81078,79966
+"SE31 North-Central Sweden","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","women",74448,73079,71618,69977,68001
+"SE31 North-Central Sweden","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","men",81691,82996,84137,85676,86444
+"SE31 North-Central Sweden","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","women",66362,67259,68065,69392,69439
+"SE31 North-Central Sweden","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","men",35050,35851,36875,36941,37065
+"SE31 North-Central Sweden","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","women",39684,40208,40661,40675,41040
+"SE31 North-Central Sweden","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","men",32551,33146,33895,34166,34732
+"SE31 North-Central Sweden","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","women",56038,57534,59309,60642,62378
+"SE31 North-Central Sweden","total 16-74 years","post-graduate education (ISCED97 6)","men",1456,1490,1526,1559,1583
+"SE31 North-Central Sweden","total 16-74 years","post-graduate education (ISCED97 6)","women",810,845,897,936,978
+"SE31 North-Central Sweden","total 16-74 years","no information about level of educational attainment","men",6049,6394,7343,7223,7548
+"SE31 North-Central Sweden","total 16-74 years","no information about level of educational attainment","women",4497,4637,5434,5372,5467
+"SE32 Central Norrland","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","men",7655,7173,6778,6239,5484
+"SE32 Central Norrland","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","women",5959,5654,5260,4873,4437
+"SE32 Central Norrland","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","men",20982,21001,21011,21148,21233
+"SE32 Central Norrland","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","women",15533,15238,15224,15221,15219
+"SE32 Central Norrland","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","men",38180,37858,37514,36903,36078
+"SE32 Central Norrland","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","women",33678,32867,32066,31053,30009
+"SE32 Central Norrland","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","men",35318,35887,36474,36932,37249
+"SE32 Central Norrland","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","women",29052,29460,29836,30139,30329
+"SE32 Central Norrland","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","men",16612,16908,17216,17285,17344
+"SE32 Central Norrland","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","women",18087,18180,18314,18481,18469
+"SE32 Central Norrland","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","men",15680,15933,16242,16421,16578
+"SE32 Central Norrland","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","women",26666,27321,28078,28696,29312
+"SE32 Central Norrland","total 16-74 years","post-graduate education (ISCED97 6)","men",617,613,618,634,642
+"SE32 Central Norrland","total 16-74 years","post-graduate education (ISCED97 6)","women",405,430,439,460,487
+"SE32 Central Norrland","total 16-74 years","no information about level of educational attainment","men",2288,2367,2780,2901,3021
+"SE32 Central Norrland","total 16-74 years","no information about level of educational attainment","women",1647,1721,1930,1999,2007
+"SE33 Upper Norrland","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","men",8536,7814,7157,6480,5788
+"SE33 Upper Norrland","total 16-74 years","primary and secondary education less than 9 years (ISCED97 1)","women",6769,6176,5658,5125,4629
+"SE33 Upper Norrland","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","men",25213,24883,24863,24828,24879
+"SE33 Upper Norrland","total 16-74 years","primary and secondary education 9-10 years (ISCED97 2)","women",19224,18830,18806,18860,18824
+"SE33 Upper Norrland","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","men",51726,51032,50402,49276,48331
+"SE33 Upper Norrland","total 16-74 years","upper secondary education, 2 years or less (ISCED97 3C)","women",44768,43568,42373,40660,39234
+"SE33 Upper Norrland","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","men",51698,52519,53288,54758,55501
+"SE33 Upper Norrland","total 16-74 years","upper secondary education 3 years (ISCED97 3A)","women",38766,39291,39733,40723,41050
+"SE33 Upper Norrland","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","men",25412,25541,25871,26060,26145
+"SE33 Upper Norrland","total 16-74 years","post-secondary education, less than 3 years (ISCED97 4+5B)","women",26557,26704,26944,27025,26997
+"SE33 Upper Norrland","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","men",26571,26915,27396,27697,28108
+"SE33 Upper Norrland","total 16-74 years","post-secondary education 3 years or more (ISCED97 5A)","women",42179,43132,44195,45138,46233
+"SE33 Upper Norrland","total 16-74 years","post-graduate education (ISCED97 6)","men",2721,2788,2821,2853,2832
+"SE33 Upper Norrland","total 16-74 years","post-graduate education (ISCED97 6)","women",1803,1854,1914,1998,2066
+"SE33 Upper Norrland","total 16-74 years","no information about level of educational attainment","men",3237,3270,3734,4303,4338
+"SE33 Upper Norrland","total 16-74 years","no information about level of educational attainment","women",2238,2310,2561,2838,2732

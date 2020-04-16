@@ -1,0 +1,660 @@
+---
+title: The significance of sex, year, per cent women in the region and the number
+  of engineers in the region on the salary of engineers in Sweden
+author: Mikael Lundqvist
+date: '2020-04-16'
+slug: '2020-04-16'
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+For a couple of posts, I have analysed what predictors affect the education level in Sweden. In this post, I will return to analysing the salary of engineers and I will try to use my experiences from studying the education level.
+
+Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.
+
+Please send suggestions for improvement of the analysis to ranalystatisticssweden@gmail.com.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (broom)
+library (car)
+library (sjPlot)
+library (leaps)
+library (MASS)
+library (earth)
+library (lspline)
+library (boot)
+library (faraway)
+library (arm)
+library (caret)    
+library (recipes)  
+library (vip)         
+library (pdp)         
+library (PerformanceAnalytics)
+library (ggpubr)
+library (glmnet)
+library (rpart)       
+library (ipred)       
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = groupsize) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women <- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts <- read.csv("nuts.csv") %>%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+
+nuts %>% 
+  distinct (NUTS2_en) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Nomenclature des Unités Territoriales Statistiques (NUTS)')
+
+bs <- function(formula, data, indices) {
+  d <- data[indices,] # allows boot to select sample 
+  fit <- lm(formula, weights = tbnum_weights, data=d)
+  return(coef(fit)) 
+} 
+```
+
+
+The data tables are downloaded from Statistics Sweden. They are saved as a comma-delimited file without heading, UF0506A1.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The tables: 
+
+UF0506A1_1.csv: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018 NUTS 2 level 2008- 10 year intervals (16-74)
+
+000000CG_1: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary All sectors.
+
+000000CD_1.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Number of employees All sectors-
+
+The data is aggregated, the size of each group is in the column groupsize.
+
+I have also included some calculated predictors from the original data.
+
+perc_women: The percentage of women within each group defined by edulevel, region and year
+
+perc_women_region: The percentage of women within each group defined by year and region
+
+regioneduyears: The average number of education years per capita within each group defined by sex, year and region
+
+eduquotient: The quotient between regioneduyears for men and women
+
+salaryquotient: The quotient between salary for men and women within each group defined by year and region
+
+perc_women_eng_region: The percentage of women who are engineers within each group defined by year and region
+
+
+```{r, echo = TRUE} 
+numedulevel <- read.csv("edulevel_1.csv") 
+
+numedulevel[, 2] <- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+tb <- readfile("000000CG_1.csv") 
+tb <- readfile("000000CD_1.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex", "sector","occuptional  (SSYK 2012)")) %>%
+  filter(`occuptional  (SSYK 2012)` == "214 Engineering professionals") 
+
+tb <- readfile("UF0506A1_1.csv") %>%  
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears)) %>%  
+  mutate(edulevel = `level of education`) %>%
+  group_by(edulevel, region, year, sex) %>%
+  mutate(groupsize_all_ages = sum(groupsize)) %>%  
+  group_by(edulevel, region, year) %>% 
+  mutate (perc_women = perc_women (groupsize_all_ages[1:2])) %>% 
+  group_by (sex, year, region) %>%
+  mutate(regioneduyears = sum(groupsize * eduyears) / sum(groupsize)) %>%
+  mutate(regiongroupsize = sum(groupsize)) %>% 
+  mutate(suming = groupsize.x) %>%
+  group_by(region, year) %>%
+  mutate (sum_pop = sum(groupsize)) %>%
+  mutate (perc_women_region = perc_women (regiongroupsize[1:2])) %>% 
+  mutate (eduquotient = regioneduyears[2] / regioneduyears[1]) %>% 
+  mutate (salary = groupsize.y) %>%
+  mutate (salaryquotient = salary[2] / salary[1]) %>%   
+  mutate (perc_women_eng_region = perc_women(suming[1:2])) %>%  
+  left_join(nuts %>% distinct (NUTS2_en, NUTS2_sh), by = c("region" = "NUTS2_en")) %>%
+  drop_na()
+
+summary(tb)
+```
+
+
+Prepare the data using Tidyverse recipes package, i.e. centre, scale and make sure all predictors are numerical.
+
+
+```{r, echo = TRUE} 
+tbtemp <- ungroup(tb) %>% dplyr::select(region, salary, year_n, regiongroupsize, sex, regioneduyears, suming, perc_women_region, salaryquotient, eduquotient, perc_women_eng_region)
+
+tb_outliers_info <- unique(tbtemp)
+
+tb_unique <- unique(dplyr::select(tbtemp, -region))
+
+tbnum_weights <- tb_unique$suming
+
+blueprint <- recipe(salary ~ ., data = tb_unique) %>%
+  step_nzv(all_nominal()) %>%
+  step_integer(matches("Qual|Cond|QC|Qu")) %>%
+  step_center(all_numeric(), -all_outcomes()) %>%
+  step_scale(all_numeric(), -all_outcomes()) %>%
+  step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE)
+
+prepare <- prep(blueprint, training = tb_unique)
+
+tbnum <- bake(prepare, new_data = tb_unique)
+```
+
+
+The correlation chart shows that many predictors are correlated with the response variable but also that many predictors are correlated between each other. The vif function also shows high multicollinearity. Some notable correlations are in a dedicated plot below.
+
+
+```{r, echo = TRUE, fig.cap = 'Correlation between response and predictors and between predictors, Year 2014 - 2018'} 
+
+chart.Correlation(tbnum, histogram = TRUE, pch = 19)
+
+vif(tbnum)
+
+p1 <- tb %>%
+  ggscatter(x = "regiongroupsize", y = "perc_women_region", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson") 
+
+p2 <- tb %>%
+  ggscatter(x = "regiongroupsize", y = "perc_women_eng_region", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson") 
+
+p3 <- tb %>%
+  ggscatter(x = "regiongroupsize", y = "eduquotient", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson") 
+
+p4 <- tb %>%
+  ggscatter(x = "perc_women_region", y = "eduquotient", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson") 
+
+gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+
+The dataset only contains 76 rows. This together with multicollinearity limits the number of predictors to include in the regression. I would like to choose the predictors that best contains most information from the dataset with respect to the response.  
+
+I will use an elastic net to find the variable that contains the best signals for later use in the analysis. First I will search for the explanatory variables that best predict the response using no interactions. I will use 10-fold cross-validation with an elastic net. Elastic nets are linear and do not take into account the shape of the relations between the predictors. Alpha = 1 indicates a lasso regression.
+
+
+```{r, echo = TRUE, fig.cap = 'Elastic net search on the data using no interactions, Year 2014 - 2018'} 
+X <- model.matrix(salary ~ ., tbnum)[, -1]
+
+Y <- tbnum$salary
+
+set.seed(123)  # for reproducibility
+cv_glmnet <- train(
+    x = X,
+    y = Y,
+    weights = tbnum_weights,     
+    method = "glmnet",
+    preProc = c("zv", "center", "scale"),
+    trControl = trainControl(method = "cv", number = 10),
+    tuneLength = 20
+)
+
+vip(cv_glmnet, num_features = 20, geom = "point")
+
+cv_glmnet$bestTune
+
+elastic_min <- glmnet(
+    x = X,
+    y = Y,
+    alpha = 1
+)
+
+plot(elastic_min, xvar = "lambda", main = "Elastic net penalty\n\n")
+```
+
+
+Next, I will use an elastic net to find the variable that contains the best signals including interactions. 
+
+
+```{r, echo = TRUE, fig.cap = 'Elastic net search on the data including interactions, Year 2014 - 2018'} 
+temp <- dplyr::select(tbnum, -salary)
+
+f <- as.formula( ~ .*.)
+X <- model.matrix(f, temp)[, -1]
+
+Y <- tbnum$salary
+
+set.seed(123)  # for reproducibility
+cv_glmnet <- train(
+    x = X,
+    y = Y,
+    weights = tbnum_weights,     
+    method = "glmnet",
+    metric = "Rsquared",
+    maximize = TRUE,
+    preProc = c("zv", "center", "scale"),
+    trControl = trainControl(method = "cv", number = 10),
+    tuneLength = 30
+)
+
+vip(cv_glmnet, num_features = 20, geom = "point")
+
+cv_glmnet$bestTune
+
+elastic_min <- glmnet(
+    x = X,
+    y = Y,
+    alpha = 0.9
+)
+
+plot(elastic_min, xvar = "lambda", main = "Elastic net penalty\n\n")
+```
+
+
+I use MARS to fit the best signals using from the elastic net using no interactions. Four predictors minimise the AIC while still ensuring that the coefficients are valid, testing them with bootstrap.
+
+
+```{r, echo = TRUE, fig.cap = 'Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018'} 
+temp <- dplyr::select(tbnum, c(salary, year_n, sex_men, perc_women_region, suming))
+
+mmod_scaled <- earth(salary ~ ., weights = tbnum_weights, data = temp, nk = 9, degree = 1)
+
+summary (mmod_scaled)
+plot (mmod_scaled)
+plotmo (mmod_scaled)
+
+model_mmod_scale <- lm (salary ~ 
+  sex_men +                        
+  lspline(year_n, c(0)) +
+  lspline(perc_women_region, c(0.311813)) +
+  lspline(suming, c(-0.549566)),   
+  weights = tbnum_weights,
+  data = tbnum) 
+
+b <- regsubsets(salary ~ sex_men + lspline(year_n, c(0)) + lspline(perc_women_region, c(0.311813)) + lspline(suming, c(-0.549566)) + lspline(suming, c(-1.22297)), data = tbnum, weights = tbnum_weights, nvmax = 12)
+
+rs <- summary(b)
+AIC <- 50 * log (rs$rss / 50) + (2:8) * 2
+which.min (AIC)
+
+names (rs$which[6,])[rs$which[6,]]
+
+model_mmod_scale <- lm (salary ~ 
+  sex_men +                        
+  lspline(year_n, c(0)) +
+  lspline(perc_women_region, c(0.311813)) +
+  lspline(suming, c(-0.549566)),
+  weights = tbnum_weights,
+  data = tbnum) 
+
+summary (model_mmod_scale)$adj.r.squared
+
+AIC(model_mmod_scale)
+
+set.seed(123)
+results <- boot(data = tbnum, statistic = bs, 
+   R = 1000, formula = as.formula(model_mmod_scale))
+
+#conf = coefficient not passing through zero
+summary (model_mmod_scale) %>% tidy() %>% 
+  mutate(bootest = tidy(results)$statistic, 
+  bootbias = tidy(results)$bias, 
+  booterr =  tidy(results)$std.error, 
+  conf = !((tidy(confint(results))$X2.5.. < 0) & (tidy(confint(results))$X97.5.. > 0)))
+
+plot(results, index=1) # intercept 
+```
+
+
+I will include the interaction between sex_men and salaryquotient. If I include more terms from MARS I judge that the predictions are getting unstable testing with bootstrap. 
+
+
+
+```{r, echo = TRUE, fig.cap = 'Hockey-stick functions fit with MARS for the predictors including interactions, Year 2014 - 2018'} 
+
+# The three best candidates from the elastic net search
+model_mmod_scale <- lm (salary ~ 
+  year_n +
+  perc_women_region +
+  year_n:perc_women_region,
+  weights = tbnum_weights,
+  data = tbnum) 
+
+summary (model_mmod_scale)
+
+set.seed(123)
+results <- boot(data = tbnum, statistic = bs, 
+   R = 1000, formula = as.formula(model_mmod_scale))
+
+summary (model_mmod_scale) %>% tidy() %>% 
+  mutate(bootest = tidy(results)$statistic, 
+  bootbias = tidy(results)$bias, 
+  booterr =  tidy(results)$std.error, 
+  conf = !((tidy(confint(results))$X2.5.. < 0) & (tidy(confint(results))$X97.5.. > 0)))
+
+temp <- dplyr::select(tbnum, c(salary, year_n, sex_men, perc_women_region, suming, salaryquotient, regioneduyears))
+
+# A test with MARS and interactions
+mmod_scaled <- earth(salary ~ ., weights = tbnum_weights, data = temp, nk = 11, degree = 2)
+
+summary (mmod_scaled)
+
+mmod_scaled <- earth(salary ~ ., weights = tbnum_weights, data = temp, nk = 13, degree = 2)
+
+summary (mmod_scaled)
+plot (mmod_scaled)
+plotmo (mmod_scaled)
+
+model_mmod_scale <- lm (salary ~ 
+  sex_men +                        
+  lspline(year_n, c(0)) +
+  lspline(perc_women_region, c(0.311813)) +
+  lspline(suming, c(-0.549566)) +
+  lspline(salaryquotient, c(-1.22297)) +    
+  sex_men:salaryquotient,  
+  weights = tbnum_weights,
+  data = tbnum) 
+
+summary (model_mmod_scale)
+
+set.seed(123)
+results <- boot(data = tbnum, statistic = bs, 
+  R = 1000, formula = as.formula(model_mmod_scale))
+
+summary (model_mmod_scale) %>% tidy() %>% 
+  mutate(bootest = tidy(results)$statistic, 
+  bootbias = tidy(results)$bias, 
+  booterr =  tidy(results)$std.error, 
+  conf = !((tidy(confint(results))$X2.5.. < 0) & (tidy(confint(results))$X97.5.. > 0)))
+```
+
+
+I will also use 10-fold cross-validation fit with decision trees and bagging on the data.
+
+
+```{r, echo = TRUE, fig.cap = 'Data fit with decision tree bag, Year 2014 - 2018'} 
+set.seed(123)
+tbnum_bag <- train(
+  salary ~ .,
+  data = tbnum,
+  method = "treebag",
+  weights = tbnum_weights,  
+  trControl = trainControl(method = "cv", number = 10),
+  nbagg = 200,  
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+
+vip::vip(tbnum_bag, num_features = 20, bar = FALSE)
+```
+
+
+Perform diagnostics on the final model.
+
+
+```{r, echo = TRUE, fig.cap = 'Diagnostics on the model, Year 2014 - 2018'} 
+model <- lm (salary ~ 
+  sex_men +                        
+  lspline(year_n, c(0)) +
+  lspline(perc_women_region, c(0.311813)) +
+  lspline(suming, c(-0.549566)) +
+  sex_men:salaryquotient,  
+  weights = tbnum_weights,
+  data = tbnum)
+
+summary (model)
+
+anova (model)
+
+plot (model)
+
+binnedplot(predict(model), resid(model))
+
+halfnorm(rstudent(model))
+
+tbnum %>% mutate(residuals = residuals(model)) %>% 
+  group_by(salary, perc_women_region, suming, year_n, sex_men) %>% 
+  summarise(residuals = mean(residuals), count = sum(suming)) %>%
+    ggplot (aes(x = salary, y = residuals, size = sqrt(count), colour = perc_women_region)) +
+    geom_point() + facet_grid(. ~ year_n)
+
+set.seed(123)
+results <- boot(data = tbnum, statistic = bs, 
+  R = 1000, formula = as.formula(model))
+
+summary (model) %>% tidy() %>% 
+  mutate(bootest = tidy(results)$statistic, 
+  bootbias = tidy(results)$bias, 
+  booterr =  tidy(results)$std.error, 
+  conf = !((tidy(confint(results))$X2.5.. < 0) & (tidy(confint(results))$X97.5.. > 0)))
+
+plot(results, index = 1) # intercept 
+```
+
+
+Let's have a look at the outliers.
+
+
+```{r, echo = TRUE, fig.cap = 'The outliers from the model, Year 2014 - 2018'}
+tb_outliers_info[25,]
+tb_outliers_info[35,]
+tb_outliers_info[36,]
+
+```
+
+
+Now let's see what we have found. I will plot both the regression and the decision trees models for comparison. 
+
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the per cent women in the region on the salary for engineers, Year 2014 - 2018'}
+temp <- dplyr::select(tb_unique, c(salary, year_n, sex, perc_women_region, suming, salaryquotient, regioneduyears))
+
+mmod <- earth(salary ~ ., weights = tbnum_weights, data = temp, nk = 11, degree = 2)
+
+summary(mmod)
+
+model <- lm (salary ~ 
+  sex +                        
+  lspline(year_n, c(2016)) +
+  lspline(perc_women_region, c(0.493906)) +
+  lspline(suming, c(2400)) +
+  sex:salaryquotient,     
+  weights = tbnum_weights,
+  data = tb_unique) 
+
+set.seed(123)  # for reproducibility
+tbnum_bag <- train(
+  salary ~ .,
+  data = tb_unique,
+  method = "treebag",
+  weights = suming,  
+  trControl = trainControl(method = "cv", number = 10),
+  nbagg = 200,  
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+
+p1 <- plot_model (model, type = "pred", terms = c("perc_women_region"))
+
+p2 <- partial(tbnum_bag, pred.var = "perc_women_region") %>% autoplot()
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+
+tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = perc_women_region, y = salary)) + 
+  labs(
+    x = "Percent women in region",
+    y = "Salary"
+  )
+```
+
+```{r, echo = TRUE, fig.cap = 'The significance of the year on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("year_n"))
+
+p2 <- partial(tbnum_bag, pred.var = "year_n") %>% autoplot()
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+
+tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = year_n, y = salary)) + 
+  labs(
+    x = "Year",
+    y = "Salary"
+  )
+```
+
+```{r, echo = TRUE, fig.cap = 'The significance of gender on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("sex"))
+
+p2 <- tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = sex, y = salary)) + 
+  labs(
+    x = "Sex",
+    y = "Salary"
+  )
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+
+```{r, echo = TRUE, fig.cap = 'The significance of the number of engineers on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("suming"))
+
+p2 <- partial(tbnum_bag, pred.var = "suming") %>% autoplot()
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+
+tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = suming, y = salary)) + 
+  labs(
+    x = "# engineers in the region",
+    y = "Salary"
+  )
+```
+
+```{r, echo = TRUE, fig.cap = 'The significance of the interaction between sex and the quotient between salary for men and women within each group defined by year and region on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("salaryquotient", "sex"))
+
+p2 <- tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = salaryquotient, y = salary, colour = sex)) + 
+  labs(
+    x = "Quotient between salary for men and women",
+    y = "Salary"
+  )
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+```{r, echo = TRUE, fig.cap = 'The combination of the year and sex on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("year_n", "sex"))
+
+p2 <- tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = year_n, y = salary, colour = sex)) + 
+  labs(
+    x = "Year",
+    y = "Salary"
+  )
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+```{r, echo = TRUE, fig.cap = 'The combination of the per cent women in the region and sex on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("perc_women_region", "sex"))
+
+p2 <- tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = perc_women_region, y = salary, colour = sex)) + 
+  labs(
+    x = "Percent women in region",
+    y = "Salary"
+  )
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+```{r, echo = TRUE, fig.cap = 'The combination of the number of engineers in the region and sex on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("suming", "sex"))
+
+p2 <- tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = suming, y = salary, colour = sex)) + 
+  labs(
+    x = "# engineers in the region",
+    y = "Salary"
+  )
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+```{r, echo = TRUE, fig.cap = 'The combination of the year and per cent women in the region on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("year_n", "perc_women_region"))
+
+p2 <- partial(tbnum_bag, pred.var = c("perc_women_region", "year_n")) %>% 
+  plotPartial(levelplot = FALSE, zlab = "yhat", drape = TRUE, 
+              colorkey = TRUE, screen = list(z = -20, x = -60))
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+
+tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = year_n, y = salary, colour = perc_women_region)) + 
+  labs(
+    x = "Year",
+    y = "Salary"
+  )
+```
+
+```{r, echo = TRUE, fig.cap = 'The combination of the year and number of engineers in the region on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("year_n", "suming"))
+
+p2 <- partial(tbnum_bag, pred.var = c("suming", "year_n")) %>% 
+  plotPartial(levelplot = FALSE, zlab = "yhat", drape = TRUE, 
+              colorkey = TRUE, screen = list(z = -20, x = -60))
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+
+tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = year_n, y = salary, colour = suming)) + 
+  labs(
+    x = "Year",
+    y = "Salary"
+  )
+```
+
+```{r, echo = TRUE, fig.cap = 'The combination of the number of engineers in the region and per cent women in the region on the salary for engineers, Year 2014 - 2018'}
+p1 <- plot_model (model, type = "pred", terms = c("suming", "perc_women_region"))
+
+p2 <- partial(tbnum_bag, pred.var = c("perc_women_region", "suming")) %>% 
+  plotPartial(levelplot = FALSE, zlab = "yhat", drape = TRUE, 
+              colorkey = TRUE, screen = list(z = -20, x = -60))
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+
+tb_unique %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = suming, y = salary, colour = perc_women_region)) + 
+  labs(
+    x = "# engineers in the region",
+    y = "Salary"
+  )
+```
