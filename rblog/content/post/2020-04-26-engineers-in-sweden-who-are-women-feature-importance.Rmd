@@ -1,0 +1,461 @@
+---
+title: Engineers in Sweden who are women, feature importance
+author: Mikael Lundqvist
+date: '2020-04-26'
+slug: engineers-in-sweden-who-are-women-feature-importance
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+In my last post, I found that the per cent women in the region had a significant impact on the salaries of Engineers. In this post, I will analyse what predictors are best to forecast the percentage of women who are Engineers in the region. I will begin in much the same way as when I looked at salaries. However, there are limitations to linear models. In the second half of this post, I compare my finding to other machine learning algorithms.
+
+Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.
+
+Please send suggestions for improvement of the analysis to ranalystatisticssweden@gmail.com.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (broom)
+library (car)
+library (leaps)
+library (MASS)
+library (earth)
+library (lspline)
+library (boot)
+library (arm)
+library (caret)    
+library (recipes)  
+library (vip)         
+library (ggpubr)
+library (glmnet)
+library (rpart)       
+library (ipred) 
+library (iml)
+library (neuralnet)
+library (DALEX)
+library (Metrics)
+library (auditor)
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = groupsize) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women <- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts <- read.csv("nuts.csv") %>%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+
+nuts %>% 
+  distinct (NUTS2_en) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Nomenclature des Unités Territoriales Statistiques (NUTS)')
+
+bs <- function(formula, data, indices) {
+  d <- data[indices,] # allows boot to select sample 
+  fit <- lm(formula, weights = tbnum_weights, data=d)
+  return(coef(fit)) 
+} 
+```
+
+
+The data tables are downloaded from Statistics Sweden. They are saved as a comma-delimited file without heading, UF0506A1.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The tables: 
+
+UF0506A1_1.csv: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018 NUTS 2 level 2008- Age, total, all reported ages
+
+000000CG_1: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary All sectors.
+
+000000CD_1.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Number of employees All sectors-
+
+The data is aggregated, the size of each group is in the column groupsize.
+
+I have also included some calculated predictors from the original data.
+
+perc_women: The percentage of women within each group defined by edulevel, region and year
+
+perc_women_region: The percentage of women within each group defined by year and region
+
+regioneduyears: The average number of education years per capita within each group defined by sex, year and region
+
+eduquotient: The quotient between regioneduyears for men and women
+
+salaryquotient: The quotient between salary for men and women within each group defined by year and region
+
+perc_women_eng_region: The percentage of women who are engineers within each group defined by year and region
+
+
+```{r, echo = TRUE} 
+numedulevel <- read.csv("edulevel_1.csv") 
+
+numedulevel[, 2] <- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+tb <- readfile("000000CG_1.csv") 
+tb <- readfile("000000CD_1.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex", "sector","occuptional  (SSYK 2012)")) %>%
+  filter(`occuptional  (SSYK 2012)` == "214 Engineering professionals") 
+
+tb <- readfile("UF0506A1_1.csv") %>%  
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears)) %>%  
+  mutate(edulevel = `level of education`) %>%
+  group_by(edulevel, region, year, sex) %>%
+  mutate(groupsize_all_ages = sum(groupsize)) %>%  
+  group_by(edulevel, region, year) %>% 
+  mutate (perc_women = perc_women (groupsize_all_ages[1:2])) %>% 
+  group_by (sex, year, region) %>%
+  mutate(regioneduyears = sum(groupsize * eduyears) / sum(groupsize)) %>%
+  mutate(regiongroupsize = sum(groupsize)) %>% 
+  mutate(suming = groupsize.x) %>%
+  group_by(region, year) %>%
+  mutate (sum_pop = sum(groupsize)) %>%
+  mutate (perc_women_region = perc_women (regiongroupsize[1:2])) %>% 
+  mutate (eduquotient = regioneduyears[2] / regioneduyears[1]) %>% 
+  mutate (salary = groupsize.y) %>%
+  mutate (salaryquotient = salary[2] / salary[1]) %>%   
+  mutate (perc_women_eng_region = perc_women(suming[1:2])) %>%  
+  left_join(nuts %>% distinct (NUTS2_en, NUTS2_sh), by = c("region" = "NUTS2_en")) %>%
+  drop_na()
+
+summary(tb)
+```
+
+
+Prepare the data using Tidyverse recipes package, i.e. centre, scale and make sure all predictors are numerical.
+
+
+```{r, echo = TRUE} 
+tbtemp <- ungroup(tb) %>% dplyr::select(region, salary, year_n, regiongroupsize, sex, regioneduyears, suming, perc_women_region, salaryquotient, eduquotient, perc_women_eng_region)
+
+tb_outliers_info <- unique(tbtemp)
+
+tb_unique <- unique(dplyr::select(tbtemp, -region))
+
+tbnum_weights <- tb_unique$suming
+
+blueprint <- recipe(perc_women_eng_region ~ ., data = tb_unique) %>%
+  step_nzv(all_nominal()) %>%
+  step_integer(matches("Qual|Cond|QC|Qu")) %>%
+  step_center(all_numeric(), -all_outcomes()) %>%
+  step_scale(all_numeric(), -all_outcomes()) %>%
+  step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE)
+
+prepare <- prep(blueprint, training = tb_unique)
+
+tbnum <- bake(prepare, new_data = tb_unique)
+```
+
+
+The dataset only contains 76 rows. This together with multicollinearity limits the number of predictors to include in the regression. I would like to choose the predictors that best contains most information from the dataset with respect to the response.  
+
+I will use an elastic net to find the variable that contains the best signals for later use in the analysis. First I will search for the explanatory variables that best predict the response using no interactions. I will use 10-fold cross-validation with an elastic net. Elastic nets are linear and do not take into account the shape of the relations between the predictors. Alpha = 1 indicates a lasso regression.
+
+
+```{r, echo = TRUE, fig.cap = 'Elastic net search on the data using no interactions, Year 2014 - 2018'} 
+X <- model.matrix(perc_women_eng_region ~ ., tbnum)[, -1]
+
+Y <- tbnum$perc_women_eng_region
+
+set.seed(123)  # for reproducibility
+tbnum_glmnet <- caret::train(
+    x = X,
+    y = Y,
+    weights = tbnum_weights,     
+    method = "glmnet",
+    preProc = c("zv", "center", "scale"),
+    trControl = trainControl(method = "cv", number = 10),
+    tuneLength = 20
+)
+
+vip(tbnum_glmnet, num_features = 20, geom = "point")
+
+tbnum_glmnet$bestTune
+
+elastic_min <- glmnet(
+    x = X,
+    y = Y,
+    alpha = .1
+)
+
+plot(elastic_min, xvar = "lambda", main = "Elastic net penalty\n\n")
+```
+
+
+I use MARS to fit the best signals using from the elastic net using no interactions. Four predictors minimise the AIC while still ensuring that the coefficients are valid, testing them with bootstrap.
+
+
+```{r, echo = TRUE, fig.cap = 'Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018'} 
+temp <- dplyr::select(tbnum, c(perc_women_eng_region, regiongroupsize, regioneduyears, eduquotient, sex_men))
+
+mmod_scaled <- earth(perc_women_eng_region ~ ., weights = tbnum_weights, data = temp, nk = 9, degree = 1)
+
+summary (mmod_scaled)
+plot (mmod_scaled)
+plotmo (mmod_scaled)
+
+model_mmod_scale <- lm (perc_women_eng_region ~ 
+  sex_men +                        
+  lspline(regiongroupsize, c(0.651904)) +
+  lspline(regioneduyears, c(-0.259811)) +
+  lspline(eduquotient, c(-1.22297)),   
+  weights = tbnum_weights,
+  data = tbnum) 
+
+model_mmod_scale <- lm (perc_women_eng_region ~ .,
+  weights = tbnum_weights,
+  data = tbnum)
+
+b <- regsubsets(perc_women_eng_region ~ sex_men + lspline(regiongroupsize, c(0.651904)) + lspline(regioneduyears, c(-0.259811)) + lspline(eduquotient, c(-1.22297)), data = tbnum, weights = tbnum_weights, nvmax = 12)
+
+rs <- summary(b)
+AIC <- 50 * log (rs$rss / 50) + (2:8) * 2
+which.min (AIC)
+
+names (rs$which[7,])[rs$which[7,]]
+
+model_mmod_scale <- lm (perc_women_eng_region ~ 
+  sex_men +     
+  lspline(regiongroupsize, c(0.651904)) +
+  lspline(regioneduyears, c(-0.259811)) +
+  lspline(eduquotient, c(-1.22297)), 
+  weights = tbnum_weights,
+  data = tbnum) 
+
+summary (model_mmod_scale)$adj.r.squared
+
+AIC(model_mmod_scale)
+
+set.seed(123)
+results <- boot(data = tbnum, statistic = bs, 
+   R = 1000, formula = as.formula(model_mmod_scale))
+
+#conf = coefficient not passing through zero
+summary (model_mmod_scale) %>% tidy() %>% 
+  mutate(bootest = tidy(results)$statistic, 
+  bootbias = tidy(results)$bias, 
+  booterr =  tidy(results)$std.error, 
+  conf = !((tidy(confint(results))$X2.5.. < 0) & (tidy(confint(results))$X97.5.. > 0)))
+
+plot(results, index=1) # intercept 
+```
+
+
+plot_model will show diagnostics for the model, a residual plot, scale location plot, residual density and the regression error characteristic curve. It will also show the residuals versus the actual response to help find outliers. It will plot the feature importance and feature effects. In addition, it will plot how strongly features interact with each other and the 2-way interactions with regiongroupsize and all other features. The interaction measure regards how much of the variance of f(x) is explained by the interaction. The measure is between 0 (no interaction) and 1 (= 100% of variance of f(x) due to interactions). Regiongroupsize is of special interest since it is the feature with the strongest importance to the per cent of engineers who are women in the region. 
+
+
+```{r, echo = TRUE} 
+plot_model <- function(model){
+   exp_model <- DALEX::explain(model, data = tbnum, y = tbnum$perc_women_eng_region)
+  
+   lm_mr <- model_residual(exp_model)  
+    
+   predictor <- Predictor$new(model, 
+      data = dplyr::select(tbnum, -perc_women_eng_region), 
+      y = tbnum$perc_women_eng_region)    
+   
+   writeLines("")
+   
+   print(paste ("Model RMSE: ", rmse(predict(model), tbnum$perc_women_eng_region)))
+ 
+   p1 <- plot(lm_mr, type = "residual")  
+   
+   p2 <- plot(lm_mr, type = "scalelocation")  
+   
+   p3 <- plot(lm_mr, type = "residual_density") 
+   
+   p4 <- plot(lm_mr, type = "rec")
+   
+   print(gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2))
+   
+   print(plot_residual(lm_mr, variable = "_y_hat_", nlabel = 10))
+   
+   print(plot (FeatureImp$new(predictor, loss = "mae")))
+
+   print(plot (FeatureEffects$new(predictor)))
+   
+   p1 <- plot (Interaction$new(predictor)) 
+         
+   p2 <- plot (Interaction$new(predictor, feature = "regiongroupsize")) 
+   
+   print(gridExtra::grid.arrange(p1, p2, ncol = 2))
+}
+```
+
+
+Manual Data fit with Regularized Regression and MARS
+
+
+```{r, echo = TRUE, fig.cap = 'Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018'} 
+model <- lm (
+  perc_women_eng_region ~ 
+     sex_men +                        
+     lspline(regiongroupsize, c(0.651904)) +
+     lspline(regioneduyears, c(-0.259811)) +
+     lspline(eduquotient, c(-1.22297)),   
+  weights = tbnum_weights,
+  data = tbnum) 
+
+plot_model(model)
+```
+
+
+Data fit with Regularized Regression
+
+
+```{r, echo = TRUE, fig.cap = 'Data fit with Regularized Regression, Year 2014 - 2018'} 
+X <- model.matrix(perc_women_eng_region ~ ., tbnum)[, -1]
+
+Y <- tbnum$perc_women_eng_region
+
+set.seed(123)  # for reproducibility
+model <- caret::train(
+    x = X,
+    y = Y,
+    weights = tbnum_weights,     
+    method = "glmnet",
+    preProc = c("zv", "center", "scale"),
+    trControl = trainControl(method = "cv", number = 10),
+    tuneLength = 20
+)
+
+plot_model(model)
+```
+
+
+Data fit with Multivariate Adaptive Regression Splines
+
+
+```{r, echo = TRUE, fig.cap = 'Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018'} 
+hyper_grid <- expand.grid(
+  degree = 1, 
+  nprune = seq(2, 100, length.out = 10) %>% floor()
+)
+
+set.seed(123)  # for reproducibility
+model <- caret::train(
+  x = data.frame(subset(tbnum, select = -perc_women_eng_region)),
+  y = tbnum$perc_women_eng_region,
+  method = "earth",
+  weights = tbnum_weights,
+  trControl = trainControl(method = "cv", number = 10),
+  tuneGrid = hyper_grid
+)
+
+plot_model(model)
+```
+
+
+Data fit with decision tree bag
+
+
+```{r, echo = TRUE, fig.cap = 'Data fit with decision tree bag, Year 2014 - 2018'} 
+set.seed(123)
+model <- caret::train(
+  perc_women_eng_region ~ .,
+  data = tbnum,
+  method = "treebag",
+  weights = tbnum_weights,  
+  trControl = trainControl(method = "cv", number = 10),
+  nbagg = 50,  
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+
+plot_model(model)
+```
+
+
+Data fit with Random Forest
+
+
+```{r, echo = TRUE, fig.cap = 'Data fit with Random Forest, Year 2014 - 2018'} 
+set.seed(123)
+invisible(capture.output(model <- caret::train(
+   perc_women_eng_region  ~ ., 
+   data = tbnum,
+   weights = tbnum_weights,
+   method = "ranger",
+   trControl = trainControl(method = "cv", number = 5, verboseIter = T, classProbs = T),
+   num.trees = 100,
+   importance = "permutation")))
+
+plot_model(model)
+```
+
+
+Data fit with Gradient Boosting Machine
+
+
+```{r, echo = TRUE, fig.cap = 'Data fit with Gradient Boosting Machine, Year 2014 - 2018'} 
+tr <- trainControl(method = "repeatedcv", number = 10, repeats = 5)
+
+tg <- expand.grid(shrinkage = seq(0.1), 
+   interaction.depth = c(3),
+   n.minobsinnode = c(10),
+   n.trees = c(100))
+
+set.seed(123)
+model <- caret::train(
+   perc_women_eng_region ~ ., 
+   data = tbnum, 
+   weights = tbnum_weights,
+   method = "gbm", 
+   trControl = tr, 
+   tuneGrid = tg, 
+   verbose = FALSE)
+
+plot_model(model)
+```
+
+
+Data fit with Deep Learning
+
+
+```{r, echo = TRUE, fig.cap = 'Data fit with Deep Learning, Year 2014 - 2018'} 
+rctrl1 <- trainControl(method = "cv", number = 3, returnResamp = "all")
+
+set.seed(123)  # for reproducibility
+model <- caret::train(
+   perc_women_eng_region ~ ., 
+   data = tbnum, 
+   weights = tbnum_weights,
+   method = "neuralnet", 
+   trControl = rctrl1,
+   tuneGrid = data.frame(layer1 = 2:20, layer2 = 2:20, layer3 = 2:20),
+   rep = 3,
+   threshold = 0.0001,
+   preProc = c("center", "scale"))
+
+plot_model(model)
+```
+
+
+Data fit with Support Vector Machine
+
+
+```{r, echo = TRUE, fig.cap = 'Data fit with Support Vector Machine, Year 2014 - 2018'} 
+set.seed(123)  # for reproducibility
+model <- caret::train(
+  perc_women_eng_region ~ ., 
+  data = tbnum,
+  weights = tbnum_weights,  
+  method = "svmRadial",
+  preProcess = c("center", "scale"),  
+  trControl = trainControl(method = "cv", number = 10),
+  tuneLength = 10
+)
+
+plot_model(model)
+```

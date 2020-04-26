@@ -1,0 +1,1069 @@
+---
+title: Engineers in Sweden who are women, feature importance
+author: Mikael Lundqvist
+date: '2020-04-26'
+slug: engineers-in-sweden-who-are-women-feature-importance
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+
+
+<p>In my last post, I found that the per cent women in the region had a significant impact on the salaries of Engineers. In this post, I will analyse what predictors are best to forecast the percentage of women who are Engineers in the region. I will begin in much the same way as when I looked at salaries. However, there are limitations to linear models. In the second half of this post, I compare my finding to other machine learning algorithms.</p>
+<p>Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.</p>
+<p>Please send suggestions for improvement of the analysis to <a href="mailto:ranalystatisticssweden@gmail.com" class="email">ranalystatisticssweden@gmail.com</a>.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse)</code></pre>
+<pre><code>## -- Attaching packages -------------------------------------------------- tidyverse 1.3.0 --</code></pre>
+<pre><code>## v ggplot2 3.3.0     v purrr   0.3.4
+## v tibble  3.0.0     v dplyr   0.8.5
+## v tidyr   1.0.2     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.5.0</code></pre>
+<pre><code>## -- Conflicts ----------------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library (broom)
+library (car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre class="r"><code>library (leaps)
+library (MASS)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;MASS&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     select</code></pre>
+<pre class="r"><code>library (earth)</code></pre>
+<pre><code>## Loading required package: Formula</code></pre>
+<pre><code>## Loading required package: plotmo</code></pre>
+<pre><code>## Loading required package: plotrix</code></pre>
+<pre><code>## Loading required package: TeachingDemos</code></pre>
+<pre class="r"><code>library (lspline)
+library (boot)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;boot&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:car&#39;:
+## 
+##     logit</code></pre>
+<pre class="r"><code>library (arm)</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Matrix&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
+## 
+##     expand, pack, unpack</code></pre>
+<pre><code>## Loading required package: lme4</code></pre>
+<pre><code>## Registered S3 methods overwritten by &#39;lme4&#39;:
+##   method                          from
+##   cooks.distance.influence.merMod car 
+##   influence.merMod                car 
+##   dfbeta.influence.merMod         car 
+##   dfbetas.influence.merMod        car</code></pre>
+<pre><code>## 
+## arm (Version 1.10-1, built: 2018-4-12)</code></pre>
+<pre><code>## Working directory is C:/R/rblog/content/post</code></pre>
+<pre><code>## 
+## Attaching package: &#39;arm&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:boot&#39;:
+## 
+##     logit</code></pre>
+<pre><code>## The following object is masked from &#39;package:plotrix&#39;:
+## 
+##     rescale</code></pre>
+<pre><code>## The following object is masked from &#39;package:car&#39;:
+## 
+##     logit</code></pre>
+<pre class="r"><code>library (caret)    </code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## 
+## Attaching package: &#39;lattice&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:boot&#39;:
+## 
+##     melanoma</code></pre>
+<pre><code>## 
+## Attaching package: &#39;caret&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     lift</code></pre>
+<pre class="r"><code>library (recipes)  </code></pre>
+<pre><code>## 
+## Attaching package: &#39;recipes&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:stringr&#39;:
+## 
+##     fixed</code></pre>
+<pre><code>## The following object is masked from &#39;package:stats&#39;:
+## 
+##     step</code></pre>
+<pre class="r"><code>library (vip)         </code></pre>
+<pre><code>## 
+## Attaching package: &#39;vip&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:utils&#39;:
+## 
+##     vi</code></pre>
+<pre class="r"><code>library (ggpubr)</code></pre>
+<pre><code>## Loading required package: magrittr</code></pre>
+<pre><code>## 
+## Attaching package: &#39;magrittr&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     set_names</code></pre>
+<pre><code>## The following object is masked from &#39;package:tidyr&#39;:
+## 
+##     extract</code></pre>
+<pre class="r"><code>library (glmnet)</code></pre>
+<pre><code>## Loaded glmnet 3.0-2</code></pre>
+<pre class="r"><code>library (rpart)       
+library (ipred) 
+library (iml)
+library (neuralnet)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;neuralnet&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     compute</code></pre>
+<pre class="r"><code>library (DALEX)</code></pre>
+<pre><code>## Welcome to DALEX (version: 1.2.1).
+## Find examples and detailed introduction at: https://pbiecek.github.io/ema/</code></pre>
+<pre><code>## 
+## Attaching package: &#39;DALEX&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     explain</code></pre>
+<pre class="r"><code>library (Metrics)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Metrics&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:caret&#39;:
+## 
+##     precision, recall</code></pre>
+<pre class="r"><code>library (auditor)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;auditor&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:DALEX&#39;:
+## 
+##     model_performance</code></pre>
+<pre class="r"><code>readfile &lt;- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%
+  gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = groupsize) %&gt;%
+  drop_na() %&gt;%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women &lt;- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts &lt;- read.csv(&quot;nuts.csv&quot;) %&gt;%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+
+nuts %&gt;% 
+  distinct (NUTS2_en) %&gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &#39;Nomenclature des Unités Territoriales Statistiques (NUTS)&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-1">Table 1: </span>Nomenclature des Unités Territoriales Statistiques (NUTS)</caption>
+<thead>
+<tr class="header">
+<th align="left">NUTS2_en</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">SE11 Stockholm</td>
+</tr>
+<tr class="even">
+<td align="left">SE12 East-Central Sweden</td>
+</tr>
+<tr class="odd">
+<td align="left">SE21 Småland and islands</td>
+</tr>
+<tr class="even">
+<td align="left">SE22 South Sweden</td>
+</tr>
+<tr class="odd">
+<td align="left">SE23 West Sweden</td>
+</tr>
+<tr class="even">
+<td align="left">SE31 North-Central Sweden</td>
+</tr>
+<tr class="odd">
+<td align="left">SE32 Central Norrland</td>
+</tr>
+<tr class="even">
+<td align="left">SE33 Upper Norrland</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>bs &lt;- function(formula, data, indices) {
+  d &lt;- data[indices,] # allows boot to select sample 
+  fit &lt;- lm(formula, weights = tbnum_weights, data=d)
+  return(coef(fit)) 
+} </code></pre>
+<p>The data tables are downloaded from Statistics Sweden. They are saved as a comma-delimited file without heading, UF0506A1.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>The tables:</p>
+<p>UF0506A1_1.csv: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018 NUTS 2 level 2008- Age, total, all reported ages</p>
+<p>000000CG_1: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary All sectors.</p>
+<p>000000CD_1.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Number of employees All sectors-</p>
+<p>The data is aggregated, the size of each group is in the column groupsize.</p>
+<p>I have also included some calculated predictors from the original data.</p>
+<p>perc_women: The percentage of women within each group defined by edulevel, region and year</p>
+<p>perc_women_region: The percentage of women within each group defined by year and region</p>
+<p>regioneduyears: The average number of education years per capita within each group defined by sex, year and region</p>
+<p>eduquotient: The quotient between regioneduyears for men and women</p>
+<p>salaryquotient: The quotient between salary for men and women within each group defined by year and region</p>
+<p>perc_women_eng_region: The percentage of women who are engineers within each group defined by year and region</p>
+<pre class="r"><code>numedulevel &lt;- read.csv(&quot;edulevel_1.csv&quot;) 
+
+numedulevel[, 2] &lt;- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+tb &lt;- readfile(&quot;000000CG_1.csv&quot;) 
+tb &lt;- readfile(&quot;000000CD_1.csv&quot;) %&gt;% 
+  left_join(tb, by = c(&quot;region&quot;, &quot;year&quot;, &quot;sex&quot;, &quot;sector&quot;,&quot;occuptional  (SSYK 2012)&quot;)) %&gt;%
+  filter(`occuptional  (SSYK 2012)` == &quot;214 Engineering professionals&quot;) 
+
+tb &lt;- readfile(&quot;UF0506A1_1.csv&quot;) %&gt;%  
+  right_join(tb, by = c(&quot;region&quot;, &quot;year&quot;, &quot;sex&quot;)) %&gt;%
+  right_join(numedulevel, by = c(&quot;level of education&quot; = &quot;level.of.education&quot;)) %&gt;%
+  filter(!is.na(eduyears)) %&gt;%  
+  mutate(edulevel = `level of education`) %&gt;%
+  group_by(edulevel, region, year, sex) %&gt;%
+  mutate(groupsize_all_ages = sum(groupsize)) %&gt;%  
+  group_by(edulevel, region, year) %&gt;% 
+  mutate (perc_women = perc_women (groupsize_all_ages[1:2])) %&gt;% 
+  group_by (sex, year, region) %&gt;%
+  mutate(regioneduyears = sum(groupsize * eduyears) / sum(groupsize)) %&gt;%
+  mutate(regiongroupsize = sum(groupsize)) %&gt;% 
+  mutate(suming = groupsize.x) %&gt;%
+  group_by(region, year) %&gt;%
+  mutate (sum_pop = sum(groupsize)) %&gt;%
+  mutate (perc_women_region = perc_women (regiongroupsize[1:2])) %&gt;% 
+  mutate (eduquotient = regioneduyears[2] / regioneduyears[1]) %&gt;% 
+  mutate (salary = groupsize.y) %&gt;%
+  mutate (salaryquotient = salary[2] / salary[1]) %&gt;%   
+  mutate (perc_women_eng_region = perc_women(suming[1:2])) %&gt;%  
+  left_join(nuts %&gt;% distinct (NUTS2_en, NUTS2_sh), by = c(&quot;region&quot; = &quot;NUTS2_en&quot;)) %&gt;%
+  drop_na()
+
+summary(tb)</code></pre>
+<pre><code>##     region              age            level of education     sex           
+##  Length:532         Length:532         Length:532         Length:532        
+##  Class :character   Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+##                                                                             
+##                                                                             
+##                                                                             
+##      year             groupsize          year_n        sector         
+##  Length:532         Min.   :   405   Min.   :2014   Length:532        
+##  Class :character   1st Qu.: 20996   1st Qu.:2015   Class :character  
+##  Mode  :character   Median : 43656   Median :2016   Mode  :character  
+##                     Mean   : 64760   Mean   :2016                     
+##                     3rd Qu.:102394   3rd Qu.:2017                     
+##                     Max.   :271889   Max.   :2018                     
+##  occuptional  (SSYK 2012)  groupsize.x       year_n.x     groupsize.y   
+##  Length:532               Min.   :  340   Min.   :2014   Min.   :34700  
+##  Class :character         1st Qu.: 1700   1st Qu.:2015   1st Qu.:40300  
+##  Mode  :character         Median : 3000   Median :2016   Median :42000  
+##                           Mean   : 5850   Mean   :2016   Mean   :42078  
+##                           3rd Qu.: 7475   3rd Qu.:2017   3rd Qu.:43925  
+##                           Max.   :21400   Max.   :2018   Max.   :49400  
+##     year_n.y       eduyears       edulevel         groupsize_all_ages
+##  Min.   :2014   Min.   : 8.00   Length:532         Min.   :   405    
+##  1st Qu.:2015   1st Qu.: 9.00   Class :character   1st Qu.: 20996    
+##  Median :2016   Median :12.00   Mode  :character   Median : 43656    
+##  Mean   :2016   Mean   :12.71                      Mean   : 64760    
+##  3rd Qu.:2017   3rd Qu.:15.00                      3rd Qu.:102394    
+##  Max.   :2018   Max.   :22.00                      Max.   :271889    
+##    perc_women     regioneduyears  regiongroupsize      suming     
+##  Min.   :0.3575   Min.   :11.18   Min.   :128262   Min.   :  340  
+##  1st Qu.:0.4338   1st Qu.:11.61   1st Qu.:288058   1st Qu.: 1700  
+##  Median :0.4631   Median :11.74   Median :514608   Median : 3000  
+##  Mean   :0.4771   Mean   :11.79   Mean   :453318   Mean   : 5850  
+##  3rd Qu.:0.5132   3rd Qu.:12.04   3rd Qu.:691870   3rd Qu.: 7475  
+##  Max.   :0.6423   Max.   :12.55   Max.   :827940   Max.   :21400  
+##     sum_pop        perc_women_region  eduquotient        salary     
+##  Min.   : 262870   Min.   :0.4831    Min.   :1.019   Min.   :34700  
+##  1st Qu.: 587142   1st Qu.:0.4882    1st Qu.:1.029   1st Qu.:40300  
+##  Median :1029820   Median :0.4934    Median :1.034   Median :42000  
+##  Mean   : 906635   Mean   :0.4923    Mean   :1.034   Mean   :42078  
+##  3rd Qu.:1395157   3rd Qu.:0.4970    3rd Qu.:1.041   3rd Qu.:43925  
+##  Max.   :1655215   Max.   :0.5014    Max.   :1.047   Max.   :49400  
+##  salaryquotient   perc_women_eng_region   NUTS2_sh        
+##  Min.   :0.8653   Min.   :0.1566        Length:532        
+##  1st Qu.:0.9329   1st Qu.:0.1787        Class :character  
+##  Median :0.9395   Median :0.2042        Mode  :character  
+##  Mean   :0.9447   Mean   :0.2039                          
+##  3rd Qu.:0.9537   3rd Qu.:0.2216                          
+##  Max.   :1.0446   Max.   :0.2746</code></pre>
+<p>Prepare the data using Tidyverse recipes package, i.e. centre, scale and make sure all predictors are numerical.</p>
+<pre class="r"><code>tbtemp &lt;- ungroup(tb) %&gt;% dplyr::select(region, salary, year_n, regiongroupsize, sex, regioneduyears, suming, perc_women_region, salaryquotient, eduquotient, perc_women_eng_region)
+
+tb_outliers_info &lt;- unique(tbtemp)
+
+tb_unique &lt;- unique(dplyr::select(tbtemp, -region))
+
+tbnum_weights &lt;- tb_unique$suming
+
+blueprint &lt;- recipe(perc_women_eng_region ~ ., data = tb_unique) %&gt;%
+  step_nzv(all_nominal()) %&gt;%
+  step_integer(matches(&quot;Qual|Cond|QC|Qu&quot;)) %&gt;%
+  step_center(all_numeric(), -all_outcomes()) %&gt;%
+  step_scale(all_numeric(), -all_outcomes()) %&gt;%
+  step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE)
+
+prepare &lt;- prep(blueprint, training = tb_unique)
+
+tbnum &lt;- bake(prepare, new_data = tb_unique)</code></pre>
+<p>The dataset only contains 76 rows. This together with multicollinearity limits the number of predictors to include in the regression. I would like to choose the predictors that best contains most information from the dataset with respect to the response.</p>
+<p>I will use an elastic net to find the variable that contains the best signals for later use in the analysis. First I will search for the explanatory variables that best predict the response using no interactions. I will use 10-fold cross-validation with an elastic net. Elastic nets are linear and do not take into account the shape of the relations between the predictors. Alpha = 1 indicates a lasso regression.</p>
+<pre class="r"><code>X &lt;- model.matrix(perc_women_eng_region ~ ., tbnum)[, -1]
+
+Y &lt;- tbnum$perc_women_eng_region
+
+set.seed(123)  # for reproducibility
+tbnum_glmnet &lt;- caret::train(
+    x = X,
+    y = Y,
+    weights = tbnum_weights,     
+    method = &quot;glmnet&quot;,
+    preProc = c(&quot;zv&quot;, &quot;center&quot;, &quot;scale&quot;),
+    trControl = trainControl(method = &quot;cv&quot;, number = 10),
+    tuneLength = 20
+)</code></pre>
+<pre><code>## Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info = trainInfo, :
+## There were missing values in resampled performance measures.</code></pre>
+<pre class="r"><code>vip(tbnum_glmnet, num_features = 20, geom = &quot;point&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-41"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-4-1.png" alt="Elastic net search on the data using no interactions, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 1: Elastic net search on the data using no interactions, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>tbnum_glmnet$bestTune</code></pre>
+<pre><code>##         alpha       lambda
+## 349 0.9052632 0.0002658605</code></pre>
+<pre class="r"><code>elastic_min &lt;- glmnet(
+    x = X,
+    y = Y,
+    alpha = .1
+)
+
+plot(elastic_min, xvar = &quot;lambda&quot;, main = &quot;Elastic net penalty\n\n&quot;)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-42"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-4-2.png" alt="Elastic net search on the data using no interactions, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 2: Elastic net search on the data using no interactions, Year 2014 - 2018
+</p>
+</div>
+<p>I use MARS to fit the best signals using from the elastic net using no interactions. Four predictors minimise the AIC while still ensuring that the coefficients are valid, testing them with bootstrap.</p>
+<pre class="r"><code>temp &lt;- dplyr::select(tbnum, c(perc_women_eng_region, regiongroupsize, regioneduyears, eduquotient, sex_men))
+
+mmod_scaled &lt;- earth(perc_women_eng_region ~ ., weights = tbnum_weights, data = temp, nk = 9, degree = 1)
+
+summary (mmod_scaled)</code></pre>
+<pre><code>## Call: earth(formula=perc_women_eng_region~., data=temp, weights=tbnum_weights,
+##             degree=1, nk=9)
+## 
+##                              coefficients
+## (Intercept)                   0.188579073
+## sex_men                       0.020170708
+## h(0.651904-regiongroupsize)  -0.017635288
+## h(regiongroupsize-0.651904)   0.032588077
+## h(-0.259811-regioneduyears)  -0.021971561
+## h(regioneduyears- -0.259811)  0.021625566
+## h(-1.22297-eduquotient)      -0.049922858
+## h(eduquotient- -1.22297)      0.009477773
+## 
+## Selected 8 of 8 terms, and 4 of 4 predictors
+## Termination condition: Reached nk 9
+## Importance: regiongroupsize, regioneduyears, eduquotient, sex_men
+## Weights: 21400, 6800, 11500, 3000, 2400, 500, 7000, 1900, 16000, 4100, 3...
+## Number of terms at each degree of interaction: 1 7 (additive model)
+## GCV 0.8258677    RSS 40.43492    GRSq 0.8250241    RSq 0.8842515</code></pre>
+<pre class="r"><code>plot (mmod_scaled)</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-51"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-5-1.png" alt="Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 3: Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>plotmo (mmod_scaled)</code></pre>
+<pre><code>##  plotmo grid:    regiongroupsize regioneduyears eduquotient sex_men
+##                        0.2593006     -0.1394781           0     0.5</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-52"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-5-2.png" alt="Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 4: Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018
+</p>
+</div>
+<pre class="r"><code>model_mmod_scale &lt;- lm (perc_women_eng_region ~ 
+  sex_men +                        
+  lspline(regiongroupsize, c(0.651904)) +
+  lspline(regioneduyears, c(-0.259811)) +
+  lspline(eduquotient, c(-1.22297)),   
+  weights = tbnum_weights,
+  data = tbnum) 
+
+model_mmod_scale &lt;- lm (perc_women_eng_region ~ .,
+  weights = tbnum_weights,
+  data = tbnum)
+
+b &lt;- regsubsets(perc_women_eng_region ~ sex_men + lspline(regiongroupsize, c(0.651904)) + lspline(regioneduyears, c(-0.259811)) + lspline(eduquotient, c(-1.22297)), data = tbnum, weights = tbnum_weights, nvmax = 12)
+
+rs &lt;- summary(b)
+AIC &lt;- 50 * log (rs$rss / 50) + (2:8) * 2
+which.min (AIC)</code></pre>
+<pre><code>## [1] 7</code></pre>
+<pre class="r"><code>names (rs$which[7,])[rs$which[7,]]</code></pre>
+<pre><code>## [1] &quot;(Intercept)&quot;                           
+## [2] &quot;sex_men&quot;                               
+## [3] &quot;lspline(regiongroupsize, c(0.651904))1&quot;
+## [4] &quot;lspline(regiongroupsize, c(0.651904))2&quot;
+## [5] &quot;lspline(regioneduyears, c(-0.259811))1&quot;
+## [6] &quot;lspline(regioneduyears, c(-0.259811))2&quot;
+## [7] &quot;lspline(eduquotient, c(-1.22297))1&quot;    
+## [8] &quot;lspline(eduquotient, c(-1.22297))2&quot;</code></pre>
+<pre class="r"><code>model_mmod_scale &lt;- lm (perc_women_eng_region ~ 
+  sex_men +     
+  lspline(regiongroupsize, c(0.651904)) +
+  lspline(regioneduyears, c(-0.259811)) +
+  lspline(eduquotient, c(-1.22297)), 
+  weights = tbnum_weights,
+  data = tbnum) 
+
+summary (model_mmod_scale)$adj.r.squared</code></pre>
+<pre><code>## [1] 0.8723362</code></pre>
+<pre class="r"><code>AIC(model_mmod_scale)</code></pre>
+<pre><code>## [1] -426.1528</code></pre>
+<pre class="r"><code>set.seed(123)
+results &lt;- boot(data = tbnum, statistic = bs, 
+   R = 1000, formula = as.formula(model_mmod_scale))
+
+#conf = coefficient not passing through zero
+summary (model_mmod_scale) %&gt;% tidy() %&gt;% 
+  mutate(bootest = tidy(results)$statistic, 
+  bootbias = tidy(results)$bias, 
+  booterr =  tidy(results)$std.error, 
+  conf = !((tidy(confint(results))$X2.5.. &lt; 0) &amp; (tidy(confint(results))$X97.5.. &gt; 0)))</code></pre>
+<pre><code>## Warning in norm.inter(t, adj.alpha): extreme order statistics used as endpoints</code></pre>
+<pre><code>## Warning: &#39;tidy.matrix&#39; is deprecated.
+## See help(&quot;Deprecated&quot;)</code></pre>
+<pre><code>## Warning in norm.inter(t, adj.alpha): extreme order statistics used as endpoints</code></pre>
+<pre><code>## Warning: &#39;tidy.matrix&#39; is deprecated.
+## See help(&quot;Deprecated&quot;)</code></pre>
+<pre><code>## # A tibble: 8 x 9
+##   term      estimate std.error statistic  p.value bootest bootbias booterr conf 
+##   &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt; &lt;lgl&gt;
+## 1 (Interce~  0.244     0.0177      13.8  2.05e-21 0.244    4.73e-3 0.0376  TRUE 
+## 2 sex_men    0.0202    0.00509      3.96 1.82e- 4 0.0202   2.44e-3 0.00694 TRUE 
+## 3 lspline(~  0.0176    0.00437      4.03 1.42e- 4 0.0176   9.52e-4 0.00560 TRUE 
+## 4 lspline(~  0.0326    0.00828      3.94 1.97e- 4 0.0326  -2.36e-3 0.0135  TRUE 
+## 5 lspline(~  0.0220    0.00466      4.72 1.23e- 5 0.0220  -3.76e-3 0.00672 TRUE 
+## 6 lspline(~  0.0216    0.00490      4.41 3.78e- 5 0.0216   4.59e-4 0.00672 TRUE 
+## 7 lspline(~  0.0499    0.0133       3.76 3.56e- 4 0.0499   3.70e-3 0.0293  TRUE 
+## 8 lspline(~  0.00948   0.00357      2.66 9.85e- 3 0.00948 -3.47e-3 0.00491 TRUE</code></pre>
+<pre class="r"><code>plot(results, index=1) # intercept </code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-53"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-5-3.png" alt="Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 5: Hockey-stick functions fit with MARS for the predictors using no interactions, Year 2014 - 2018
+</p>
+</div>
+<p>plot_model will show diagnostics for the model, a residual plot, scale location plot, residual density and the regression error characteristic curve. It will also show the residuals versus the actual response to help find outliers. It will plot the feature importance and feature effects. In addition, it will plot how strongly features interact with each other and the 2-way interactions with regiongroupsize and all other features. The interaction measure regards how much of the variance of f(x) is explained by the interaction. The measure is between 0 (no interaction) and 1 (= 100% of variance of f(x) due to interactions). Regiongroupsize is of special interest since it is the feature with the strongest importance to the per cent of engineers who are women in the region.</p>
+<pre class="r"><code>plot_model &lt;- function(model){
+   exp_model &lt;- DALEX::explain(model, data = tbnum, y = tbnum$perc_women_eng_region)
+  
+   lm_mr &lt;- model_residual(exp_model)  
+    
+   predictor &lt;- Predictor$new(model, 
+      data = dplyr::select(tbnum, -perc_women_eng_region), 
+      y = tbnum$perc_women_eng_region)    
+   
+   writeLines(&quot;&quot;)
+   
+   print(paste (&quot;Model RMSE: &quot;, rmse(predict(model), tbnum$perc_women_eng_region)))
+ 
+   p1 &lt;- plot(lm_mr, type = &quot;residual&quot;)  
+   
+   p2 &lt;- plot(lm_mr, type = &quot;scalelocation&quot;)  
+   
+   p3 &lt;- plot(lm_mr, type = &quot;residual_density&quot;) 
+   
+   p4 &lt;- plot(lm_mr, type = &quot;rec&quot;)
+   
+   print(gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2))
+   
+   print(plot_residual(lm_mr, variable = &quot;_y_hat_&quot;, nlabel = 10))
+   
+   print(plot (FeatureImp$new(predictor, loss = &quot;mae&quot;)))
+
+   print(plot (FeatureEffects$new(predictor)))
+   
+   p1 &lt;- plot (Interaction$new(predictor)) 
+         
+   p2 &lt;- plot (Interaction$new(predictor, feature = &quot;regiongroupsize&quot;)) 
+   
+   print(gridExtra::grid.arrange(p1, p2, ncol = 2))
+}</code></pre>
+<p>Manual Data fit with Regularized Regression and MARS</p>
+<pre class="r"><code>model &lt;- lm (
+  perc_women_eng_region ~ 
+     sex_men +                        
+     lspline(regiongroupsize, c(0.651904)) +
+     lspline(regioneduyears, c(-0.259811)) +
+     lspline(eduquotient, c(-1.22297)),   
+  weights = tbnum_weights,
+  data = tbnum) 
+
+plot_model(model)</code></pre>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  lm  ( [33m default [39m )
+##   -&gt; data              :  76  rows  11  cols 
+##   -&gt; data              :  tibbble converted into a data.frame 
+##   -&gt; target variable   :  76  values 
+##   -&gt; model_info        :  package stats , ver. 4.0.0 , task regression ( [33m default [39m ) 
+##   -&gt; predict function  :  yhat.lm  will be used ( [33m default [39m )
+##   -&gt; predicted values  :  numerical, min =  0.166477 , mean =  0.2053461 , max =  0.2700836  
+##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )
+##   -&gt; residuals         :  numerical, min =  -0.03274164 , mean =  -0.001460259 , max =  0.02792793  
+##  [32m A new explainer has been created! [39m 
+## 
+## [1] &quot;Model RMSE:  0.0119381601517971&quot;</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-71"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-7-1.png" alt="Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 6: Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (2 x 2) &quot;arrange&quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-72"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-7-2.png" alt="Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 7: Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-73"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-7-3.png" alt="Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 8: Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## 
+## Attaching package: &#39;patchwork&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:MASS&#39;:
+## 
+##     area</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-74"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-7-4.png" alt="Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 9: Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-75"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-7-5.png" alt="Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 10: Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (1 x 2) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]</code></pre>
+<p>Data fit with Regularized Regression</p>
+<pre class="r"><code>X &lt;- model.matrix(perc_women_eng_region ~ ., tbnum)[, -1]
+
+Y &lt;- tbnum$perc_women_eng_region
+
+set.seed(123)  # for reproducibility
+model &lt;- caret::train(
+    x = X,
+    y = Y,
+    weights = tbnum_weights,     
+    method = &quot;glmnet&quot;,
+    preProc = c(&quot;zv&quot;, &quot;center&quot;, &quot;scale&quot;),
+    trControl = trainControl(method = &quot;cv&quot;, number = 10),
+    tuneLength = 20
+)</code></pre>
+<pre><code>## Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info = trainInfo, :
+## There were missing values in resampled performance measures.</code></pre>
+<pre class="r"><code>plot_model(model)</code></pre>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  train  ( [33m default [39m )
+##   -&gt; data              :  76  rows  11  cols 
+##   -&gt; data              :  tibbble converted into a data.frame 
+##   -&gt; target variable   :  76  values 
+##   -&gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
+##   -&gt; predict function  :  yhat.train  will be used ( [33m default [39m )
+##   -&gt; predicted values  :  numerical, min =  0.1587043 , mean =  0.2046837 , max =  0.26522  
+##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )
+##   -&gt; residuals         :  numerical, min =  -0.02797346 , mean =  -0.0007978481 , max =  0.0284033  
+##  [32m A new explainer has been created! [39m 
+## 
+## [1] &quot;Model RMSE:  0.0115236920245644&quot;</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-81"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-8-1.png" alt="Data fit with Regularized Regression, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 11: Data fit with Regularized Regression, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (2 x 2) &quot;arrange&quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-82"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-8-2.png" alt="Data fit with Regularized Regression, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 12: Data fit with Regularized Regression, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-83"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-8-3.png" alt="Data fit with Regularized Regression, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 13: Data fit with Regularized Regression, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-84"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-8-4.png" alt="Data fit with Regularized Regression, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 14: Data fit with Regularized Regression, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-85"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-8-5.png" alt="Data fit with Regularized Regression, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 15: Data fit with Regularized Regression, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (1 x 2) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]</code></pre>
+<p>Data fit with Multivariate Adaptive Regression Splines</p>
+<pre class="r"><code>hyper_grid &lt;- expand.grid(
+  degree = 1, 
+  nprune = seq(2, 100, length.out = 10) %&gt;% floor()
+)
+
+set.seed(123)  # for reproducibility
+model &lt;- caret::train(
+  x = data.frame(subset(tbnum, select = -perc_women_eng_region)),
+  y = tbnum$perc_women_eng_region,
+  method = &quot;earth&quot;,
+  weights = tbnum_weights,
+  trControl = trainControl(method = &quot;cv&quot;, number = 10),
+  tuneGrid = hyper_grid
+)
+
+plot_model(model)</code></pre>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  train  ( [33m default [39m )
+##   -&gt; data              :  76  rows  11  cols 
+##   -&gt; data              :  tibbble converted into a data.frame 
+##   -&gt; target variable   :  76  values 
+##   -&gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
+##   -&gt; predict function  :  yhat.train  will be used ( [33m default [39m )</code></pre>
+<pre><code>## Warning in if (class(response) == &quot;data.frame&quot;) response &lt;- as.matrix(response):
+## the condition has length &gt; 1 and only the first element will be used</code></pre>
+<pre><code>##   -&gt; predicted values  :  predict function returns multiple columns:  1  ( [31m WARNING [39m ) some of functionalities may not work 
+##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )</code></pre>
+<pre><code>## Warning in if (class(response) == &quot;data.frame&quot;) response &lt;- as.matrix(response):
+## the condition has length &gt; 1 and only the first element will be used</code></pre>
+<pre><code>##   -&gt; residuals         :  numerical, min =  -0.02080626 , mean =  -2.559655e-05 , max =  0.03188827  
+##  [32m A new explainer has been created! [39m 
+## 
+## [1] &quot;Model RMSE:  0.00915463662070812&quot;</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-91"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-9-1.png" alt="Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 16: Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (2 x 2) &quot;arrange&quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-92"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-9-2.png" alt="Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 17: Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-93"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-9-3.png" alt="Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 18: Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-94"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-9-4.png" alt="Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 19: Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-95"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-9-5.png" alt="Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 20: Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (1 x 2) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]</code></pre>
+<p>Data fit with decision tree bag</p>
+<pre class="r"><code>set.seed(123)
+model &lt;- caret::train(
+  perc_women_eng_region ~ .,
+  data = tbnum,
+  method = &quot;treebag&quot;,
+  weights = tbnum_weights,  
+  trControl = trainControl(method = &quot;cv&quot;, number = 10),
+  nbagg = 50,  
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+
+plot_model(model)</code></pre>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  train.formula  ( [33m default [39m )
+##   -&gt; data              :  76  rows  11  cols 
+##   -&gt; data              :  tibbble converted into a data.frame 
+##   -&gt; target variable   :  76  values 
+##   -&gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
+##   -&gt; predict function  :  yhat.train  will be used ( [33m default [39m )
+##   -&gt; predicted values  :  numerical, min =  0.1604821 , mean =  0.2040995 , max =  0.2709777  
+##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )
+##   -&gt; residuals         :  numerical, min =  -0.01038796 , mean =  -0.0002136866 , max =  0.008340556  
+##  [32m A new explainer has been created! [39m 
+## 
+## [1] &quot;Model RMSE:  0.00341044239371977&quot;</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-101"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-10-1.png" alt="Data fit with decision tree bag, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 21: Data fit with decision tree bag, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (2 x 2) &quot;arrange&quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-102"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-10-2.png" alt="Data fit with decision tree bag, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 22: Data fit with decision tree bag, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-103"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-10-3.png" alt="Data fit with decision tree bag, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 23: Data fit with decision tree bag, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-104"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-10-4.png" alt="Data fit with decision tree bag, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 24: Data fit with decision tree bag, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-105"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-10-5.png" alt="Data fit with decision tree bag, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 25: Data fit with decision tree bag, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (1 x 2) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]</code></pre>
+<p>Data fit with Random Forest</p>
+<pre class="r"><code>set.seed(123)
+invisible(capture.output(model &lt;- caret::train(
+   perc_women_eng_region  ~ ., 
+   data = tbnum,
+   weights = tbnum_weights,
+   method = &quot;ranger&quot;,
+   trControl = trainControl(method = &quot;cv&quot;, number = 5, verboseIter = T, classProbs = T),
+   num.trees = 100,
+   importance = &quot;permutation&quot;)))</code></pre>
+<pre><code>## Warning in train.default(x, y, weights = w, ...): cannnot compute class
+## probabilities for regression</code></pre>
+<pre class="r"><code>plot_model(model)</code></pre>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  train.formula  ( [33m default [39m )
+##   -&gt; data              :  76  rows  11  cols 
+##   -&gt; data              :  tibbble converted into a data.frame 
+##   -&gt; target variable   :  76  values 
+##   -&gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
+##   -&gt; predict function  :  yhat.train  will be used ( [33m default [39m )
+##   -&gt; predicted values  :  numerical, min =  0.1702906 , mean =  0.2059004 , max =  0.2740629  
+##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )
+##   -&gt; residuals         :  numerical, min =  -0.02299151 , mean =  -0.002014566 , max =  0.02045637  
+##  [32m A new explainer has been created! [39m 
+## 
+## [1] &quot;Model RMSE:  0.00876237694751394&quot;</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-111"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-11-1.png" alt="Data fit with Random Forest, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 26: Data fit with Random Forest, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (2 x 2) &quot;arrange&quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-112"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-11-2.png" alt="Data fit with Random Forest, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 27: Data fit with Random Forest, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-113"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-11-3.png" alt="Data fit with Random Forest, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 28: Data fit with Random Forest, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-114"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-11-4.png" alt="Data fit with Random Forest, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 29: Data fit with Random Forest, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-115"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-11-5.png" alt="Data fit with Random Forest, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 30: Data fit with Random Forest, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (1 x 2) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]</code></pre>
+<p>Data fit with Gradient Boosting Machine</p>
+<pre class="r"><code>tr &lt;- trainControl(method = &quot;repeatedcv&quot;, number = 10, repeats = 5)
+
+tg &lt;- expand.grid(shrinkage = seq(0.1), 
+   interaction.depth = c(3),
+   n.minobsinnode = c(10),
+   n.trees = c(100))
+
+set.seed(123)
+model &lt;- caret::train(
+   perc_women_eng_region ~ ., 
+   data = tbnum, 
+   weights = tbnum_weights,
+   method = &quot;gbm&quot;, 
+   trControl = tr, 
+   tuneGrid = tg, 
+   verbose = FALSE)
+
+plot_model(model)</code></pre>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  train.formula  ( [33m default [39m )
+##   -&gt; data              :  76  rows  11  cols 
+##   -&gt; data              :  tibbble converted into a data.frame 
+##   -&gt; target variable   :  76  values 
+##   -&gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
+##   -&gt; predict function  :  yhat.train  will be used ( [33m default [39m )
+##   -&gt; predicted values  :  numerical, min =  0.1540585 , mean =  0.2044099 , max =  0.276681  
+##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )
+##   -&gt; residuals         :  numerical, min =  -0.01277545 , mean =  -0.000524046 , max =  0.0114161  
+##  [32m A new explainer has been created! [39m 
+## 
+## [1] &quot;Model RMSE:  0.00352511569538881&quot;</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-121"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-12-1.png" alt="Data fit with Gradient Boosting Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 31: Data fit with Gradient Boosting Machine, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (2 x 2) &quot;arrange&quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-122"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-12-2.png" alt="Data fit with Gradient Boosting Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 32: Data fit with Gradient Boosting Machine, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-123"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-12-3.png" alt="Data fit with Gradient Boosting Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 33: Data fit with Gradient Boosting Machine, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-124"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-12-4.png" alt="Data fit with Gradient Boosting Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 34: Data fit with Gradient Boosting Machine, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-125"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-12-5.png" alt="Data fit with Gradient Boosting Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 35: Data fit with Gradient Boosting Machine, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (1 x 2) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]</code></pre>
+<p>Data fit with Deep Learning</p>
+<pre class="r"><code>rctrl1 &lt;- trainControl(method = &quot;cv&quot;, number = 3, returnResamp = &quot;all&quot;)
+
+set.seed(123)  # for reproducibility
+model &lt;- caret::train(
+   perc_women_eng_region ~ ., 
+   data = tbnum, 
+   weights = tbnum_weights,
+   method = &quot;neuralnet&quot;, 
+   trControl = rctrl1,
+   tuneGrid = data.frame(layer1 = 2:20, layer2 = 2:20, layer3 = 2:20),
+   rep = 3,
+   threshold = 0.0001,
+   preProc = c(&quot;center&quot;, &quot;scale&quot;))
+
+plot_model(model)</code></pre>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  train.formula  ( [33m default [39m )
+##   -&gt; data              :  76  rows  11  cols 
+##   -&gt; data              :  tibbble converted into a data.frame 
+##   -&gt; target variable   :  76  values 
+##   -&gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
+##   -&gt; predict function  :  yhat.train  will be used ( [33m default [39m )
+##   -&gt; predicted values  :  numerical, min =  0.1628369 , mean =  0.2038862 , max =  0.2635404  
+##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )
+##   -&gt; residuals         :  numerical, min =  -0.01827999 , mean =  -3.861844e-07 , max =  0.02411042  
+##  [32m A new explainer has been created! [39m 
+## 
+## [1] &quot;Model RMSE:  0.00924842751296535&quot;</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-131"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-13-1.png" alt="Data fit with Deep Learning, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 36: Data fit with Deep Learning, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (2 x 2) &quot;arrange&quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-132"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-13-2.png" alt="Data fit with Deep Learning, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 37: Data fit with Deep Learning, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-133"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-13-3.png" alt="Data fit with Deep Learning, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 38: Data fit with Deep Learning, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-134"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-13-4.png" alt="Data fit with Deep Learning, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 39: Data fit with Deep Learning, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-135"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-13-5.png" alt="Data fit with Deep Learning, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 40: Data fit with Deep Learning, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (1 x 2) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]</code></pre>
+<p>Data fit with Support Vector Machine</p>
+<pre class="r"><code>set.seed(123)  # for reproducibility
+model &lt;- caret::train(
+  perc_women_eng_region ~ ., 
+  data = tbnum,
+  weights = tbnum_weights,  
+  method = &quot;svmRadial&quot;,
+  preProcess = c(&quot;center&quot;, &quot;scale&quot;),  
+  trControl = trainControl(method = &quot;cv&quot;, number = 10),
+  tuneLength = 10
+)
+
+plot_model(model)</code></pre>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  train.formula  ( [33m default [39m )
+##   -&gt; data              :  76  rows  11  cols 
+##   -&gt; data              :  tibbble converted into a data.frame 
+##   -&gt; target variable   :  76  values 
+##   -&gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
+##   -&gt; predict function  :  yhat.train  will be used ( [33m default [39m )
+##   -&gt; predicted values  :  numerical, min =  0.1628809 , mean =  0.20346 , max =  0.2626565  
+##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )
+##   -&gt; residuals         :  numerical, min =  -0.02034679 , mean =  0.0004258419 , max =  0.02294541  
+##  [32m A new explainer has been created! [39m 
+## 
+## [1] &quot;Model RMSE:  0.00848330404577974&quot;</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-141"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-14-1.png" alt="Data fit with Support Vector Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 41: Data fit with Support Vector Machine, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (2 x 2) &quot;arrange&quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]</code></pre>
+<div class="figure"><span id="fig:unnamed-chunk-142"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-14-2.png" alt="Data fit with Support Vector Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 42: Data fit with Support Vector Machine, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-143"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-14-3.png" alt="Data fit with Support Vector Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 43: Data fit with Support Vector Machine, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-144"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-14-4.png" alt="Data fit with Support Vector Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 44: Data fit with Support Vector Machine, Year 2014 - 2018
+</p>
+</div>
+<div class="figure"><span id="fig:unnamed-chunk-145"></span>
+<img src="/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-14-5.png" alt="Data fit with Support Vector Machine, Year 2014 - 2018" width="672" />
+<p class="caption">
+Figure 45: Data fit with Support Vector Machine, Year 2014 - 2018
+</p>
+</div>
+<pre><code>## TableGrob (1 x 2) &quot;arrange&quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]</code></pre>
