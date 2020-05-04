@@ -1,0 +1,252 @@
+---
+title: The number of engineers in the Swedish regions, feature importance
+author: Mikael Lundqvist
+date: '2020-05-04'
+slug: the-number-of-engineers-in-the-swedish-regions-feature-importance
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+In my last post, I analysed the feature importance for the per cent of engineers in Sweden who are women. I found that the size of the region is a feature that is significant for the per cent of engineers in Sweden who are women. The size of the region is correlated to the number of engineers that works in the region. In this post, I will analyse what predictors are best to forecast the number of engineers in the region. I will use models from the caret package in my analysis.
+
+Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.
+
+Please send suggestions for improvement of the analysis to ranalystatisticssweden@gmail.com.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (broom)
+library (car)
+library (caret)    
+library (recipes)  
+library (PerformanceAnalytics)
+library (ggpubr)
+library (ipred) 
+library (iml)
+library (DALEX)
+library (Metrics)
+library (auditor)
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = groupsize) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women <- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts <- read.csv("nuts.csv") %>%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+
+nuts %>% 
+  distinct (NUTS2_en) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Nomenclature des Unités Territoriales Statistiques (NUTS)')
+
+bs <- function(formula, data, indices) {
+  d <- data[indices,] # allows boot to select sample 
+  fit <- lm(formula, weights = tbnum_weights, data=d)
+  return(coef(fit)) 
+} 
+```
+
+
+The data tables are downloaded from Statistics Sweden. They are saved as a comma-delimited file without heading, UF0506A1.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The tables: 
+
+UF0506A1_1.csv: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018 NUTS 2 level 2008- 10 year intervals (16-74)
+
+000000CG_1: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary All sectors.
+
+000000CD_1.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Number of employees All sectors-
+
+The data is aggregated, the size of each group is in the column groupsize.
+
+I have also included some calculated predictors from the original data.
+
+perc_women: The percentage of women within each group defined by edulevel, region and year
+
+perc_women_region: The percentage of women within each group defined by year and region
+
+regioneduyears: The average number of education years per capita within each group defined by year and region
+
+eduquotient: The quotient between regioneduyears for men and women
+
+salaryquotient: The quotient between salary for men and women within each group defined by year and region
+
+perc_women_eng_region: The percentage of women who are engineers within each group defined by year and region
+
+
+```{r, echo = TRUE} 
+numedulevel <- read.csv("edulevel_1.csv") 
+
+numedulevel[, 2] <- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+tb <- readfile("000000CG_1.csv") 
+tb <- readfile("000000CD_1.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex", "sector","occuptional  (SSYK 2012)")) %>%
+  filter(`occuptional  (SSYK 2012)` == "214 Engineering professionals") 
+
+tb <- readfile("UF0506A1_1.csv") %>%  
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears)) %>%  
+  mutate(edulevel = `level of education`) %>%
+  group_by(edulevel, region, year, sex) %>%
+  mutate(groupsize_all_ages = sum(groupsize)) %>%  
+  group_by(edulevel, region, year) %>% 
+  mutate (perc_women = perc_women (groupsize_all_ages[1:2])) %>% 
+  mutate (suming = sum(groupsize.x)) %>%
+  mutate (salary = (groupsize.y[2] * groupsize.x[2] + groupsize.y[1] * groupsize.x[1])/(groupsize.x[2] + groupsize.x[1])) %>%
+  group_by (sex, year, region) %>%
+  mutate(regioneduyears_sex = sum(groupsize * eduyears) / sum(groupsize)) %>%
+  mutate(regiongroupsize = sum(groupsize)) %>% 
+  mutate(suming_sex = groupsize.x) %>%
+  group_by(region, year) %>%
+  mutate (sum_pop = sum(groupsize)) %>%
+  mutate (regioneduyears = sum(groupsize * eduyears) / sum(groupsize)) %>%
+  mutate (perc_women_region = perc_women (regiongroupsize[1:2])) %>% 
+  mutate (eduquotient = regioneduyears_sex[2] / regioneduyears_sex[1]) %>% 
+  mutate (salary_sex = groupsize.y) %>%
+  mutate (salaryquotient = salary_sex[2] / salary_sex[1]) %>%   
+  mutate (perc_women_eng_region = perc_women(suming_sex[1:2])) %>%  
+  left_join(nuts %>% distinct (NUTS2_en, NUTS2_sh), by = c("region" = "NUTS2_en")) %>%
+  drop_na()
+
+summary(tb)
+```
+
+
+Prepare the data using Tidyverse recipes package, i.e. centre, scale and make sure all predictors are numerical.
+
+
+```{r, echo = TRUE} 
+tbtemp <- ungroup(tb) %>% dplyr::select(region, salary, year_n, sum_pop, regioneduyears, suming, perc_women_region, salaryquotient, eduquotient, perc_women_eng_region)
+
+tb_outliers_info <- unique(tbtemp)
+
+tb_unique <- unique(dplyr::select(tbtemp, -region))
+
+tbnum_weights <- tb_unique$suming
+
+blueprint <- recipe(suming ~ ., data = tb_unique) %>%
+  step_integer(matches("Qual|Cond|QC|Qu")) %>%
+  step_center(all_numeric(), -all_outcomes()) %>%
+  step_scale(all_numeric(), -all_outcomes()) %>%
+  step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE)
+
+prepare <- prep(blueprint, training = tb_unique)
+
+tbnum <- bake(prepare, new_data = tb_unique)
+```
+
+
+The correlation chart shows that many predictors are correlated with the response variable but also that many predictors are correlated between each other. Some notable correlations are in a dedicated plot below.
+
+
+
+```{r, echo = TRUE, fig.cap = 'Correlation between response and predictors and between predictors, Year 2014 - 2018'} 
+chart.Correlation(tbnum, histogram = TRUE, pch = 19)
+
+p1 <- tb %>%
+  ggscatter(x = "sum_pop", y = "suming", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson") 
+
+p2 <- tb %>%
+  ggscatter(x = "sum_pop", y = "perc_women_region", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson") 
+
+p3 <- tb %>%
+  ggscatter(x = "suming", y = "perc_women_eng_region", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson")
+
+p4 <- tb %>%
+  ggscatter(x = "sum_pop", y = "perc_women_eng_region", 
+    add = "reg.line", conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = "pearson")
+
+gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+
+plot_model will show diagnostics for the model, a residual plot, scale location plot, residual density and the regression error characteristic curve. It will also show the residuals versus the actual response to help find outliers. It will plot the feature importance and feature effects. In addition, it will plot how strongly features interact with each other and the 2-way interactions between the feature with the strongest interaction and all other features. The interaction measure regards how much of the variance of f(x) is explained by the interaction. The measure is between 0 (no interaction) and 1 (= 100% of variance of f(x) due to interactions). 
+
+
+
+```{r, echo = TRUE} 
+plot_model <- function(model){
+   invisible(capture.output(exp_model <- DALEX::explain(model, data = tbnum, y = tbnum$suming))) # Knit and DALEX::explain generates invalid rss feed
+  
+   lm_mr <- model_residual(exp_model)  
+    
+   predictor <- Predictor$new(model, 
+      data = dplyr::select(tbnum, -suming), 
+      y = tbnum$suming)    
+   
+   writeLines("")
+   
+   print(model)
+   
+   print(postResample(pred = predict(model), obs = tbnum$suming))
+ 
+   p1 <- plot(lm_mr, type = "residual")  
+   
+   p2 <- plot(lm_mr, type = "scalelocation")   
+   
+   p3 <- plot(lm_mr, type = "residual_density") 
+   
+   p4 <- plot(lm_mr, type = "rec") 
+   
+   print(gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2))
+   
+   print(plot_residual(lm_mr, variable = "_y_hat_", nlabel = 10))
+   
+   print(plot (FeatureImp$new(predictor, loss = "mae")))
+
+   print(plot (FeatureEffects$new(predictor)))
+   
+   interact <- Interaction$new(predictor)
+   
+   p1 <- plot (interact)
+   
+   p2 <- plot (Interaction$new(predictor, feature = as.character(arrange(interact$results, desc(.interaction))[1,1])))
+   
+   print(gridExtra::grid.arrange(p1, p2, ncol = 2))
+}
+```
+
+
+Fit the following models and plot inference and diagnostics. Principal component analysis (PCA) is used to transform the data into a smaller subspace where the new variables are uncorrelated with one another due to the high multicollinearity.
+Linear Regression, Projection Pursuit Regression, Bagged MARS, Random Forest, Bagged CART, Boosted Tree, Conditional Inference Tree
+
+
+```{r, echo = TRUE, fig.cap = ', Year 2014 - 2018'} 
+modelcollection <- c("lm", "ppr", "bagEarth", "ranger", "treebag", "blackboost", "ctree")
+
+for (model in modelcollection){
+  invisible(capture.output(model <- caret::train(
+     suming ~ .,
+     data = tbnum,
+     method = model,
+     preProc=c("pca"),
+     weights = tbnum_weights,
+     trControl = trainControl(method = "cv", number = 10)
+  )))  
+
+  plot_model(model)
+}
+```

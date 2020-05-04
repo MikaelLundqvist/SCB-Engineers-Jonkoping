@@ -13,11 +13,843 @@
     <language>en-us</language>
     
     
-    <lastBuildDate>Sun, 26 Apr 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 04 May 2020 00:00:00 +0000</lastBuildDate>
     
     
         <atom:link href="/tags/regression/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>The number of engineers in the Swedish regions, feature importance</title>
+      <link>/2020/05/04/the-number-of-engineers-in-the-swedish-regions-feature-importance/</link>
+      <pubDate>Mon, 04 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/05/04/the-number-of-engineers-in-the-swedish-regions-feature-importance/</guid>
+      <description>
+
+
+&lt;p&gt;In my last post, I analysed the feature importance for the per cent of engineers in Sweden who are women. I found that the size of the region is a feature that is significant for the per cent of engineers in Sweden who are women. The size of the region is correlated to the number of engineers that works in the region. In this post, I will analyse what predictors are best to forecast the number of engineers in the region. I will use models from the caret package in my analysis.&lt;/p&gt;
+&lt;p&gt;Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.&lt;/p&gt;
+&lt;p&gt;Please send suggestions for improvement of the analysis to &lt;a href=&#34;mailto:ranalystatisticssweden@gmail.com&#34; class=&#34;email&#34;&gt;ranalystatisticssweden@gmail.com&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;First, define libraries and functions.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (tidyverse)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## -- Attaching packages -------------------------------------------------- tidyverse 1.3.0 --&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## v ggplot2 3.3.0     v purrr   0.3.4
+## v tibble  3.0.0     v dplyr   0.8.5
+## v tidyr   1.0.2     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.5.0&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## -- Conflicts ----------------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (broom)
+library (car)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: carData&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;car&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:dplyr&amp;#39;:
+## 
+##     recode&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:purrr&amp;#39;:
+## 
+##     some&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (caret)    &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: lattice&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;caret&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:purrr&amp;#39;:
+## 
+##     lift&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (recipes)  &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;recipes&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:stringr&amp;#39;:
+## 
+##     fixed&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:stats&amp;#39;:
+## 
+##     step&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (PerformanceAnalytics)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: xts&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: zoo&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;zoo&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following objects are masked from &amp;#39;package:base&amp;#39;:
+## 
+##     as.Date, as.Date.numeric&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;xts&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following objects are masked from &amp;#39;package:dplyr&amp;#39;:
+## 
+##     first, last&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;PerformanceAnalytics&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:graphics&amp;#39;:
+## 
+##     legend&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (ggpubr)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: magrittr&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;magrittr&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:purrr&amp;#39;:
+## 
+##     set_names&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:tidyr&amp;#39;:
+## 
+##     extract&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (ipred) 
+library (iml)
+library (DALEX)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Welcome to DALEX (version: 1.2.1).
+## Find examples and detailed introduction at: https://pbiecek.github.io/ema/&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;DALEX&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:dplyr&amp;#39;:
+## 
+##     explain&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (Metrics)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;Metrics&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following objects are masked from &amp;#39;package:caret&amp;#39;:
+## 
+##     precision, recall&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (auditor)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;auditor&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:DALEX&amp;#39;:
+## 
+##     model_performance&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;readfile &amp;lt;- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &amp;quot;latin1&amp;quot;), na = c(&amp;quot;..&amp;quot;, &amp;quot;NA&amp;quot;)) %&amp;gt;%
+  gather (starts_with(&amp;quot;19&amp;quot;), starts_with(&amp;quot;20&amp;quot;), key = &amp;quot;year&amp;quot;, value = groupsize) %&amp;gt;%
+  drop_na() %&amp;gt;%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women &amp;lt;- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts &amp;lt;- read.csv(&amp;quot;nuts.csv&amp;quot;) %&amp;gt;%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+
+nuts %&amp;gt;% 
+  distinct (NUTS2_en) %&amp;gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &amp;#39;Nomenclature des Unités Territoriales Statistiques (NUTS)&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
+&lt;table&gt;
+&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-1&#34;&gt;Table 1: &lt;/span&gt;Nomenclature des Unités Territoriales Statistiques (NUTS)&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr class=&#34;header&#34;&gt;
+&lt;th align=&#34;left&#34;&gt;NUTS2_en&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE11 Stockholm&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE12 East-Central Sweden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE21 Småland and islands&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE22 South Sweden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE23 West Sweden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE31 North-Central Sweden&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE32 Central Norrland&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;SE33 Upper Norrland&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bs &amp;lt;- function(formula, data, indices) {
+  d &amp;lt;- data[indices,] # allows boot to select sample 
+  fit &amp;lt;- lm(formula, weights = tbnum_weights, data=d)
+  return(coef(fit)) 
+} &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The data tables are downloaded from Statistics Sweden. They are saved as a comma-delimited file without heading, UF0506A1.csv, &lt;a href=&#34;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&#34; class=&#34;uri&#34;&gt;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The tables:&lt;/p&gt;
+&lt;p&gt;UF0506A1_1.csv: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018 NUTS 2 level 2008- 10 year intervals (16-74)&lt;/p&gt;
+&lt;p&gt;000000CG_1: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary All sectors.&lt;/p&gt;
+&lt;p&gt;000000CD_1.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Number of employees All sectors-&lt;/p&gt;
+&lt;p&gt;The data is aggregated, the size of each group is in the column groupsize.&lt;/p&gt;
+&lt;p&gt;I have also included some calculated predictors from the original data.&lt;/p&gt;
+&lt;p&gt;perc_women: The percentage of women within each group defined by edulevel, region and year&lt;/p&gt;
+&lt;p&gt;perc_women_region: The percentage of women within each group defined by year and region&lt;/p&gt;
+&lt;p&gt;regioneduyears: The average number of education years per capita within each group defined by year and region&lt;/p&gt;
+&lt;p&gt;eduquotient: The quotient between regioneduyears for men and women&lt;/p&gt;
+&lt;p&gt;salaryquotient: The quotient between salary for men and women within each group defined by year and region&lt;/p&gt;
+&lt;p&gt;perc_women_eng_region: The percentage of women who are engineers within each group defined by year and region&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;numedulevel &amp;lt;- read.csv(&amp;quot;edulevel_1.csv&amp;quot;) 
+
+numedulevel[, 2] &amp;lt;- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+tb &amp;lt;- readfile(&amp;quot;000000CG_1.csv&amp;quot;) 
+tb &amp;lt;- readfile(&amp;quot;000000CD_1.csv&amp;quot;) %&amp;gt;% 
+  left_join(tb, by = c(&amp;quot;region&amp;quot;, &amp;quot;year&amp;quot;, &amp;quot;sex&amp;quot;, &amp;quot;sector&amp;quot;,&amp;quot;occuptional  (SSYK 2012)&amp;quot;)) %&amp;gt;%
+  filter(`occuptional  (SSYK 2012)` == &amp;quot;214 Engineering professionals&amp;quot;) 
+
+tb &amp;lt;- readfile(&amp;quot;UF0506A1_1.csv&amp;quot;) %&amp;gt;%  
+  right_join(tb, by = c(&amp;quot;region&amp;quot;, &amp;quot;year&amp;quot;, &amp;quot;sex&amp;quot;)) %&amp;gt;%
+  right_join(numedulevel, by = c(&amp;quot;level of education&amp;quot; = &amp;quot;level.of.education&amp;quot;)) %&amp;gt;%
+  filter(!is.na(eduyears)) %&amp;gt;%  
+  mutate(edulevel = `level of education`) %&amp;gt;%
+  group_by(edulevel, region, year, sex) %&amp;gt;%
+  mutate(groupsize_all_ages = sum(groupsize)) %&amp;gt;%  
+  group_by(edulevel, region, year) %&amp;gt;% 
+  mutate (perc_women = perc_women (groupsize_all_ages[1:2])) %&amp;gt;% 
+  mutate (suming = sum(groupsize.x)) %&amp;gt;%
+  mutate (salary = (groupsize.y[2] * groupsize.x[2] + groupsize.y[1] * groupsize.x[1])/(groupsize.x[2] + groupsize.x[1])) %&amp;gt;%
+  group_by (sex, year, region) %&amp;gt;%
+  mutate(regioneduyears_sex = sum(groupsize * eduyears) / sum(groupsize)) %&amp;gt;%
+  mutate(regiongroupsize = sum(groupsize)) %&amp;gt;% 
+  mutate(suming_sex = groupsize.x) %&amp;gt;%
+  group_by(region, year) %&amp;gt;%
+  mutate (sum_pop = sum(groupsize)) %&amp;gt;%
+  mutate (regioneduyears = sum(groupsize * eduyears) / sum(groupsize)) %&amp;gt;%
+  mutate (perc_women_region = perc_women (regiongroupsize[1:2])) %&amp;gt;% 
+  mutate (eduquotient = regioneduyears_sex[2] / regioneduyears_sex[1]) %&amp;gt;% 
+  mutate (salary_sex = groupsize.y) %&amp;gt;%
+  mutate (salaryquotient = salary_sex[2] / salary_sex[1]) %&amp;gt;%   
+  mutate (perc_women_eng_region = perc_women(suming_sex[1:2])) %&amp;gt;%  
+  left_join(nuts %&amp;gt;% distinct (NUTS2_en, NUTS2_sh), by = c(&amp;quot;region&amp;quot; = &amp;quot;NUTS2_en&amp;quot;)) %&amp;gt;%
+  drop_na()
+
+summary(tb)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;##     region              age            level of education     sex           
+##  Length:532         Length:532         Length:532         Length:532        
+##  Class :character   Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+##                                                                             
+##                                                                             
+##                                                                             
+##      year             groupsize          year_n        sector         
+##  Length:532         Min.   :   405   Min.   :2014   Length:532        
+##  Class :character   1st Qu.: 20996   1st Qu.:2015   Class :character  
+##  Mode  :character   Median : 43656   Median :2016   Mode  :character  
+##                     Mean   : 64760   Mean   :2016                     
+##                     3rd Qu.:102394   3rd Qu.:2017                     
+##                     Max.   :271889   Max.   :2018                     
+##  occuptional  (SSYK 2012)  groupsize.x       year_n.x     groupsize.y   
+##  Length:532               Min.   :  340   Min.   :2014   Min.   :34700  
+##  Class :character         1st Qu.: 1700   1st Qu.:2015   1st Qu.:40300  
+##  Mode  :character         Median : 3000   Median :2016   Median :42000  
+##                           Mean   : 5850   Mean   :2016   Mean   :42078  
+##                           3rd Qu.: 7475   3rd Qu.:2017   3rd Qu.:43925  
+##                           Max.   :21400   Max.   :2018   Max.   :49400  
+##     year_n.y       eduyears       edulevel         groupsize_all_ages
+##  Min.   :2014   Min.   : 8.00   Length:532         Min.   :   405    
+##  1st Qu.:2015   1st Qu.: 9.00   Class :character   1st Qu.: 20996    
+##  Median :2016   Median :12.00   Mode  :character   Median : 43656    
+##  Mean   :2016   Mean   :12.71                      Mean   : 64760    
+##  3rd Qu.:2017   3rd Qu.:15.00                      3rd Qu.:102394    
+##  Max.   :2018   Max.   :22.00                      Max.   :271889    
+##    perc_women         suming          salary      regioneduyears_sex
+##  Min.   :0.3575   Min.   : 2040   Min.   :38376   Min.   :11.18     
+##  1st Qu.:0.4338   1st Qu.: 3080   1st Qu.:40916   1st Qu.:11.61     
+##  Median :0.4631   Median : 8950   Median :42866   Median :11.74     
+##  Mean   :0.4771   Mean   :11701   Mean   :42776   Mean   :11.79     
+##  3rd Qu.:0.5132   3rd Qu.:20100   3rd Qu.:44444   3rd Qu.:12.04     
+##  Max.   :0.6423   Max.   :29500   Max.   :48429   Max.   :12.55     
+##  regiongroupsize    suming_sex       sum_pop        regioneduyears 
+##  Min.   :128262   Min.   :  340   Min.   : 262870   Min.   :11.39  
+##  1st Qu.:288058   1st Qu.: 1700   1st Qu.: 587142   1st Qu.:11.54  
+##  Median :514608   Median : 3000   Median :1029820   Median :11.81  
+##  Mean   :453318   Mean   : 5850   Mean   : 906635   Mean   :11.79  
+##  3rd Qu.:691870   3rd Qu.: 7475   3rd Qu.:1395157   3rd Qu.:11.90  
+##  Max.   :827940   Max.   :21400   Max.   :1655215   Max.   :12.41  
+##  perc_women_region  eduquotient      salary_sex    salaryquotient  
+##  Min.   :0.4831    Min.   :1.019   Min.   :34700   Min.   :0.8653  
+##  1st Qu.:0.4882    1st Qu.:1.029   1st Qu.:40300   1st Qu.:0.9329  
+##  Median :0.4934    Median :1.034   Median :42000   Median :0.9395  
+##  Mean   :0.4923    Mean   :1.034   Mean   :42078   Mean   :0.9447  
+##  3rd Qu.:0.4970    3rd Qu.:1.041   3rd Qu.:43925   3rd Qu.:0.9537  
+##  Max.   :0.5014    Max.   :1.047   Max.   :49400   Max.   :1.0446  
+##  perc_women_eng_region   NUTS2_sh        
+##  Min.   :0.1566        Length:532        
+##  1st Qu.:0.1787        Class :character  
+##  Median :0.2042        Mode  :character  
+##  Mean   :0.2039                          
+##  3rd Qu.:0.2216                          
+##  Max.   :0.2746&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Prepare the data using Tidyverse recipes package, i.e. centre, scale and make sure all predictors are numerical.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tbtemp &amp;lt;- ungroup(tb) %&amp;gt;% dplyr::select(region, salary, year_n, sum_pop, regioneduyears, suming, perc_women_region, salaryquotient, eduquotient, perc_women_eng_region)
+
+tb_outliers_info &amp;lt;- unique(tbtemp)
+
+tb_unique &amp;lt;- unique(dplyr::select(tbtemp, -region))
+
+tbnum_weights &amp;lt;- tb_unique$suming
+
+blueprint &amp;lt;- recipe(suming ~ ., data = tb_unique) %&amp;gt;%
+  step_integer(matches(&amp;quot;Qual|Cond|QC|Qu&amp;quot;)) %&amp;gt;%
+  step_center(all_numeric(), -all_outcomes()) %&amp;gt;%
+  step_scale(all_numeric(), -all_outcomes()) %&amp;gt;%
+  step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE)
+
+prepare &amp;lt;- prep(blueprint, training = tb_unique)
+
+tbnum &amp;lt;- bake(prepare, new_data = tb_unique)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The correlation chart shows that many predictors are correlated with the response variable but also that many predictors are correlated between each other. Some notable correlations are in a dedicated plot below.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;chart.Correlation(tbnum, histogram = TRUE, pch = 19)&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-41&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-4-1.png&#34; alt=&#34;Correlation between response and predictors and between predictors, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 1: Correlation between response and predictors and between predictors, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;p1 &amp;lt;- tb %&amp;gt;%
+  ggscatter(x = &amp;quot;sum_pop&amp;quot;, y = &amp;quot;suming&amp;quot;, 
+    add = &amp;quot;reg.line&amp;quot;, conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = &amp;quot;pearson&amp;quot;) 
+
+p2 &amp;lt;- tb %&amp;gt;%
+  ggscatter(x = &amp;quot;sum_pop&amp;quot;, y = &amp;quot;perc_women_region&amp;quot;, 
+    add = &amp;quot;reg.line&amp;quot;, conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = &amp;quot;pearson&amp;quot;) 
+
+p3 &amp;lt;- tb %&amp;gt;%
+  ggscatter(x = &amp;quot;suming&amp;quot;, y = &amp;quot;perc_women_eng_region&amp;quot;, 
+    add = &amp;quot;reg.line&amp;quot;, conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = &amp;quot;pearson&amp;quot;)
+
+p4 &amp;lt;- tb %&amp;gt;%
+  ggscatter(x = &amp;quot;sum_pop&amp;quot;, y = &amp;quot;perc_women_eng_region&amp;quot;, 
+    add = &amp;quot;reg.line&amp;quot;, conf.int = TRUE, 
+    cor.coef = TRUE, cor.method = &amp;quot;pearson&amp;quot;)
+
+gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## `geom_smooth()` using formula &amp;#39;y ~ x&amp;#39;
+## `geom_smooth()` using formula &amp;#39;y ~ x&amp;#39;
+## `geom_smooth()` using formula &amp;#39;y ~ x&amp;#39;
+## `geom_smooth()` using formula &amp;#39;y ~ x&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-42&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-4-2.png&#34; alt=&#34;Correlation between response and predictors and between predictors, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 2: Correlation between response and predictors and between predictors, Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;plot_model will show diagnostics for the model, a residual plot, scale location plot, residual density and the regression error characteristic curve. It will also show the residuals versus the actual response to help find outliers. It will plot the feature importance and feature effects. In addition, it will plot how strongly features interact with each other and the 2-way interactions between the feature with the strongest interaction and all other features. The interaction measure regards how much of the variance of f(x) is explained by the interaction. The measure is between 0 (no interaction) and 1 (= 100% of variance of f(x) due to interactions).&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot_model &amp;lt;- function(model){
+   invisible(capture.output(exp_model &amp;lt;- DALEX::explain(model, data = tbnum, y = tbnum$suming))) # Knit and DALEX::explain generates invalid rss feed
+  
+   lm_mr &amp;lt;- model_residual(exp_model)  
+    
+   predictor &amp;lt;- Predictor$new(model, 
+      data = dplyr::select(tbnum, -suming), 
+      y = tbnum$suming)    
+   
+   writeLines(&amp;quot;&amp;quot;)
+   
+   print(model)
+   
+   print(postResample(pred = predict(model), obs = tbnum$suming))
+ 
+   p1 &amp;lt;- plot(lm_mr, type = &amp;quot;residual&amp;quot;)  
+   
+   p2 &amp;lt;- plot(lm_mr, type = &amp;quot;scalelocation&amp;quot;)   
+   
+   p3 &amp;lt;- plot(lm_mr, type = &amp;quot;residual_density&amp;quot;) 
+   
+   p4 &amp;lt;- plot(lm_mr, type = &amp;quot;rec&amp;quot;) 
+   
+   print(gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2))
+   
+   print(plot_residual(lm_mr, variable = &amp;quot;_y_hat_&amp;quot;, nlabel = 10))
+   
+   print(plot (FeatureImp$new(predictor, loss = &amp;quot;mae&amp;quot;)))
+
+   print(plot (FeatureEffects$new(predictor)))
+   
+   interact &amp;lt;- Interaction$new(predictor)
+   
+   p1 &amp;lt;- plot (interact)
+   
+   p2 &amp;lt;- plot (Interaction$new(predictor, feature = as.character(arrange(interact$results, desc(.interaction))[1,1])))
+   
+   print(gridExtra::grid.arrange(p1, p2, ncol = 2))
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Fit the following models and plot inference and diagnostics. Principal component analysis (PCA) is used to transform the data into a smaller subspace where the new variables are uncorrelated with one another due to the high multicollinearity.
+Linear Regression, Projection Pursuit Regression, Bagged MARS, Random Forest, Bagged CART, Boosted Tree, Conditional Inference Tree&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;modelcollection &amp;lt;- c(&amp;quot;lm&amp;quot;, &amp;quot;ppr&amp;quot;, &amp;quot;bagEarth&amp;quot;, &amp;quot;ranger&amp;quot;, &amp;quot;treebag&amp;quot;, &amp;quot;blackboost&amp;quot;, &amp;quot;ctree&amp;quot;)
+
+for (model in modelcollection){
+  invisible(capture.output(model &amp;lt;- caret::train(
+     suming ~ .,
+     data = tbnum,
+     method = model,
+     preProc=c(&amp;quot;pca&amp;quot;),
+     weights = tbnum_weights,
+     trControl = trainControl(method = &amp;quot;cv&amp;quot;, number = 10)
+  )))  
+
+  plot_model(model)
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Linear Regression 
+## 
+## 38 samples
+##  8 predictor
+## 
+## Pre-processing: principal component signal extraction (8), centered (8),
+##  scaled (8) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 35, 34, 34, 35, 34, 34, ... 
+## Resampling results:
+## 
+##   RMSE      Rsquared   MAE    
+##   4237.874  0.8822043  3423.46
+## 
+## Tuning parameter &amp;#39;intercept&amp;#39; was held constant at a value of TRUE
+##         RMSE     Rsquared          MAE 
+## 3883.8558386    0.8463367 2767.1742230&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-61&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-1.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 3: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 2) &amp;quot;arrange&amp;quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-62&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-2.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 4: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-63&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-3.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 5: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;patchwork&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:MASS&amp;#39;:
+## 
+##     area&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-64&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-4.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 6: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-65&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-5.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 7: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (1 x 2) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 
+## Projection Pursuit Regression 
+## 
+## 38 samples
+##  8 predictor
+## 
+## Pre-processing: principal component signal extraction (8), centered (8),
+##  scaled (8) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 34, 34, 34, 34, 34, 34, ... 
+## Resampling results across tuning parameters:
+## 
+##   nterms  RMSE      Rsquared   MAE     
+##   1       4130.062  0.8121472  3256.277
+##   2       4246.374  0.8418553  3408.002
+##   3       3906.203  0.8768507  3171.871
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final value used for the model was nterms = 3.
+##         RMSE     Rsquared          MAE 
+## 1402.1162486    0.9796416 1090.5426055&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-66&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-6.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 8: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 2) &amp;quot;arrange&amp;quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-67&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-7.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 9: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-68&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-8.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 10: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-69&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-9.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 11: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (1 x 2) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: earth&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: Formula&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: plotmo&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: plotrix&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Attaching package: &amp;#39;plotrix&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## The following object is masked from &amp;#39;package:scales&amp;#39;:
+## 
+##     rescale&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: TeachingDemos&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-610&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-10.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 12: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Bagged MARS 
+## 
+## 38 samples
+##  8 predictor
+## 
+## Pre-processing: principal component signal extraction (8), centered (8),
+##  scaled (8) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 34, 34, 34, 34, 35, 34, ... 
+## Resampling results across tuning parameters:
+## 
+##   nprune  RMSE      Rsquared   MAE     
+##    2      4671.353  0.8678650  3762.492
+##    7      4301.170  0.8466750  3379.813
+##   13      4535.948  0.8434574  3713.592
+## 
+## Tuning parameter &amp;#39;degree&amp;#39; was held constant at a value of 1
+## RMSE was used to select the optimal model using the smallest value.
+## The final values used for the model were nprune = 7 and degree = 1.
+##         RMSE     Rsquared          MAE 
+## 2950.1269148    0.9075753 2178.7339222&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-611&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-11.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 13: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 2) &amp;quot;arrange&amp;quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-612&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-12.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 14: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-613&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-13.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 15: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-614&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-14.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 16: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-615&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-15.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 17: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (1 x 2) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 
+## Random Forest 
+## 
+## 38 samples
+##  8 predictor
+## 
+## Pre-processing: principal component signal extraction (8), centered (8),
+##  scaled (8) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 34, 34, 34, 34, 34, 34, ... 
+## Resampling results across tuning parameters:
+## 
+##   mtry  splitrule   RMSE      Rsquared   MAE     
+##   2     variance    6106.457  0.7899054  5600.253
+##   2     extratrees  5899.990  0.8178129  5413.206
+##   3     variance    5242.999  0.8372295  4583.812
+##   3     extratrees  4978.308  0.8145967  4339.194
+##   4     variance    4367.341  0.8690214  3526.925
+##   4     extratrees  4461.317  0.8391514  3797.024
+## 
+## Tuning parameter &amp;#39;min.node.size&amp;#39; was held constant at a value of 5
+## RMSE was used to select the optimal model using the smallest value.
+## The final values used for the model were mtry = 4, splitrule = variance
+##  and min.node.size = 5.
+##         RMSE     Rsquared          MAE 
+## 1782.3243833    0.9749664 1275.2575351&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-616&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-16.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 18: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 2) &amp;quot;arrange&amp;quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-617&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-17.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 19: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-618&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-18.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 20: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-619&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-19.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 21: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-620&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-20.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 22: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (1 x 2) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 
+## Bagged CART 
+## 
+## 38 samples
+##  8 predictor
+## 
+## Pre-processing: principal component signal extraction (8), centered (8),
+##  scaled (8) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 35, 34, 34, 34, 34, 34, ... 
+## Resampling results:
+## 
+##   RMSE      Rsquared   MAE     
+##   4828.894  0.8094027  3527.702
+## 
+##         RMSE     Rsquared          MAE 
+## 3481.9118680    0.8750994 2582.9979981&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-621&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-21.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 23: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 2) &amp;quot;arrange&amp;quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-622&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-22.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 24: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-623&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-23.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 25: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-624&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-24.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 26: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (1 x 2) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning in if (class(response) == &amp;quot;data.frame&amp;quot;) response &amp;lt;- as.matrix(response):
+## the condition has length &amp;gt; 1 and only the first element will be used
+
+## Warning in if (class(response) == &amp;quot;data.frame&amp;quot;) response &amp;lt;- as.matrix(response):
+## the condition has length &amp;gt; 1 and only the first element will be used&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-625&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-25.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 27: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## 
+## Boosted Tree 
+## 
+## 38 samples
+##  8 predictor
+## 
+## Pre-processing: principal component signal extraction (8), centered (8),
+##  scaled (8) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 34, 34, 34, 34, 34, 35, ... 
+## Resampling results across tuning parameters:
+## 
+##   maxdepth  mstop  RMSE      Rsquared   MAE     
+##   1          50    4440.664  0.7708467  3558.175
+##   1         100    4429.005  0.7943325  3512.541
+##   1         150    4456.381  0.7981314  3487.719
+##   2          50    4598.712  0.8028983  3497.232
+##   2         100    4582.388  0.7786909  3482.167
+##   2         150    4546.031  0.7990669  3437.192
+##   3          50    4166.522  0.8926944  2940.884
+##   3         100    4134.064  0.8935203  2910.923
+##   3         150    4139.154  0.8939033  2918.382
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final values used for the model were mstop = 100 and maxdepth = 3.
+##        RMSE    Rsquared         MAE 
+## 110.7432126   0.9998769  88.9875261&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-626&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-26.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 28: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 2) &amp;quot;arrange&amp;quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-627&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-27.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 29: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-628&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-28.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 30: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-629&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-29.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 31: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-630&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-30.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 32: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (1 x 2) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 
+## Conditional Inference Tree 
+## 
+## 38 samples
+##  8 predictor
+## 
+## Pre-processing: principal component signal extraction (8), centered (8),
+##  scaled (8) 
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 34, 34, 35, 34, 34, 34, ... 
+## Resampling results across tuning parameters:
+## 
+##   mincriterion  RMSE      Rsquared   MAE   
+##   0.01          4244.251  0.7539372  2824.5
+##   0.50          4244.251  0.7539372  2824.5
+##   0.99          4244.251  0.7539372  2824.5
+## 
+## RMSE was used to select the optimal model using the smallest value.
+## The final value used for the model was mincriterion = 0.99.
+##     RMSE Rsquared      MAE 
+##        0        1        0&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning: Removed 38 rows containing missing values (geom_point).&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-631&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-31.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 33: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (2 x 2) &amp;quot;arrange&amp;quot;: 4 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning in .subset2(public_bind_env, &amp;quot;initialize&amp;quot;)(...): Model error is 0,
+## switching from compare=&amp;#39;ratio&amp;#39; to compare=&amp;#39;difference&amp;#39;&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-632&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-32.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 34: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-633&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-33.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 35: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-634&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-34.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 36: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-635&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/post/2020-05-04-the-number-of-engineers-in-the-swedish-regions-feature-importance_files/figure-html/unnamed-chunk-6-35.png&#34; alt=&#34;, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 37: , Year 2014 - 2018
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;pre&gt;&lt;code&gt;## TableGrob (1 x 2) &amp;quot;arrange&amp;quot;: 2 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
     
     <item>
       <title>Engineers in Sweden who are women, feature importance</title>
@@ -22771,837 +23603,6 @@ Figure 12: Residuals vs Leverage
 Figure 13: Residuals vs Leverage
 &lt;/p&gt;
 &lt;/div&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>The significance of experience on the salary in Sweden, a comparison between different occupational groups</title>
-      <link>/2019/12/02/the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups/</link>
-      <pubDate>Mon, 02 Dec 2019 00:00:00 +0000</pubDate>
-      
-      <guid>/2019/12/02/the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups/</guid>
-      <description>
-
-
-&lt;p&gt;In my last post, I found that experience has a significant impact on the salary of engineers. Is the significance of experience on wages unique to engineers or are there similar correlations in other occupational groups?&lt;/p&gt;
-&lt;p&gt;I will use the same model in principal as in my previous post to calculate the significance of age. I will not use sex as an explanatory variable since there are occupational groups that do not have enough data for both genders. I will also use a polynomial of degree three since this provides a significant model fit for some occupational groups.&lt;/p&gt;
-&lt;p&gt;There are still occupational groups with too little data for regression analysis. More than 30 posts are necessary to fit both age and year.&lt;/p&gt;
-&lt;p&gt;The R-value from the Anova table is used as the single value to discriminate how much the age and salary correlates. For exploratory analysis, the Anova value seems good enough.&lt;/p&gt;
-&lt;p&gt;In the figure below I will also use the estimate for the year to see how much the salaries are raised each year for the different occupational groups holding age as constant.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library (tidyverse)
-## -- Attaching packages -------------------------------------------- tidyverse 1.2.1 --
-## v ggplot2 3.2.0     v purrr   0.3.2
-## v tibble  2.1.3     v dplyr   0.8.3
-## v tidyr   0.8.3     v stringr 1.4.0
-## v readr   1.3.1     v forcats 0.4.0
-## -- Conflicts ----------------------------------------------- tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()
-library (broom)
-library (car)
-## Loading required package: carData
-## 
-## Attaching package: &amp;#39;car&amp;#39;
-## The following object is masked from &amp;#39;package:dplyr&amp;#39;:
-## 
-##     recode
-## The following object is masked from &amp;#39;package:purrr&amp;#39;:
-## 
-##     some
-library (polynom)
-
-readfile &amp;lt;- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &amp;quot;latin1&amp;quot;), na = c(&amp;quot;..&amp;quot;, &amp;quot;NA&amp;quot;)) %&amp;gt;%
-  gather (starts_with(&amp;quot;19&amp;quot;), starts_with(&amp;quot;20&amp;quot;), key = &amp;quot;year&amp;quot;, value = salary) %&amp;gt;%
-  drop_na() %&amp;gt;%
-  mutate (year_n = parse_number (year))
-}&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000D2.csv, &lt;a href=&#34;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&#34; class=&#34;uri&#34;&gt;http://www.statistikdatabasen.scb.se/pxweb/en/ssd/&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;The table: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by sector, occupational group (SSYK 2012), sex and age. Year 2014 - 2018 Monthly salary All sectors&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tb &amp;lt;- readfile(&amp;quot;000000D2.csv&amp;quot;) %&amp;gt;%
-  rowwise() %&amp;gt;%
-  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &amp;quot;-&amp;quot;), strtoi))[1]) %&amp;gt;%
-  rowwise() %&amp;gt;%
-  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), &amp;quot;-&amp;quot;), strtoi))[2]) %&amp;gt;%
-  mutate(age_n = (age_l + age_h) / 2)
-
-summary_table = 0
-anova_table = 0
-
-for (i in unique(tb$`occuptional  (SSYK 2012)`)){
-  temp &amp;lt;- filter(tb, `occuptional  (SSYK 2012)` == i)
-  if (dim(temp)[1] &amp;gt; 30){
-    model &amp;lt;-lm (log(salary) ~ year_n + poly(age_n, 3), data = temp)
-    summary_table &amp;lt;- rbind (summary_table, mutate (tidy (summary (model)), ssyk = i))
-    anova_table &amp;lt;- rbind (anova_table, mutate (tidy (Anova (model, type = 2)), ssyk = i))
-  }
-}
-
-merge(summary_table, anova_table, by = &amp;quot;ssyk&amp;quot;, all = TRUE) %&amp;gt;%
-  filter (term.y == &amp;quot;poly(age_n, 3)&amp;quot;) %&amp;gt;%
-  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = estimate, y = statistic.y)) +
-    labs(
-      x = &amp;quot;Increase in salaries (% / year)&amp;quot;,
-      y = &amp;quot;F-value for age&amp;quot;
-    ) &lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-2&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-2-1.png&#34; alt=&#34;The significance of experience on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 1: The significance of experience on the salary in Sweden, a comparison between different occupational groups, Year 2014 - 2018
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;p&gt;The table with all occupational groups sorted by F-value in descending order.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;merge(summary_table, anova_table, by = &amp;quot;ssyk&amp;quot;, all = TRUE) %&amp;gt;%
-  filter (term.y == &amp;quot;poly(age_n, 3)&amp;quot;) %&amp;gt;%
-  filter (term.x == &amp;quot;year_n&amp;quot;) %&amp;gt;%
-  select (ssyk, estimate, statistic.y) %&amp;gt;%
-  rename (`F-value for age` = statistic.y) %&amp;gt;%
-  rename (`Increase in salary` = estimate) %&amp;gt;%
-  arrange (desc (`F-value for age`)) %&amp;gt;%
-  knitr::kable(
-    booktabs = TRUE,
-    caption = &amp;#39;Correlation for F-value (age) and the yearly increase in salaries with age held as constant&amp;#39;)&lt;/code&gt;&lt;/pre&gt;
-&lt;table&gt;
-&lt;caption&gt;&lt;span id=&#34;tab:unnamed-chunk-3&#34;&gt;Table 1: &lt;/span&gt;Correlation for F-value (age) and the yearly increase in salaries with age held as constant&lt;/caption&gt;
-&lt;thead&gt;
-&lt;tr class=&#34;header&#34;&gt;
-&lt;th align=&#34;left&#34;&gt;ssyk&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;Increase in salary&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;F-value for age&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;234 Primary- and pre-school teachers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0345563&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;1349.859088&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;233 Secondary education teachers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0294574&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;861.331070&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;532 Personal care workers in health services&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0285338&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;800.259659&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;336 Police officers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0284911&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;675.571576&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;223 Nursing professionals (cont.)&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0303955&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;625.404523&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;214 Engineering professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0192393&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;612.414362&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;235 Teaching professionals not elsewhere classified&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0245885&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;578.686817&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;266 Social work and counselling professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0316617&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;551.888399&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;221 Medical doctors&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0150176&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;449.792500&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;251 ICT architects, systems analysts and test managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0249600&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;415.590103&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;534 Attendants, personal assistants and related workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0191811&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;406.258604&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;231 University and higher education teachers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0254827&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;404.602202&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;222 Nursing professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0414071&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;371.107319&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;533 Health care assistants&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0205813&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;345.075594&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;531 Child care workers and teachers aides&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0219044&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;291.049608&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;351 ICT operations and user support technicians&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0211211&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;271.091961&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;159 Other social services managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0251218&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;191.570380&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;211 Physicists and chemists&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0207272&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;186.366824&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;321 Medical and pharmaceutical technicians&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0288946&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;177.137635&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;152 Managers in social and curative care&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0387001&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;164.636802&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;243 Marketing and public relations professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0150173&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;154.310784&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;723 Machinery mechanics and fitters&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0204993&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;146.299981&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;125 Sales and marketing managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0187356&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;145.732333&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;141 Primary and secondary schools and adult education managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0346753&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;142.578762&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;341 Social work and religious associate professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0255830&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;137.073911&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;133 Research and development managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0137728&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;135.323107&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;153 Elderly care managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0331514&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;132.163025&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;242 Organisation analysts, policy administrators and human resource specialists&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0223881&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;132.013557&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;332 Insurance advisers, sales and purchasing agents&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0176134&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;128.196288&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;218 Specialists within environmental and health protection&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0258110&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;120.206634&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;311 Physical and engineering science technicians&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0213202&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;119.371812&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;422 Client information clerks&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0175877&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;117.057208&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;411 Office assistants and other secretaries&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0250406&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;115.401389&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;264 Authors, journalists and linguists&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0158766&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;107.667527&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;226 Dentists&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0230213&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;99.061845&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;232 Vocational education teachers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0298647&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;93.534293&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;122 Human resource managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0365348&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;86.595103&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;342 Athletes, fitness instructors and recreational workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0162825&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;86.085107&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;515 Building caretakers and related workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0188443&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;85.346469&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;123 Administration and planning managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0423650&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;81.886461&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;137 Production managers in manufacturing&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0267995&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;80.958767&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;227 Naprapaths, physiotherapists, occupational therapists&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0212967&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;78.930141&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;132 Supply, logistics and transport managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0135557&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;78.186301&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;817 Wood processing and papermaking plant operators&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0289197&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;75.983376&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;441 Library and filing clerks&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0210449&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;75.872685&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;131 Information and communications technology service managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0431537&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;75.423080&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;343 Photographers, interior decorators and entertainers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0339142&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;75.132287&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;241 Accountants, financial analysts and fund managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0270620&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;71.204029&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;216 Architects and surveyors&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0241267&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;68.945982&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;134 Architectural and engineering managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0236760&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;68.279874&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;228 Specialists in health care not elsewhere classified&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0272838&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;64.426085&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;213 Biologists, pharmacologists and specialists in agriculture and forestry&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0144849&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;63.378555&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;831 Train operators and related workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0177987&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;55.404356&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;334 Administrative and specialized secretaries&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0292702&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;52.477105&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;335 Tax and related government associate professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0227003&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;49.850281&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;224 Psychologists and psychotherapists&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0270655&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;47.653074&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;511 Cabin crew, guides and related workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0069736&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;47.413185&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;812 Metal processing and finishing plant operators&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0176743&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;47.395879&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;331 Financial and accounting associate professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0229113&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;45.186053&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;261 Legal professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0292942&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;44.569161&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;819 Process control technicians&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0232825&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;43.919550&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;333 Business services agents&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0263028&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;43.327180&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;961 Recycling collectors&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0225031&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;42.772133&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;312 Construction and manufacturing supervisors&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0322029&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;41.767797&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;516 Other service related workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0202784&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;41.325733&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;262 Museum curators and librarians and related professionals&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0228651&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;40.378111&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;265 Creative and performing artists&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0252235&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;39.119906&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;741 Electrical equipment installers and repairers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0221901&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;38.176541&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;524 Event seller and telemarketers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0203373&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;36.349688&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;941 Fast-food workers, food preparation assistants&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0199578&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;35.998201&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;815 Machine operators, textile, fur and leather products&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0128372&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;33.582965&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;962 Newspaper distributors, janitors and other service workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0141958&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;32.540073&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;136 Production managers in construction and mining&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0264825&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;31.006282&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;834 Mobile plant operators&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0251599&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;30.439935&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;816 Machine operators, food and related products&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0198706&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;29.543569&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;129 Administration and service managers not elsewhere classified&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0171682&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;29.032377&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;212 Mathematicians, actuaries and statisticians&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0240773&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;28.949679&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;352 Broadcasting and audio-visual technicians&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0067079&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;28.725776&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;513 Waiters and bartenders&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0214795&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;28.455515&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;813 Machine operators, chemical and pharmaceutical products&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0254550&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;26.563325&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;151 Health care managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0211530&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;24.870942&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;611 Market gardeners and crop growers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0089573&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;23.602904&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;732 Printing trades workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0191704&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;23.581610&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;432 Stores and transport clerks&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0217702&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;22.969527&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;217 Designers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0252062&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;22.823943&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;161 Financial and insurance managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0518758&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;21.908728&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;711 Carpenters, bricklayers and construction workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0136555&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;20.268520&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;541 Other surveillance and security workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0239438&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;19.245270&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;179 Other services managers not elsewhere classified&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0272448&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;17.108091&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;911 Cleaners and helpers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0176513&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;16.284355&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;512 Cooks and cold-buffet managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0278549&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;15.787404&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;814 Machine operators, rubber, plastic and paper products&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0245275&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;15.256042&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;267 Religious professionals and deacons&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0268407&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;11.266331&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;761 Butchers, bakers and food processors&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0153660&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;11.168879&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;722 Blacksmiths, toolmakers and related trades workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0192713&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10.890741&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;121 Finance managers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0276643&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9.785317&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;752 Wood treaters, cabinet-makers and related trades workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0269102&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9.779896&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;713 Painters, Lacquerers, Chimney-sweepers and related trades workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0259098&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9.415854&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;932 Manufacturing labourers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0266336&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9.113769&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;522 Shop staff&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0267679&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8.247675&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;818 Other stationary plant and machine operators&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0237780&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6.983074&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;344 Driving instructors and other instructors&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0286480&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6.971261&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;523 Cashiers and related clerks&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0041737&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;4.970851&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;833 Heavy truck and bus drivers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0188392&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;4.786235&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;odd&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;912 Washers, window cleaners and other cleaning workers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0382761&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;4.701424&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr class=&#34;even&#34;&gt;
-&lt;td align=&#34;left&#34;&gt;821 Assemblers&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;0.0286219&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;1.405402&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;Let’s check what we have found.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
-  filter(`occuptional  (SSYK 2012)` == &amp;quot;234 Primary- and pre-school teachers&amp;quot;)
- 
-temp %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
-    facet_grid(. ~ sex) +   
-    labs(
-      x = &amp;quot;Year&amp;quot;,
-      y = &amp;quot;Salary (SEK/month)&amp;quot;
-    ) &lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-4&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-4-1.png&#34; alt=&#34;Highest F-value, Primary- and pre-school teachers&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 2: Highest F-value, Primary- and pre-school teachers
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;model &amp;lt;-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
-
-summod &amp;lt;- tidy(summary (model))
-
-temp %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
-    labs(
-      x = &amp;quot;Age&amp;quot;,
-      y = &amp;quot;Salary&amp;quot;
-    )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-5&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-5-1.png&#34; alt=&#34;Model fit, Primary- and pre-school teachers, Correlation between age and salary&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 3: Model fit, Primary- and pre-school teachers, Correlation between age and salary
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;pdx &amp;lt;- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
-
-temp %&amp;gt;%
-  ggplot () + 
-    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
-    labs(
-      x = &amp;quot;Age&amp;quot;,
-      y = &amp;quot;Salary raise (%)&amp;quot;
-    )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-6&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-6-1.png&#34; alt=&#34;Model fit, Primary- and pre-school teachers, The derivative for age&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 4: Model fit, Primary- and pre-school teachers, The derivative for age
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
-  filter(`occuptional  (SSYK 2012)` == &amp;quot;821 Assemblers&amp;quot;)
-
-temp %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
-    facet_grid(. ~ sex) +   
-    labs(
-      x = &amp;quot;Year&amp;quot;,
-      y = &amp;quot;Salary (SEK/month)&amp;quot;
-    ) &lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-7&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-7-1.png&#34; alt=&#34;Lowest F-value, Assemblers&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 5: Lowest F-value, Assemblers
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;model &amp;lt;-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
-
-summod &amp;lt;- tidy(summary (model))
-
-temp %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
-    labs(
-      x = &amp;quot;Age&amp;quot;,
-      y = &amp;quot;Salary&amp;quot;
-    )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-8&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-8-1.png&#34; alt=&#34;Model fit, Assemblers, Correlation between age and salary&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 6: Model fit, Assemblers, Correlation between age and salary
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;pdx &amp;lt;- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
-
-temp %&amp;gt;%
-  ggplot () + 
-    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
-    labs(
-      x = &amp;quot;Age&amp;quot;,
-      y = &amp;quot;Salary raise (%)&amp;quot;
-    )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-9&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-9-1.png&#34; alt=&#34;Model fit, Assemblers, The derivative for age&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 7: Model fit, Assemblers, The derivative for age
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
-  filter(`occuptional  (SSYK 2012)` == &amp;quot;161 Financial and insurance managers&amp;quot;)
-
-temp %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
-    facet_grid(. ~ sex) + 
-      labs(
-        x = &amp;quot;Year&amp;quot;,
-        y = &amp;quot;Salary (SEK/month)&amp;quot;
-      ) &lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-10&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-10-1.png&#34; alt=&#34;Highest yearly salary increase, Financial and insurance managers&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 8: Highest yearly salary increase, Financial and insurance managers
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;model &amp;lt;- lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
-
-summod &amp;lt;- tidy(summary (model))
-
-temp %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
-    labs(
-      x = &amp;quot;Age&amp;quot;,
-      y = &amp;quot;Salary&amp;quot;
-    )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-11&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-11-1.png&#34; alt=&#34;Model fit, Financial and insurance managers, Correlation between age and salary&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 9: Model fit, Financial and insurance managers, Correlation between age and salary
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;pdx &amp;lt;- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
-
-temp %&amp;gt;%
-  ggplot () + 
-    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
-    labs(
-      x = &amp;quot;Age&amp;quot;,
-      y = &amp;quot;Salary raise (%)&amp;quot;
-    )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-12&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-12-1.png&#34; alt=&#34;Model fit, Financial and insurance managers, The derivative for age&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 10: Model fit, Financial and insurance managers, The derivative for age
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;temp &amp;lt;- tb %&amp;gt;%
-  filter(`occuptional  (SSYK 2012)` == &amp;quot;523 Cashiers and related clerks&amp;quot;)
-temp %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = year_n,y = salary, colour = age)) +
-    facet_grid(. ~ sex) + 
-    labs(
-      x = &amp;quot;Year&amp;quot;,
-      y = &amp;quot;Salary (SEK/month)&amp;quot;
-  )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-13&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-13-1.png&#34; alt=&#34;Lowest yearly salary increase, Cashiers and related clerks&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 11: Lowest yearly salary increase, Cashiers and related clerks
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;model &amp;lt;-lm (log(salary) ~ year_n + poly(age_n, 3, raw = T), data = temp)
-
-summod &amp;lt;- tidy(summary (model))
-
-temp %&amp;gt;%
-  ggplot () +
-    geom_point (mapping = aes(x = age_n,y = age_n * summod$estimate[3] + summod$estimate[4] * age_n^2 + summod$estimate[5] * age_n^3)) +
-    labs(
-      x = &amp;quot;Age&amp;quot;,
-      y = &amp;quot;Salary&amp;quot;
-    )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-14&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-14-1.png&#34; alt=&#34;Model fit, Cashiers and related clerks, Correlation between age and salary&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 12: Model fit, Cashiers and related clerks, Correlation between age and salary
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;pdx &amp;lt;- deriv(as.polynomial(c(0, summod$estimate[3], summod$estimate[4], summod$estimate[5])))
-
-temp %&amp;gt;%
-  ggplot () + 
-    geom_point (mapping = aes(x = age_n, y = summod$estimate[2] + pdx[1] + pdx[2] * age_n + pdx[3] * age_n^2)) +
-    labs(
-      x = &amp;quot;Age&amp;quot;,
-      y = &amp;quot;Salary raise (%)&amp;quot;
-    )&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-15&#34;&gt;&lt;/span&gt;
-&lt;img src=&#34;/post/2019-12-02-the-significance-of-experience-on-the-salary-in-sweden-a-comparison-between-different-occupational-groups_files/figure-html/unnamed-chunk-15-1.png&#34; alt=&#34;Model fit, Cashiers and related clerks, The derivative for age&#34; width=&#34;672&#34; /&gt;
-&lt;p class=&#34;caption&#34;&gt;
-Figure 13: Model fit, Cashiers and related clerks, The derivative for age
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;p&gt;&lt;a href=&#34;https://www.r-bloggers.com/&#34; class=&#34;uri&#34;&gt;https://www.r-bloggers.com/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://rweekly.org&#34; class=&#34;uri&#34;&gt;https://rweekly.org&lt;/a&gt;&lt;/p&gt;
 </description>
     </item>
     
