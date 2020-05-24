@@ -1,0 +1,428 @@
+---
+title: Per cent who are women in different occupational groups in Sweden, feature
+  importance
+author: Mikael Lundqvist
+date: '2020-05-24'
+slug: per-cent-who-are-women-in-different-occupational-groups-in-sweden-feature-importance
+categories:
+  - R
+tags:
+  - plot
+  - R Markdown
+  - regression
+---
+
+In a previous post, I analysed the feature importance for the per cent of engineers in Sweden who are women. I found that the size of the region is a feature that is significant for the per cent of engineers in Sweden who are women.
+In this post, I will analyse the feature importance of different occupational groups in Sweden. I will use an ensemble of linear models in my analysis.
+
+Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.
+
+Please send suggestions for improvement of the analysis to ranalystatisticssweden@gmail.com.
+
+First, define libraries and functions.
+
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (broom)
+library (car)
+library (caret)    
+library (recipes)  
+library (PerformanceAnalytics)
+library (ggpubr)
+library (ipred) 
+library (iml)
+library (SuperLearner)
+library (scatterplot3d)
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = groupsize) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women <- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts <- read.csv("nuts.csv") %>%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+
+nuts %>% 
+  distinct (NUTS2_en) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Nomenclature des Unités Territoriales Statistiques (NUTS)')
+
+SL.lm.caret <- function(..., method = "lm", tuneLength = 3, obsWeights = obsWeights, trControl = caret::trainControl(method = "cv", number = 10, verboseIter = FALSE)){
+    suppressWarnings(SL.caret(..., obsWeights = obsWeights, method = method, tuneLength = tuneLength, trControl = trControl))
+}
+
+SL.lmStepAIC.caret <- function(..., method = "lmStepAIC", tuneLength = 3, obsWeights = obsWeights, trControl = caret::trainControl(method = "cv", number = 10, verboseIter = FALSE)){
+    suppressWarnings(SL.caret(..., obsWeights = obsWeights, method = method, tuneLength = tuneLength, trControl = trControl))
+}  
+
+SL.bayesglm.caret <- function(..., method = "bayesglm", tuneLength = 3, obsWeights = obsWeights, trControl = caret::trainControl(method = "cv", number = 10, verboseIter = FALSE)){
+    suppressWarnings(SL.caret(..., obsWeights = obsWeights, method = method, tuneLength = tuneLength, trControl = trControl))
+}  
+
+SL.rlm.caret <- function(..., method = "rlm", tuneLength = 3, obsWeights = obsWeights, trControl = caret::trainControl(method = "cv", number = 10, verboseIter = FALSE)){
+    suppressWarnings(SL.caret(..., obsWeights = obsWeights, method = method, tuneLength = tuneLength, trControl = trControl))
+}
+```
+
+
+The data tables are downloaded from Statistics Sweden. They are saved as a comma-delimited file without heading, UF0506A1.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The tables: 
+
+UF0506A1_1.csv: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2018 NUTS 2 level 2008- 10 year intervals (16-74)
+
+000000CG_1: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Monthly salary All sectors.
+
+000000CD_1.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2018 Number of employees All sectors.
+
+The data is aggregated, the size of each group is in the column groupsize.
+
+I have also included some calculated predictors from the original data.
+
+perc_women: The percentage of women within each group defined by edulevel, region and year
+
+perc_women_region: The percentage of women within each group defined by year and region
+
+regioneduyears: The average number of education years per capita within each group defined by year and region
+
+eduquotient: The quotient between regioneduyears for men and women
+
+salaryquotient: The quotient between salary for men and women within each group defined by year and region
+
+perc_women_eng_region: The percentage of women who are engineers within each group defined by year and region
+
+
+```{r, echo = TRUE} 
+numedulevel <- read.csv("edulevel_1.csv") 
+
+numedulevel[, 2] <- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+tb <- readfile("000000CG_1.csv") 
+tb <- readfile("000000CD_1.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex", "sector","occuptional  (SSYK 2012)")) 
+
+tb <- readfile("UF0506A1_1.csv") %>%  
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears)) %>%  
+  mutate(edulevel = `level of education`) %>%
+  group_by(edulevel, region, year, sex, `occuptional  (SSYK 2012)`) %>%
+  mutate(groupsize_all_ages = sum(groupsize)) %>%  
+  group_by(edulevel, region, year, `occuptional  (SSYK 2012)`) %>% 
+  mutate (perc_women = perc_women (groupsize_all_ages[1:2])) %>% 
+  mutate (suming = sum(groupsize.x)) %>%
+  mutate (salary = (groupsize.y[2] * groupsize.x[2] + groupsize.y[1] * groupsize.x[1])/(groupsize.x[2] + groupsize.x[1])) %>%
+  group_by (sex, year, region, `occuptional  (SSYK 2012)`) %>%
+  mutate(regioneduyears_sex = sum(groupsize * eduyears) / sum(groupsize)) %>%
+  mutate(regiongroupsize = sum(groupsize)) %>% 
+  mutate(suming_sex = groupsize.x) %>%
+  group_by(region, year, `occuptional  (SSYK 2012)`) %>%
+  mutate (sum_pop = sum(groupsize)) %>%
+  mutate (regioneduyears = sum(groupsize * eduyears) / sum(groupsize)) %>%
+  mutate (perc_women_region = perc_women (regiongroupsize[1:2])) %>% 
+  mutate (eduquotient = regioneduyears_sex[2] / regioneduyears_sex[1]) %>% 
+  mutate (salary_sex = groupsize.y) %>%
+  mutate (salaryquotient = salary_sex[2] / salary_sex[1]) %>%   
+  mutate (perc_women_eng_region = perc_women(suming_sex[1:2])) %>%  
+  left_join(nuts %>% distinct (NUTS2_en, NUTS2_sh), by = c("region" = "NUTS2_en")) %>%
+  drop_na()
+
+summary(tb)
+
+tbtemp <- ungroup(tb) %>% dplyr::select(salary, suming, year_n, sum_pop, regioneduyears, perc_women_region, salaryquotient, eduquotient, perc_women_eng_region, `occuptional  (SSYK 2012)`)
+
+tb_unique <- unique(tbtemp)
+```
+
+
+I will use SuperLearner to train the ensemble consisting of four linear models without interactions. The four models are Linear Regression (lm), Linear Regression with Stepwise Selection (lmStepAIC), Bayesian Generalized Linear Model (bayesglm) and Robust Linear Model (rlm).
+
+
+```{r, echo = TRUE} 
+summary_table = vector()
+cor_table = vector()
+sp_table <- vector()
+rmse_table <- vector()
+
+for (i in unique(tb_unique$`occuptional  (SSYK 2012)`)){
+  temp <- filter(tb_unique, `occuptional  (SSYK 2012)` == i)
+  if (dim(temp)[1] > 20){
+     temp_weights = temp$suming
+     temp <- dplyr::select(temp, - c(`occuptional  (SSYK 2012)`, suming))
+     blueprint <- recipe(perc_women_eng_region ~ ., data = temp) %>%
+       step_integer(matches("Qual|Cond|QC|Qu")) %>%
+       step_center(all_numeric(), -all_outcomes()) %>%
+       step_scale(all_numeric(), -all_outcomes()) %>%
+       step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE)
+     prepare <- prep(blueprint, training = temp)
+     temp <- bake(prepare, new_data = temp)
+  
+     invisible(capture.output(model <- SuperLearner(
+        temp$perc_women_eng_region,
+        data.frame(dplyr::select(temp, -c(perc_women_eng_region))),
+        family = gaussian(),
+        verbose = FALSE,
+        obsWeights = temp_weights,
+        SL.library = list("SL.lm.caret", "SL.lmStepAIC.caret", "SL.bayesglm.caret", "SL.rlm.caret"))))
+
+     pred <- function(object, newdata){
+       predict(model, newdata=newdata, onlySL = TRUE)$pred
+     }  
+    
+     predictor <- Predictor$new(model, 
+        data = dplyr::select(temp, -perc_women_eng_region), 
+        y = temp$perc_women_eng_region,
+        predict.fun = pred)   
+   
+     imp <- FeatureImp$new(predictor, loss = "mae", n.repetitions = 30)
+    
+     summary_table <- rbind(summary_table, mutate(tibble(.rows = 7), importance = imp$results$importance, feature = imp$results$feature, importance.05 = imp$results$importance.05, ssyk = i))
+    
+     cor_table <- rbind(cor_table, mutate(tibble(.rows = 7), feature = colnames(dplyr::select(temp, -c(perc_women_eng_region))), cor = cor(dplyr::select(temp, -c(perc_women_eng_region)), temp$perc_women_eng_region), ssyk = i))
+    
+     sp_table <- rbind(sp_table, mutate(tibble(.rows = 4), coef = model$coef, model = names(model$coef),  ssyk = i))
+    
+     prs <- postResample(pred = predict(model)$pred, obs = temp$perc_women_eng_region)
+    
+     rmse_table <- rbind(rmse_table, mutate(tibble(.rows = 1), RMSE = prs[1], Rsquared = prs[2], MAE = prs[3], ssyk = i))    
+  }
+}
+```
+
+
+The table below shows the feature values for the different occupation groups and if there is a single important feature (diff1) or if there are two important features (diff2) for the occupational group. The Rsquared value shows if the model for the occupational group does have a good fit.
+
+
+```{r, echo = TRUE}
+summary_table %>% 
+  group_by(ssyk) %>% 
+  group_by(ssyk) %>% 
+  dplyr::mutate(diff1 = importance.05[1] / importance[2]) %>% 
+  dplyr::mutate(diff2 = importance.05[2] / importance[3]) %>% 
+  left_join(cor_table, by = c("ssyk", "feature")) %>% 
+  left_join(sp_table %>% spread(model, coef), by=c("ssyk")) %>% 
+  left_join(rmse_table, by=c("ssyk")) %>% 
+  dplyr::select(ssyk, feature, importance, importance.05, diff1, diff2, Rsquared) %>%
+  knitr::kable( 
+     booktabs = TRUE,
+     caption = 'Feature values for different occupation groups')
+```
+
+
+The sum of the per cent that the model was used by the SuperLearner analysing the different occupational groups. 
+
+
+```{r, echo = TRUE, fig.cap = 'The sum of the per cent that the model was used by the SuperLearner'}
+sp_table %>%
+  ggplot (aes(coef, model)) +  
+    geom_col ()  
+```
+
+
+The sum of the strongest feature for every occupational group. 
+
+
+```{r, echo = TRUE, fig.cap = 'The sum of the strongest feature for every occupational group'}
+summary_table %>% 
+  arrange(desc(importance)) %>% 
+  group_by(ssyk) %>% 
+  slice(1) %>%
+  ggplot (aes(importance, feature)) +  
+    geom_col () 
+```
+
+
+Let's see what we have found. First, check the occupation groups with a single feature that is significantly stronger than all other features. Linear models will not be suitable for all occupational groups implying that the model will not have a high R squared value. 
+
+A strong signal, the average number of education years in the region, Personal care workers in health services
+
+
+```{r, echo = TRUE, fig.cap = 'Personal care workers in health services, Year 2014 - 2018'}
+temp <- filter(tb_unique, `occuptional  (SSYK 2012)` == "532 Personal care workers in health services")
+
+model <- lm(perc_women_eng_region ~ regioneduyears, weights = suming, data = temp)
+
+temp %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = regioneduyears, y = perc_women_eng_region, colour = suming)) +
+    geom_abline (slope = model$coefficients[2], intercept = model$coefficients[1])  +
+    labs(
+      x = "Education years",
+      y = "Per cent of women in the occupation"
+    )
+
+summary(model)$adj.r.squared
+
+anova(model)
+
+postResample(pred = predict(model), obs = temp$perc_women_eng_region)
+```
+
+
+A strong signal, the average number of education years in the region, Medical doctors
+
+
+```{r, echo = TRUE, fig.cap = 'Medical doctors, Year 2014 - 2018'}
+temp <- filter(tb_unique, `occuptional  (SSYK 2012)` == "221 Medical doctors")
+
+model <- lm(perc_women_eng_region ~ regioneduyears, weights = suming, data = temp)
+
+temp %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = regioneduyears, y = perc_women_eng_region, colour = suming)) +
+    geom_abline(slope = model$coefficients[2], intercept = model$coefficients[1]) +
+    labs(
+      x = "Education years",
+      y = "Per cent of women in the occupation"
+    )
+
+summary(model)$adj.r.squared
+
+anova(model)
+
+postResample(pred = predict(model), obs = temp$perc_women_eng_region)
+```
+
+
+A strong signal, the per cent women in the region, Insurance advisers, sales and purchasing agents
+
+
+```{r, echo = TRUE, fig.cap = 'Insurance advisers, sales and purchasing agents, Year 2014 - 2018'}
+temp <- filter(tb_unique, `occuptional  (SSYK 2012)` == "332 Insurance advisers, sales and purchasing agents")
+
+model <- lm(perc_women_eng_region ~ perc_women_region, weights = suming, data = temp)
+
+temp %>%
+  ggplot () +  
+    geom_jitter (mapping = aes(x = perc_women_region, y = perc_women_eng_region, colour = suming)) +
+    geom_abline(slope = model$coefficients[2], intercept = model$coefficients[1]) +
+    labs(
+      x = "Per cent of women in the region",
+      y = "Per cent of women in the occupation"
+    )
+
+summary(model)$adj.r.squared
+
+anova(model)
+
+postResample(pred = predict(model), obs = temp$perc_women_eng_region)
+```
+
+
+Two strong signals, population size in the region and the average number of education years in the region, Engineering professionals
+
+
+```{r, echo = TRUE, fig.cap = 'Engineering professionals, Year 2014 - 2018'}
+temp <- filter(tb_unique, `occuptional  (SSYK 2012)` == "214 Engineering professionals")
+
+s3d <- scatterplot3d(
+  temp$sum_pop, 
+  temp$regioneduyears, 
+  temp$perc_women_eng_region,
+  type = "h", 
+  color = "blue", 
+  xlab = "Population in region",
+  ylab = "Education years",
+  zlab = "Per cent of women in the occupation")
+
+model <- lm(perc_women_eng_region ~ sum_pop + regioneduyears, weights = suming, data = temp)
+
+s3d$plane3d(model)
+
+summary(model)$adj.r.squared
+
+anova(model)
+
+postResample(pred = predict(model), obs = temp$perc_women_eng_region)
+```
+
+
+Two strong signals, population size in the region and the per cent women in the region, Insurance advisers, sales and purchasing agents
+
+
+```{r, echo = TRUE, fig.cap = 'Insurance advisers, sales and purchasing agents, Year 2014 - 2018'}
+temp <- filter(tb_unique, `occuptional  (SSYK 2012)` == "332 Insurance advisers, sales and purchasing agents")
+
+s3d <- scatterplot3d(
+  temp$sum_pop, 
+  temp$perc_women_region, 
+  temp$perc_women_eng_region,
+  type = "h", 
+  color = "blue", 
+  xlab = "Population in region",
+  ylab = "Per cent of women in the region",
+  zlab = "Per cent of women in the occupation")
+
+model <- lm(perc_women_eng_region ~ sum_pop + perc_women_region, weights = suming, data = temp)
+
+s3d$plane3d(model)
+
+summary(model)$adj.r.squared
+
+anova(model)
+
+postResample(pred = predict(model), obs = temp$perc_women_eng_region)
+```
+
+
+Two strong signals, year and the per cent women in the region, Physical and engineering science technicians
+
+
+```{r, echo = TRUE, fig.cap = 'Physical and engineering science technicians, Year 2014 - 2018'}
+temp <- filter(tb_unique, `occuptional  (SSYK 2012)` == "311 Physical and engineering science technicians")
+
+s3d <- scatterplot3d(
+  temp$year_n, 
+  temp$perc_women_region, 
+  temp$perc_women_eng_region, 
+  type = "h", 
+  color = "blue", 
+  xlab = "Year",
+  ylab = "Per cent of women in the region",
+  zlab = "Per cent of women in the occupation")
+
+model <- lm(perc_women_eng_region ~ year_n + perc_women_region, weights = suming, data = temp)
+
+s3d$plane3d(model)
+
+summary(model)$adj.r.squared
+
+anova(model)
+
+postResample(pred = predict(model), obs = temp$perc_women_eng_region)
+```
+
+
+Two strong signals, year and salary, Naprapaths, physiotherapists, occupational therapists
+
+
+```{r, echo = TRUE, fig.cap = 'Naprapaths, physiotherapists, occupational therapists, Year 2014 - 2018'}
+temp <- filter(tb_unique, `occuptional  (SSYK 2012)` == "227 Naprapaths, physiotherapists, occupational therapists")
+
+s3d <- scatterplot3d(
+  temp$year_n, 
+  temp$salary, 
+  temp$perc_women_eng_region, 
+  type = "h", 
+  color = "blue", 
+  xlab = "Year",
+  ylab = "Salary",
+  zlab = "Per cent of women in the occupation")
+
+model <- lm(perc_women_eng_region ~ year_n + salary, weights = suming, data = temp)
+
+s3d$plane3d(model)
+
+summary(model)$adj.r.squared
+
+anova(model)
+
+postResample(pred = predict(model), obs = temp$perc_women_eng_region)
+```
