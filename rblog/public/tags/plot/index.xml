@@ -4718,7 +4718,7 @@ Figure 5: Hockey-stick functions fit with MARS for the predictors using no inter
 &lt;/div&gt;
 &lt;p&gt;plot_model will show diagnostics for the model, a residual plot, scale location plot, residual density and the regression error characteristic curve. It will also show the residuals versus the actual response to help find outliers. It will plot the feature importance and feature effects. In addition, it will plot how strongly features interact with each other and the 2-way interactions with regiongroupsize and all other features. The interaction measure regards how much of the variance of f(x) is explained by the interaction. The measure is between 0 (no interaction) and 1 (= 100% of variance of f(x) due to interactions). Regiongroupsize is of special interest since it is the feature with the strongest importance to the per cent of engineers who are women in the region.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot_model &amp;lt;- function(model){
-   exp_model &amp;lt;- DALEX::explain(model, data = tbnum, y = tbnum$perc_women_eng_region)
+   invisible(capture.output(exp_model &amp;lt;- DALEX::explain(model, data = tbnum, y = tbnum$perc_women_eng_region))) # Knit and DALEX::explain generates invalid rss feed
   
    lm_mr &amp;lt;- model_residual(exp_model)  
     
@@ -4763,18 +4763,7 @@ Figure 5: Hockey-stick functions fit with MARS for the predictors using no inter
   data = tbnum) 
 
 plot_model(model)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Preparation of a new explainer is initiated
-##   -&amp;gt; model label       :  lm  ( [33m default [39m )
-##   -&amp;gt; data              :  76  rows  11  cols 
-##   -&amp;gt; data              :  tibbble converted into a data.frame 
-##   -&amp;gt; target variable   :  76  values 
-##   -&amp;gt; model_info        :  package stats , ver. 4.0.0 , task regression ( [33m default [39m ) 
-##   -&amp;gt; predict function  :  yhat.lm  will be used ( [33m default [39m )
-##   -&amp;gt; predicted values  :  numerical, min =  0.166477 , mean =  0.2053461 , max =  0.2700836  
-##   -&amp;gt; residual function :  difference between y and yhat ( [33m default [39m )
-##   -&amp;gt; residuals         :  numerical, min =  -0.03274164 , mean =  -0.001460259 , max =  0.02792793  
-##  [32m A new explainer has been created! [39m 
-## 
+&lt;pre&gt;&lt;code&gt;## 
 ## [1] &amp;quot;Model RMSE:  0.0119381601517971&amp;quot;&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-71&#34;&gt;&lt;/span&gt;
 &lt;img src=&#34;/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-7-1.png&#34; alt=&#34;Manual Data fit with Regularized Regression and MARS, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
@@ -4839,18 +4828,7 @@ model &amp;lt;- caret::train(
 &lt;pre&gt;&lt;code&gt;## Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info = trainInfo, :
 ## There were missing values in resampled performance measures.&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot_model(model)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Preparation of a new explainer is initiated
-##   -&amp;gt; model label       :  train  ( [33m default [39m )
-##   -&amp;gt; data              :  76  rows  11  cols 
-##   -&amp;gt; data              :  tibbble converted into a data.frame 
-##   -&amp;gt; target variable   :  76  values 
-##   -&amp;gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
-##   -&amp;gt; predict function  :  yhat.train  will be used ( [33m default [39m )
-##   -&amp;gt; predicted values  :  numerical, min =  0.1587043 , mean =  0.2046837 , max =  0.26522  
-##   -&amp;gt; residual function :  difference between y and yhat ( [33m default [39m )
-##   -&amp;gt; residuals         :  numerical, min =  -0.02797346 , mean =  -0.0007978481 , max =  0.0284033  
-##  [32m A new explainer has been created! [39m 
-## 
+&lt;pre&gt;&lt;code&gt;## 
 ## [1] &amp;quot;Model RMSE:  0.0115236920245644&amp;quot;&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-81&#34;&gt;&lt;/span&gt;
 &lt;img src=&#34;/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-8-1.png&#34; alt=&#34;Data fit with Regularized Regression, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
@@ -4909,22 +4887,12 @@ model &amp;lt;- caret::train(
 )
 
 plot_model(model)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Preparation of a new explainer is initiated
-##   -&amp;gt; model label       :  train  ( [33m default [39m )
-##   -&amp;gt; data              :  76  rows  11  cols 
-##   -&amp;gt; data              :  tibbble converted into a data.frame 
-##   -&amp;gt; target variable   :  76  values 
-##   -&amp;gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
-##   -&amp;gt; predict function  :  yhat.train  will be used ( [33m default [39m )&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;## Warning in if (class(response) == &amp;quot;data.frame&amp;quot;) response &amp;lt;- as.matrix(response):
+## the condition has length &amp;gt; 1 and only the first element will be used
+
+## Warning in if (class(response) == &amp;quot;data.frame&amp;quot;) response &amp;lt;- as.matrix(response):
 ## the condition has length &amp;gt; 1 and only the first element will be used&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;##   -&amp;gt; predicted values  :  predict function returns multiple columns:  1  ( [31m WARNING [39m ) some of functionalities may not work 
-##   -&amp;gt; residual function :  difference between y and yhat ( [33m default [39m )&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Warning in if (class(response) == &amp;quot;data.frame&amp;quot;) response &amp;lt;- as.matrix(response):
-## the condition has length &amp;gt; 1 and only the first element will be used&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;##   -&amp;gt; residuals         :  numerical, min =  -0.02080626 , mean =  -2.559655e-05 , max =  0.03188827  
-##  [32m A new explainer has been created! [39m 
-## 
+&lt;pre&gt;&lt;code&gt;## 
 ## [1] &amp;quot;Model RMSE:  0.00915463662070812&amp;quot;&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-91&#34;&gt;&lt;/span&gt;
 &lt;img src=&#34;/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-9-1.png&#34; alt=&#34;Data fit with Multivariate Adaptive Regression Splines, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
@@ -4979,18 +4947,7 @@ model &amp;lt;- caret::train(
 )
 
 plot_model(model)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Preparation of a new explainer is initiated
-##   -&amp;gt; model label       :  train.formula  ( [33m default [39m )
-##   -&amp;gt; data              :  76  rows  11  cols 
-##   -&amp;gt; data              :  tibbble converted into a data.frame 
-##   -&amp;gt; target variable   :  76  values 
-##   -&amp;gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
-##   -&amp;gt; predict function  :  yhat.train  will be used ( [33m default [39m )
-##   -&amp;gt; predicted values  :  numerical, min =  0.1604821 , mean =  0.2040995 , max =  0.2709777  
-##   -&amp;gt; residual function :  difference between y and yhat ( [33m default [39m )
-##   -&amp;gt; residuals         :  numerical, min =  -0.01038796 , mean =  -0.0002136866 , max =  0.008340556  
-##  [32m A new explainer has been created! [39m 
-## 
+&lt;pre&gt;&lt;code&gt;## 
 ## [1] &amp;quot;Model RMSE:  0.00341044239371977&amp;quot;&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-101&#34;&gt;&lt;/span&gt;
 &lt;img src=&#34;/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-10-1.png&#34; alt=&#34;Data fit with decision tree bag, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
@@ -5045,18 +5002,7 @@ invisible(capture.output(model &amp;lt;- caret::train(
 &lt;pre&gt;&lt;code&gt;## Warning in train.default(x, y, weights = w, ...): cannnot compute class
 ## probabilities for regression&lt;/code&gt;&lt;/pre&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;plot_model(model)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Preparation of a new explainer is initiated
-##   -&amp;gt; model label       :  train.formula  ( [33m default [39m )
-##   -&amp;gt; data              :  76  rows  11  cols 
-##   -&amp;gt; data              :  tibbble converted into a data.frame 
-##   -&amp;gt; target variable   :  76  values 
-##   -&amp;gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
-##   -&amp;gt; predict function  :  yhat.train  will be used ( [33m default [39m )
-##   -&amp;gt; predicted values  :  numerical, min =  0.1702906 , mean =  0.2059004 , max =  0.2740629  
-##   -&amp;gt; residual function :  difference between y and yhat ( [33m default [39m )
-##   -&amp;gt; residuals         :  numerical, min =  -0.02299151 , mean =  -0.002014566 , max =  0.02045637  
-##  [32m A new explainer has been created! [39m 
-## 
+&lt;pre&gt;&lt;code&gt;## 
 ## [1] &amp;quot;Model RMSE:  0.00876237694751394&amp;quot;&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-111&#34;&gt;&lt;/span&gt;
 &lt;img src=&#34;/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-11-1.png&#34; alt=&#34;Data fit with Random Forest, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
@@ -5117,18 +5063,7 @@ model &amp;lt;- caret::train(
    verbose = FALSE)
 
 plot_model(model)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Preparation of a new explainer is initiated
-##   -&amp;gt; model label       :  train.formula  ( [33m default [39m )
-##   -&amp;gt; data              :  76  rows  11  cols 
-##   -&amp;gt; data              :  tibbble converted into a data.frame 
-##   -&amp;gt; target variable   :  76  values 
-##   -&amp;gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
-##   -&amp;gt; predict function  :  yhat.train  will be used ( [33m default [39m )
-##   -&amp;gt; predicted values  :  numerical, min =  0.1540585 , mean =  0.2044099 , max =  0.276681  
-##   -&amp;gt; residual function :  difference between y and yhat ( [33m default [39m )
-##   -&amp;gt; residuals         :  numerical, min =  -0.01277545 , mean =  -0.000524046 , max =  0.0114161  
-##  [32m A new explainer has been created! [39m 
-## 
+&lt;pre&gt;&lt;code&gt;## 
 ## [1] &amp;quot;Model RMSE:  0.00352511569538881&amp;quot;&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-121&#34;&gt;&lt;/span&gt;
 &lt;img src=&#34;/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-12-1.png&#34; alt=&#34;Data fit with Gradient Boosting Machine, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
@@ -5186,18 +5121,7 @@ model &amp;lt;- caret::train(
    preProc = c(&amp;quot;center&amp;quot;, &amp;quot;scale&amp;quot;))
 
 plot_model(model)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Preparation of a new explainer is initiated
-##   -&amp;gt; model label       :  train.formula  ( [33m default [39m )
-##   -&amp;gt; data              :  76  rows  11  cols 
-##   -&amp;gt; data              :  tibbble converted into a data.frame 
-##   -&amp;gt; target variable   :  76  values 
-##   -&amp;gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
-##   -&amp;gt; predict function  :  yhat.train  will be used ( [33m default [39m )
-##   -&amp;gt; predicted values  :  numerical, min =  0.1628369 , mean =  0.2038862 , max =  0.2635404  
-##   -&amp;gt; residual function :  difference between y and yhat ( [33m default [39m )
-##   -&amp;gt; residuals         :  numerical, min =  -0.01827999 , mean =  -3.861844e-07 , max =  0.02411042  
-##  [32m A new explainer has been created! [39m 
-## 
+&lt;pre&gt;&lt;code&gt;## 
 ## [1] &amp;quot;Model RMSE:  0.00924842751296535&amp;quot;&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-131&#34;&gt;&lt;/span&gt;
 &lt;img src=&#34;/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-13-1.png&#34; alt=&#34;Data fit with Deep Learning, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;
@@ -5252,18 +5176,7 @@ model &amp;lt;- caret::train(
 )
 
 plot_model(model)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;## Preparation of a new explainer is initiated
-##   -&amp;gt; model label       :  train.formula  ( [33m default [39m )
-##   -&amp;gt; data              :  76  rows  11  cols 
-##   -&amp;gt; data              :  tibbble converted into a data.frame 
-##   -&amp;gt; target variable   :  76  values 
-##   -&amp;gt; model_info        :  package caret , ver. 6.0.86 , task Regression ( [33m default [39m ) 
-##   -&amp;gt; predict function  :  yhat.train  will be used ( [33m default [39m )
-##   -&amp;gt; predicted values  :  numerical, min =  0.1628809 , mean =  0.20346 , max =  0.2626565  
-##   -&amp;gt; residual function :  difference between y and yhat ( [33m default [39m )
-##   -&amp;gt; residuals         :  numerical, min =  -0.02034679 , mean =  0.0004258419 , max =  0.02294541  
-##  [32m A new explainer has been created! [39m 
-## 
+&lt;pre&gt;&lt;code&gt;## 
 ## [1] &amp;quot;Model RMSE:  0.00848330404577974&amp;quot;&lt;/code&gt;&lt;/pre&gt;
 &lt;div class=&#34;figure&#34;&gt;&lt;span id=&#34;fig:unnamed-chunk-141&#34;&gt;&lt;/span&gt;
 &lt;img src=&#34;/post/2020-04-26-engineers-in-sweden-who-are-women-feature-importance_files/figure-html/unnamed-chunk-14-1.png&#34; alt=&#34;Data fit with Support Vector Machine, Year 2014 - 2018&#34; width=&#34;672&#34; /&gt;

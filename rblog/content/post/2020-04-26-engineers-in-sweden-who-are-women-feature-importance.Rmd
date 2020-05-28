@@ -258,7 +258,7 @@ plot_model will show diagnostics for the model, a residual plot, scale location 
 
 ```{r, echo = TRUE} 
 plot_model <- function(model){
-   exp_model <- DALEX::explain(model, data = tbnum, y = tbnum$perc_women_eng_region)
+   invisible(capture.output(exp_model <- DALEX::explain(model, data = tbnum, y = tbnum$perc_women_eng_region))) # Knit and DALEX::explain generates invalid rss feed
   
    lm_mr <- model_residual(exp_model)  
     
