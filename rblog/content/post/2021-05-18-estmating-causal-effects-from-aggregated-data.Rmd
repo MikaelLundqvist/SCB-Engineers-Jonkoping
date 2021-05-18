@@ -1,0 +1,251 @@
+---
+title: "Estimating causal effects from aggregated data"
+author: "Mikael Lundqvist"
+date: '2021-05-18'
+slug: estimating-causal-effects-from-aggregated-data
+tags:
+- R Markdown
+- regression
+categories: R
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+```
+
+The publically available datasets from Statistics Sweden are aggregated tables. Groups with fewer than five records are filtered out not to have any individual data being made public. 
+
+In this post, I am going to investigate with what precision it is possible to estimate the causal effect of predictors using aggregated data. I will use the dataset CPS1988 which is contained in the AER library. Cross-section data originating from the March 1988 Current Population Survey by the US Census Bureau.
+
+I will estimate the average treatment effect on wage for ethnicity and experience respectively. I will subclassify the predictors' education and experience. I will balance on the observed confounders and make no attempts to handle unobserved covariates. I will not try to draw any conclusions on causal effects based on SUTVA assumptions.
+
+First, define libraries and functions.
+
+```{r , echo = TRUE}
+library (tidyverse)
+library (AER)
+library (bnlearn)
+library (PerformanceAnalytics)
+library (tableone)
+library (Matching)
+library (WeightIt)
+library (lavaan)
+library (tidySEM)
+library (cobalt)
+library (jtools)
+
+# Argument: Vector with binned values; Value: Numeric vector where each value is the mean of the binwidth
+unbin_bin <- function(x){
+  unbin_x <- function(x) (parse_number(unlist(strsplit(as.character(x), ",")))[1] + parse_number(unlist(strsplit(as.character(x), ",")))[2])/2
+
+  unlist(map(x, unbin_x))
+}
+
+data(CPS1988)
+
+CPS1988_n <- CPS1988 %>%
+  mutate(education = as.numeric(education)) %>%
+  mutate(experience = as.numeric(experience)) %>%
+  mutate(region = as.numeric(region)) %>%
+  mutate(smsa = as.numeric(smsa)) %>%
+  mutate(parttime = as.numeric(parttime)) %>%
+  mutate(ethnicity = as.numeric(ethnicity))
+```
+
+The correlation chart shows that many predictors are correlated with the response variable but also that many predictors are correlated with each other.
+
+```{r , echo = TRUE}
+chart.Correlation(CPS1988_n, histogram = TRUE, pch = 19)
+```
+
+A Directed Ascyclical Graph (DAG) is a useful tool to identify backdoor paths, confounders, mediators and colliders. A DAG is usually constructed by expert knowledge in the problem domain. There are also algorithms for Bayesian networks that can estimate a DAG based on the statistical properties of the data, these estimations need to be validated against expert knowledge. I will estimate a DAG using a Bayesian network, the Hill Climbing (HC) algorithm. 
+
+```{r , echo = TRUE}
+hcmodel <- hc(CPS1988 %>%
+  mutate(education = as.numeric(education)) %>%
+  mutate(experience = as.numeric(experience)))
+
+plot(hcmodel)
+```
+
+Structural Equation Modeling (SEM) is a tool to represent a system of regressions. I will use Lavaan to represent the DAG from the Bayesian network above.
+
+```{r , echo = TRUE}
+semmodel = '
+  education ~ wage
+  wage ~ parttime
+  experience ~ wage
+  experience ~ parttime
+  wage ~ ethnicity
+  region ~ ethnicity
+  region ~ smsa
+  wage ~ smsa
+  wage ~ region
+  education ~ region
+  education ~ parttime
+  education ~ smsa
+  smsa ~ ethnicity
+  experience ~ education
+  experience ~ ethnicity
+  parttime ~ ethnicity
+  '
+
+semfit <- sem(semmodel,
+  data =  CPS1988_n)
+
+graph_sem(model = semfit)
+```
+
+Since ethnicity is a binary variable I will use the Match algorithm to find individuals that are as similar as possible from the two groups African American and Caucasian. I will do a greedy matching based on Mahalanobis distance.
+
+```{r , echo = TRUE}
+xvars <- c("education", "experience", "smsa", "region", "parttime")
+
+print(CreateTableOne(vars = xvars, strata = "ethnicity", data = CPS1988, test = FALSE), smd = TRUE)
+
+greedymatch <- Match(Tr = as.integer(CPS1988$ethnicity) - 1, M = 1, X = data.frame(data.matrix(CPS1988[xvars])), replace = FALSE)
+
+matched <- CPS1988[unlist(greedymatch[c("index.treated", "index.control")]), ]
+
+print(CreateTableOne(vars = xvars, strata = "ethnicity", data = matched, test = FALSE), smd = TRUE)
+
+matched <- matched %>% mutate(ethnicity_n = as.integer(ethnicity) - 1)
+
+t.test(matched$wage[matched$ethnicity_n == 1] - matched$wage[matched$ethnicity_n == 0])
+```
+
+Another way to estimate the causal effect of ethnicity on wage is by calculating the propensity score. By regressing on the treatment, i.e. the variable that we want to calculate the effect for, we can reduce the selection bias by balancing on the covariates. Below you can see the balancing before and after using the propensity score.
+
+```{r , echo = TRUE}
+W.out <- weightit(ethnicity ~ education + experience + smsa + region + parttime, 
+  data = CPS1988, method = "ebal")
+
+model_lm_ethnicity <- lm(wage ~ ethnicity, data = CPS1988, weights = W.out$weights)
+
+bal.tab(ethnicity ~ education + experience + smsa + region + parttime, 
+  data = CPS1988, estimand = "ATT", m.threshold = .05)
+
+bal.tab(W.out, m.threshold = .05, disp.v.ratio = TRUE)
+```
+
+Estimate the causal effect of experience on wage by calculating the propensity score. 
+
+```{r , echo = TRUE}
+W.out <- weightit(experience ~ ethnicity + education + smsa + region + parttime,
+  data = CPS1988, method = "ebal")
+
+model_lm_experience <- lm(wage ~ experience, data = CPS1988, weights = W.out$weights)
+
+bal.tab(experience  ~ ethnicity + education + smsa + region + parttime,
+  data = CPS1988, estimand = "ATT", m.threshold = .05)
+
+bal.tab(W.out, m.threshold = .05, disp.v.ratio = TRUE)
+```
+
+Let's now investigate how aggregating the numerical predictors in the data affects the precision when estimating the causal effect on wage. I will also filter out groups with less than 5 persons in them so that any individual can not be identified in the material. The binning and filtering reduces the original dataset by 98.9 %. By expanding the reduced dataset the original dataset can be estimated.
+
+```{r , echo = TRUE}
+CPS1988_refi <- CPS1988 %>%
+  mutate(education = as.numeric(education)) %>%
+  mutate(experience = as.numeric(experience)) %>%
+  mutate(education = cut_interval(education, 5)) %>%
+  mutate(experience = cut_interval(experience, 5)) %>%
+  group_by(education, experience, ethnicity, smsa, region, parttime) %>%
+  mutate (wage = mean(wage)) %>%
+  group_by(wage, education, experience, ethnicity, smsa, region, parttime) %>% 
+  tally() %>%
+  mutate(experience = unbin_bin(experience)) %>%
+  mutate(education = unbin_bin(education)) %>%
+  filter(n > 4)  
+
+dim(CPS1988_refi)
+
+CPS1988_refiexp <- CPS1988_refi[rep(seq(nrow(CPS1988_refi)), CPS1988_refi$n),]
+
+dim(CPS1988_refiexp) 
+```
+
+How has the reduction affected the DAG? It is not possible to use weights in the hc algorithm. Therefore I will use the expanded table based on the data in the aggregated table.
+
+```{r , echo = TRUE}
+hcmodel_refiexp <- hc(dplyr::select(CPS1988_refiexp %>%
+  mutate(education = as.numeric(education)) %>%
+  mutate(experience = as.numeric(experience)), -n))
+
+plot(hcmodel_refiexp)
+```
+
+For comparison, I will plot the coefficients for ethnicity for the linear model based on the original data, aggregated data and the expanded data. I will use robust (Heteroskedasticity-Consistent) error estimates. 
+
+```{r , echo = TRUE}
+model <- lm(wage ~ ethnicity, data = CPS1988)
+
+model_refi <- lm(wage ~ ethnicity, data = CPS1988_refi, weights = n)
+
+model_refiexp <- lm(wage ~ ethnicity, data = CPS1988_refiexp)
+
+plot_summs(model, model_refi, model_refiexp, robust = "HC1", 
+  model.names = c(
+    "Original dataset", 
+    "Reduced dataset using weights", 
+    "Expanded dataset"))
+```
+
+Now let's estimate the causal effect of ethnicity on wage using propensity scores. I will use the expanded dataset since I did not get any reasonable results using the argument s.weights in weightit.
+
+```{r , echo = TRUE}
+W.out <- weightit(ethnicity ~ education + experience + smsa + region + parttime,
+  data = CPS1988_refiexp, method = "ebal")
+
+model_refiexp <- lm(wage ~ ethnicity, data = CPS1988_refiexp, weights = W.out$weights)
+
+coeftest(model_refiexp, vcov = vcovHC, type = "HC1")
+
+bal.tab(ethnicity ~ education + experience + smsa + region + parttime,
+  data = CPS1988_refiexp, estimand = "ATT", m.threshold = .05)
+
+bal.tab(W.out, m.threshold = .05, disp.v.ratio = TRUE)
+
+plot_summs(model_lm_ethnicity, model_refiexp, scale = TRUE, robust = "HC1", 
+  model.names = c(
+    "Original dataset", 
+    "Expanded dataset"))
+```
+
+Let's compare the coefficients for experience for the linear model based on the original data, aggregated data and the expanded data.
+
+```{r , echo = TRUE}
+model <- lm(wage ~ experience, data = CPS1988)
+
+model_refi <- lm(wage ~ experience, data = CPS1988_refi, weights = n)
+
+model_refiexp <- lm(wage ~ experience, data = CPS1988_refiexp)
+
+plot_summs(model, model_refi, model_refiexp, robust = "HC1",
+  model.names = c(
+    "Original dataset", 
+    "Reduced dataset using weights", 
+    "Expanded dataset"))
+```
+
+Let's estimate the causal effect of ethnicity on wage using propensity scores. I will use the expanded dataset since I did not get any reasonable results using the argument s.wights in weightit.
+
+```{r , echo = TRUE}
+W.out <- weightit(experience ~ ethnicity + education + smsa + region + parttime,
+  data = CPS1988_refiexp, method = "ebal")
+
+model_refiexp <- lm(wage ~ experience, data = CPS1988_refiexp, weights = W.out$weights)
+
+coeftest(model_refiexp, vcov = vcovHC, type = "HC1")
+
+bal.tab(experience ~ ethnicity + education + smsa + region + parttime,
+  data = CPS1988_refiexp, estimand = "ATT", m.threshold = .05)
+
+bal.tab(W.out, m.threshold = .05, disp.v.ratio = TRUE)
+
+plot_summs(model_lm_experience, model_refiexp, robust = "HC1",
+  model.names = c(
+    "Original dataset", 
+    "Expanded dataset"))           
+```

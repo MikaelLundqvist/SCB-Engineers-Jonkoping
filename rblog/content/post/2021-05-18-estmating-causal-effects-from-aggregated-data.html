@@ -1,0 +1,540 @@
+---
+title: "Estimating causal effects from aggregated data"
+author: "Mikael Lundqvist"
+date: '2021-05-18'
+slug: estimating-causal-effects-from-aggregated-data
+tags:
+- R Markdown
+- regression
+categories: R
+---
+
+
+
+<p>The publically available datasets from Statistics Sweden are aggregated tables. Groups with fewer than five records are filtered out not to have any individual data being made public.</p>
+<p>In this post, I am going to investigate with what precision it is possible to estimate the causal effect of predictors using aggregated data. I will use the dataset CPS1988 which is contained in the AER library. Cross-section data originating from the March 1988 Current Population Survey by the US Census Bureau.</p>
+<p>I will estimate the average treatment effect on wage for ethnicity and experience respectively. I will subclassify the predictors’ education and experience. I will balance on the observed confounders and make no attempts to handle unobserved covariates. I will not try to draw any conclusions on causal effects based on SUTVA assumptions.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse)
+## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+## v ggplot2 3.3.3     v purrr   0.3.4
+## v tibble  3.1.0     v dplyr   1.0.5
+## v tidyr   1.1.3     v stringr 1.4.0
+## v readr   1.4.0     v forcats 0.5.1
+## Warning: package &#39;ggplot2&#39; was built under R version 4.0.3
+## Warning: package &#39;tibble&#39; was built under R version 4.0.5
+## Warning: package &#39;tidyr&#39; was built under R version 4.0.5
+## Warning: package &#39;readr&#39; was built under R version 4.0.3
+## Warning: package &#39;dplyr&#39; was built under R version 4.0.5
+## Warning: package &#39;forcats&#39; was built under R version 4.0.3
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+library (AER)
+## Warning: package &#39;AER&#39; was built under R version 4.0.5
+## Loading required package: car
+## Warning: package &#39;car&#39; was built under R version 4.0.3
+## Loading required package: carData
+## Warning: package &#39;carData&#39; was built under R version 4.0.3
+## 
+## Attaching package: &#39;car&#39;
+## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode
+## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some
+## Loading required package: lmtest
+## Warning: package &#39;lmtest&#39; was built under R version 4.0.4
+## Loading required package: zoo
+## Warning: package &#39;zoo&#39; was built under R version 4.0.5
+## 
+## Attaching package: &#39;zoo&#39;
+## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric
+## Loading required package: sandwich
+## Warning: package &#39;sandwich&#39; was built under R version 4.0.3
+## Loading required package: survival
+## Warning: package &#39;survival&#39; was built under R version 4.0.5
+library (bnlearn)
+## Warning: package &#39;bnlearn&#39; was built under R version 4.0.3
+library (PerformanceAnalytics)
+## Loading required package: xts
+## Warning: package &#39;xts&#39; was built under R version 4.0.3
+## 
+## Attaching package: &#39;xts&#39;
+## The following objects are masked from &#39;package:dplyr&#39;:
+## 
+##     first, last
+## 
+## Attaching package: &#39;PerformanceAnalytics&#39;
+## The following object is masked from &#39;package:graphics&#39;:
+## 
+##     legend
+library (tableone)
+## Warning: package &#39;tableone&#39; was built under R version 4.0.4
+library (Matching)
+## Warning: package &#39;Matching&#39; was built under R version 4.0.5
+## Loading required package: MASS
+## 
+## Attaching package: &#39;MASS&#39;
+## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     select
+## ## 
+## ##  Matching (Version 4.9-9, Build Date: 2021-03-15)
+## ##  See http://sekhon.berkeley.edu/matching for additional documentation.
+## ##  Please cite software as:
+## ##   Jasjeet S. Sekhon. 2011. ``Multivariate and Propensity Score Matching
+## ##   Software with Automated Balance Optimization: The Matching package for R.&#39;&#39;
+## ##   Journal of Statistical Software, 42(7): 1-52. 
+## ##
+library (WeightIt)
+## Warning: package &#39;WeightIt&#39; was built under R version 4.0.5
+library (lavaan)
+## Warning: package &#39;lavaan&#39; was built under R version 4.0.5
+## This is lavaan 0.6-8
+## lavaan is FREE software! Please report any bugs.
+library (tidySEM)
+## Registered S3 methods overwritten by &#39;tidySEM&#39;:
+##   method              from           
+##   print.mplus.model   MplusAutomation
+##   print.mplusObject   MplusAutomation
+##   summary.mplus.model MplusAutomation
+## 
+## Attaching package: &#39;tidySEM&#39;
+## The following objects are masked from &#39;package:bnlearn&#39;:
+## 
+##     nodes, nodes&lt;-
+library (cobalt)
+## Warning: package &#39;cobalt&#39; was built under R version 4.0.4
+##  cobalt (Version 4.3.1, Build Date: 2021-03-30 09:50:18 UTC)
+library (jtools)
+## Warning: package &#39;jtools&#39; was built under R version 4.0.5
+## 
+## Attaching package: &#39;jtools&#39;
+## The following object is masked from &#39;package:tidySEM&#39;:
+## 
+##     get_data
+
+# Argument: Vector with binned values; Value: Numeric vector where each value is the mean of the binwidth
+unbin_bin &lt;- function(x){
+  unbin_x &lt;- function(x) (parse_number(unlist(strsplit(as.character(x), &quot;,&quot;)))[1] + parse_number(unlist(strsplit(as.character(x), &quot;,&quot;)))[2])/2
+
+  unlist(map(x, unbin_x))
+}
+
+data(CPS1988)
+
+CPS1988_n &lt;- CPS1988 %&gt;%
+  mutate(education = as.numeric(education)) %&gt;%
+  mutate(experience = as.numeric(experience)) %&gt;%
+  mutate(region = as.numeric(region)) %&gt;%
+  mutate(smsa = as.numeric(smsa)) %&gt;%
+  mutate(parttime = as.numeric(parttime)) %&gt;%
+  mutate(ethnicity = as.numeric(ethnicity))</code></pre>
+<p>The correlation chart shows that many predictors are correlated with the response variable but also that many predictors are correlated with each other.</p>
+<pre class="r"><code>chart.Correlation(CPS1988_n, histogram = TRUE, pch = 19)</code></pre>
+<p><img src="/post/2021-05-18-estmating-causal-effects-from-aggregated-data_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>A Directed Ascyclical Graph (DAG) is a useful tool to identify backdoor paths, confounders, mediators and colliders. A DAG is usually constructed by expert knowledge in the problem domain. There are also algorithms for Bayesian networks that can estimate a DAG based on the statistical properties of the data, these estimations need to be validated against expert knowledge. I will estimate a DAG using a Bayesian network, the Hill Climbing (HC) algorithm.</p>
+<pre class="r"><code>hcmodel &lt;- hc(CPS1988 %&gt;%
+  mutate(education = as.numeric(education)) %&gt;%
+  mutate(experience = as.numeric(experience)))
+
+plot(hcmodel)</code></pre>
+<p><img src="/post/2021-05-18-estmating-causal-effects-from-aggregated-data_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>Structural Equation Modeling (SEM) is a tool to represent a system of regressions. I will use Lavaan to represent the DAG from the Bayesian network above.</p>
+<pre class="r"><code>semmodel = &#39;
+  education ~ wage
+  wage ~ parttime
+  experience ~ wage
+  experience ~ parttime
+  wage ~ ethnicity
+  region ~ ethnicity
+  region ~ smsa
+  wage ~ smsa
+  wage ~ region
+  education ~ region
+  education ~ parttime
+  education ~ smsa
+  smsa ~ ethnicity
+  experience ~ education
+  experience ~ ethnicity
+  parttime ~ ethnicity
+  &#39;
+
+semfit &lt;- sem(semmodel,
+  data =  CPS1988_n)
+## Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan
+## WARNING: some observed variances are (at least) a factor 1000 times larger than
+## others; use varTable(fit) to investigate
+
+graph_sem(model = semfit)</code></pre>
+<p><img src="/post/2021-05-18-estmating-causal-effects-from-aggregated-data_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>Since ethnicity is a binary variable I will use the Match algorithm to find individuals that are as similar as possible from the two groups African American and Caucasian. I will do a greedy matching based on Mahalanobis distance.</p>
+<pre class="r"><code>xvars &lt;- c(&quot;education&quot;, &quot;experience&quot;, &quot;smsa&quot;, &quot;region&quot;, &quot;parttime&quot;)
+
+print(CreateTableOne(vars = xvars, strata = &quot;ethnicity&quot;, data = CPS1988, test = FALSE), smd = TRUE)
+##                         Stratified by ethnicity
+##                          cauc          afam          SMD   
+##   n                      25923          2232               
+##   education (mean (SD))  13.13 (2.90)  12.33 (2.77)   0.284
+##   experience (mean (SD)) 18.15 (13.04) 18.74 (13.51)  0.044
+##   smsa = yes (%)         19095 (73.7)   1837 (82.3)   0.210
+##   region (%)                                          0.644
+##      northeast            6073 (23.4)    368 (16.5)        
+##      midwest              6486 (25.0)    377 (16.9)        
+##      south                7468 (28.8)   1292 (57.9)        
+##      west                 5896 (22.7)    195 ( 8.7)        
+##   parttime = yes (%)      2280 ( 8.8)    244 (10.9)   0.072
+
+greedymatch &lt;- Match(Tr = as.integer(CPS1988$ethnicity) - 1, M = 1, X = data.frame(data.matrix(CPS1988[xvars])), replace = FALSE)
+
+matched &lt;- CPS1988[unlist(greedymatch[c(&quot;index.treated&quot;, &quot;index.control&quot;)]), ]
+
+print(CreateTableOne(vars = xvars, strata = &quot;ethnicity&quot;, data = matched, test = FALSE), smd = TRUE)
+##                         Stratified by ethnicity
+##                          cauc          afam          SMD   
+##   n                       2232          2232               
+##   education (mean (SD))  12.33 (2.76)  12.33 (2.77)   0.001
+##   experience (mean (SD)) 18.71 (13.44) 18.74 (13.51)  0.003
+##   smsa = yes (%)          1837 (82.3)   1837 (82.3)  &lt;0.001
+##   region (%)                                          0.003
+##      northeast             368 (16.5)    368 (16.5)        
+##      midwest               375 (16.8)    377 (16.9)        
+##      south                1293 (57.9)   1292 (57.9)        
+##      west                  196 ( 8.8)    195 ( 8.7)        
+##   parttime = yes (%)       244 (10.9)    244 (10.9)  &lt;0.001
+
+matched &lt;- matched %&gt;% mutate(ethnicity_n = as.integer(ethnicity) - 1)
+
+t.test(matched$wage[matched$ethnicity_n == 1] - matched$wage[matched$ethnicity_n == 0])
+## 
+##  One Sample t-test
+## 
+## data:  matched$wage[matched$ethnicity_n == 1] - matched$wage[matched$ethnicity_n == 0]
+## t = -12.989, df = 2231, p-value &lt; 2.2e-16
+## alternative hypothesis: true mean is not equal to 0
+## 95 percent confidence interval:
+##  -131.18979  -96.77381
+## sample estimates:
+## mean of x 
+## -113.9818</code></pre>
+<p>Another way to estimate the causal effect of ethnicity on wage is by calculating the propensity score. By regressing on the treatment, i.e. the variable that we want to calculate the effect for, we can reduce the selection bias by balancing on the covariates. Below you can see the balancing before and after using the propensity score.</p>
+<pre class="r"><code>W.out &lt;- weightit(ethnicity ~ education + experience + smsa + region + parttime, 
+  data = CPS1988, method = &quot;ebal&quot;)
+
+model_lm_ethnicity &lt;- lm(wage ~ ethnicity, data = CPS1988, weights = W.out$weights)
+
+bal.tab(ethnicity ~ education + experience + smsa + region + parttime, 
+  data = CPS1988, estimand = &quot;ATT&quot;, m.threshold = .05)
+## Balance Measures
+##                     Type Diff.Un      M.Threshold.Un
+## education        Contin. -0.2909 Not Balanced, &gt;0.05
+## experience       Contin.  0.0435     Balanced, &lt;0.05
+## smsa_yes          Binary  0.0864 Not Balanced, &gt;0.05
+## region_northeast  Binary -0.0694 Not Balanced, &gt;0.05
+## region_midwest    Binary -0.0813 Not Balanced, &gt;0.05
+## region_south      Binary  0.2908 Not Balanced, &gt;0.05
+## region_west       Binary -0.1401 Not Balanced, &gt;0.05
+## parttime_yes      Binary  0.0214     Balanced, &lt;0.05
+## 
+## Balance tally for mean differences
+##                     count
+## Balanced, &lt;0.05         2
+## Not Balanced, &gt;0.05     6
+## 
+## Variable with the greatest mean difference
+##   Variable Diff.Un      M.Threshold.Un
+##  education -0.2909 Not Balanced, &gt;0.05
+## 
+## Sample sizes
+##      cauc afam
+## All 25923 2232
+
+bal.tab(W.out, m.threshold = .05, disp.v.ratio = TRUE)
+## Call
+##  weightit(formula = ethnicity ~ education + experience + smsa + 
+##     region + parttime, data = CPS1988, method = &quot;ebal&quot;)
+## 
+## Balance Measures
+##                     Type Diff.Adj     M.Threshold V.Ratio.Adj
+## education        Contin.   0.0001 Balanced, &lt;0.05      0.7731
+## experience       Contin.   0.0000 Balanced, &lt;0.05      0.9613
+## smsa_yes          Binary   0.0000 Balanced, &lt;0.05           .
+## region_northeast  Binary   0.0000 Balanced, &lt;0.05           .
+## region_midwest    Binary  -0.0000 Balanced, &lt;0.05           .
+## region_south      Binary  -0.0000 Balanced, &lt;0.05           .
+## region_west       Binary  -0.0000 Balanced, &lt;0.05           .
+## parttime_yes      Binary   0.0001 Balanced, &lt;0.05           .
+## 
+## Balance tally for mean differences
+##                     count
+## Balanced, &lt;0.05         8
+## Not Balanced, &gt;0.05     0
+## 
+## Variable with the greatest mean difference
+##   Variable Diff.Adj     M.Threshold
+##  education   0.0001 Balanced, &lt;0.05
+## 
+## Effective sample sizes
+##                cauc   afam
+## Unadjusted 25923.   2232. 
+## Adjusted   25833.39 1233.1</code></pre>
+<p>Estimate the causal effect of experience on wage by calculating the propensity score.</p>
+<pre class="r"><code>W.out &lt;- weightit(experience ~ ethnicity + education + smsa + region + parttime,
+  data = CPS1988, method = &quot;ebal&quot;)
+
+model_lm_experience &lt;- lm(wage ~ experience, data = CPS1988, weights = W.out$weights)
+
+bal.tab(experience  ~ ethnicity + education + smsa + region + parttime,
+  data = CPS1988, estimand = &quot;ATT&quot;, m.threshold = .05)
+## Balance Measures
+##                     Type Corr.Un
+## ethnicity_afam    Binary  0.0121
+## education        Contin. -0.2867
+## smsa_yes          Binary -0.0397
+## region_northeast  Binary  0.0251
+## region_midwest    Binary -0.0166
+## region_south      Binary  0.0114
+## region_west       Binary -0.0212
+## parttime_yes      Binary -0.0942
+## 
+## Sample sizes
+##     Total
+## All 28155
+
+bal.tab(W.out, m.threshold = .05, disp.v.ratio = TRUE)
+## Call
+##  weightit(formula = experience ~ ethnicity + education + smsa + 
+##     region + parttime, data = CPS1988, method = &quot;ebal&quot;)
+## 
+## Balance Measures
+##                     Type Corr.Adj Diff.Adj     M.Threshold
+## ethnicity_afam    Binary       -0       -0 Balanced, &lt;0.05
+## education        Contin.       -0        0 Balanced, &lt;0.05
+## smsa_yes          Binary       -0       -0 Balanced, &lt;0.05
+## region_northeast  Binary        0        0 Balanced, &lt;0.05
+## region_midwest    Binary        0        0 Balanced, &lt;0.05
+## region_south      Binary       -0       -0 Balanced, &lt;0.05
+## region_west       Binary       -0       -0 Balanced, &lt;0.05
+## parttime_yes      Binary        0        0 Balanced, &lt;0.05
+## 
+## Balance tally for target mean differences
+##                     count
+## Balanced, &lt;0.05         8
+## Not Balanced, &gt;0.05     0
+## 
+## Variable with the greatest target mean difference
+##   Variable Diff.Adj     M.Threshold
+##  education        0 Balanced, &lt;0.05
+## 
+## Effective sample sizes
+##               Total
+## Unadjusted 28155.  
+## Adjusted   25793.54</code></pre>
+<p>Let’s now investigate how aggregating the numerical predictors in the data affects the precision when estimating the causal effect on wage. I will also filter out groups with less than 5 persons in them so that any individual can not be identified in the material. The binning and filtering reduces the original dataset by 98.9 %. By expanding the reduced dataset the original dataset can be estimated.</p>
+<pre class="r"><code>CPS1988_refi &lt;- CPS1988 %&gt;%
+  mutate(education = as.numeric(education)) %&gt;%
+  mutate(experience = as.numeric(experience)) %&gt;%
+  mutate(education = cut_interval(education, 5)) %&gt;%
+  mutate(experience = cut_interval(experience, 5)) %&gt;%
+  group_by(education, experience, ethnicity, smsa, region, parttime) %&gt;%
+  mutate (wage = mean(wage)) %&gt;%
+  group_by(wage, education, experience, ethnicity, smsa, region, parttime) %&gt;% 
+  tally() %&gt;%
+  mutate(experience = unbin_bin(experience)) %&gt;%
+  mutate(education = unbin_bin(education)) %&gt;%
+  filter(n &gt; 4)  
+
+dim(CPS1988_refi)
+## [1] 302   8
+
+CPS1988_refiexp &lt;- CPS1988_refi[rep(seq(nrow(CPS1988_refi)), CPS1988_refi$n),]
+
+dim(CPS1988_refiexp) 
+## [1] 27797     8</code></pre>
+<p>How has the reduction affected the DAG? It is not possible to use weights in the hc algorithm. Therefore I will use the expanded table based on the data in the aggregated table.</p>
+<pre class="r"><code>hcmodel_refiexp &lt;- hc(dplyr::select(CPS1988_refiexp %&gt;%
+  mutate(education = as.numeric(education)) %&gt;%
+  mutate(experience = as.numeric(experience)), -n))
+
+plot(hcmodel_refiexp)</code></pre>
+<p><img src="/post/2021-05-18-estmating-causal-effects-from-aggregated-data_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>For comparison, I will plot the coefficients for ethnicity for the linear model based on the original data, aggregated data and the expanded data. I will use robust (Heteroskedasticity-Consistent) error estimates.</p>
+<pre class="r"><code>model &lt;- lm(wage ~ ethnicity, data = CPS1988)
+
+model_refi &lt;- lm(wage ~ ethnicity, data = CPS1988_refi, weights = n)
+
+model_refiexp &lt;- lm(wage ~ ethnicity, data = CPS1988_refiexp)
+
+plot_summs(model, model_refi, model_refiexp, robust = &quot;HC1&quot;, 
+  model.names = c(
+    &quot;Original dataset&quot;, 
+    &quot;Reduced dataset using weights&quot;, 
+    &quot;Expanded dataset&quot;))
+## Loading required namespace: broom.mixed
+## Warning in checkMatrixPackageVersion(): Package version inconsistency detected.
+## TMB was built with Matrix version 1.3.2
+## Current Matrix version is 1.2.18
+## Please re-install &#39;TMB&#39; from source using install.packages(&#39;TMB&#39;, type = &#39;source&#39;) or ask CRAN for a binary version of &#39;TMB&#39; matching CRAN&#39;s &#39;Matrix&#39; package</code></pre>
+<p><img src="/post/2021-05-18-estmating-causal-effects-from-aggregated-data_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>Now let’s estimate the causal effect of ethnicity on wage using propensity scores. I will use the expanded dataset since I did not get any reasonable results using the argument s.weights in weightit.</p>
+<pre class="r"><code>W.out &lt;- weightit(ethnicity ~ education + experience + smsa + region + parttime,
+  data = CPS1988_refiexp, method = &quot;ebal&quot;)
+
+model_refiexp &lt;- lm(wage ~ ethnicity, data = CPS1988_refiexp, weights = W.out$weights)
+
+coeftest(model_refiexp, vcov = vcovHC, type = &quot;HC1&quot;)
+## 
+## t test of coefficients:
+## 
+##                Estimate Std. Error t value  Pr(&gt;|t|)    
+## (Intercept)    616.8706     1.4634 421.541 &lt; 2.2e-16 ***
+## ethnicityafam -133.7648     6.1773 -21.654 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+bal.tab(ethnicity ~ education + experience + smsa + region + parttime,
+  data = CPS1988_refiexp, estimand = &quot;ATT&quot;, m.threshold = .05)
+## Balance Measures
+##                     Type Diff.Un      M.Threshold.Un
+## education        Contin. -0.2050 Not Balanced, &gt;0.05
+## experience       Contin. -0.0567 Not Balanced, &gt;0.05
+## smsa_yes          Binary  0.0995 Not Balanced, &gt;0.05
+## region_northeast  Binary -0.0784 Not Balanced, &gt;0.05
+## region_midwest    Binary -0.0800 Not Balanced, &gt;0.05
+## region_south      Binary  0.3059 Not Balanced, &gt;0.05
+## region_west       Binary -0.1475 Not Balanced, &gt;0.05
+## parttime_yes      Binary -0.0052     Balanced, &lt;0.05
+## 
+## Balance tally for mean differences
+##                     count
+## Balanced, &lt;0.05         1
+## Not Balanced, &gt;0.05     7
+## 
+## Variable with the greatest mean difference
+##      Variable Diff.Un      M.Threshold.Un
+##  region_south  0.3059 Not Balanced, &gt;0.05
+## 
+## Sample sizes
+##      cauc afam
+## All 25732 2065
+
+bal.tab(W.out, m.threshold = .05, disp.v.ratio = TRUE)
+## Call
+##  weightit(formula = ethnicity ~ education + experience + smsa + 
+##     region + parttime, data = CPS1988_refiexp, method = &quot;ebal&quot;)
+## 
+## Balance Measures
+##                     Type Diff.Adj     M.Threshold V.Ratio.Adj
+## education        Contin.   0.0001 Balanced, &lt;0.05      0.6710
+## experience       Contin.   0.0000 Balanced, &lt;0.05      0.8969
+## smsa_yes          Binary   0.0000 Balanced, &lt;0.05           .
+## region_northeast  Binary   0.0000 Balanced, &lt;0.05           .
+## region_midwest    Binary   0.0001 Balanced, &lt;0.05           .
+## region_south      Binary  -0.0000 Balanced, &lt;0.05           .
+## region_west       Binary  -0.0001 Balanced, &lt;0.05           .
+## parttime_yes      Binary  -0.0000 Balanced, &lt;0.05           .
+## 
+## Balance tally for mean differences
+##                     count
+## Balanced, &lt;0.05         8
+## Not Balanced, &gt;0.05     0
+## 
+## Variable with the greatest mean difference
+##        Variable Diff.Adj     M.Threshold
+##  region_midwest   0.0001 Balanced, &lt;0.05
+## 
+## Effective sample sizes
+##               cauc    afam
+## Unadjusted 25732.  2065.  
+## Adjusted   25650.5 1094.35
+
+plot_summs(model_lm_ethnicity, model_refiexp, scale = TRUE, robust = &quot;HC1&quot;, 
+  model.names = c(
+    &quot;Original dataset&quot;, 
+    &quot;Expanded dataset&quot;))</code></pre>
+<p><img src="/post/2021-05-18-estmating-causal-effects-from-aggregated-data_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>Let’s compare the coefficients for experience for the linear model based on the original data, aggregated data and the expanded data.</p>
+<pre class="r"><code>model &lt;- lm(wage ~ experience, data = CPS1988)
+
+model_refi &lt;- lm(wage ~ experience, data = CPS1988_refi, weights = n)
+
+model_refiexp &lt;- lm(wage ~ experience, data = CPS1988_refiexp)
+
+plot_summs(model, model_refi, model_refiexp, robust = &quot;HC1&quot;,
+  model.names = c(
+    &quot;Original dataset&quot;, 
+    &quot;Reduced dataset using weights&quot;, 
+    &quot;Expanded dataset&quot;))</code></pre>
+<p><img src="/post/2021-05-18-estmating-causal-effects-from-aggregated-data_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>Let’s estimate the causal effect of ethnicity on wage using propensity scores. I will use the expanded dataset since I did not get any reasonable results using the argument s.wights in weightit.</p>
+<pre class="r"><code>W.out &lt;- weightit(experience ~ ethnicity + education + smsa + region + parttime,
+  data = CPS1988_refiexp, method = &quot;ebal&quot;)
+
+model_refiexp &lt;- lm(wage ~ experience, data = CPS1988_refiexp, weights = W.out$weights)
+
+coeftest(model_refiexp, vcov = vcovHC, type = &quot;HC1&quot;)
+## 
+## t test of coefficients:
+## 
+##              Estimate Std. Error t value  Pr(&gt;|t|)    
+## (Intercept) 452.45062    2.25958 200.237 &lt; 2.2e-16 ***
+## experience    8.60394    0.14098  61.029 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+bal.tab(experience ~ ethnicity + education + smsa + region + parttime,
+  data = CPS1988_refiexp, estimand = &quot;ATT&quot;, m.threshold = .05)
+## Balance Measures
+##                     Type Corr.Un
+## ethnicity_afam    Binary -0.0143
+## education        Contin. -0.2736
+## smsa_yes          Binary -0.0339
+## region_northeast  Binary  0.0256
+## region_midwest    Binary -0.0156
+## region_south      Binary  0.0092
+## region_west       Binary -0.0202
+## parttime_yes      Binary -0.1072
+## 
+## Sample sizes
+##     Total
+## All 27797
+
+bal.tab(W.out, m.threshold = .05, disp.v.ratio = TRUE)
+## Call
+##  weightit(formula = experience ~ ethnicity + education + smsa + 
+##     region + parttime, data = CPS1988_refiexp, method = &quot;ebal&quot;)
+## 
+## Balance Measures
+##                     Type Corr.Adj Diff.Adj     M.Threshold
+## ethnicity_afam    Binary       -0       -0 Balanced, &lt;0.05
+## education        Contin.       -0       -0 Balanced, &lt;0.05
+## smsa_yes          Binary       -0       -0 Balanced, &lt;0.05
+## region_northeast  Binary        0        0 Balanced, &lt;0.05
+## region_midwest    Binary        0        0 Balanced, &lt;0.05
+## region_south      Binary       -0       -0 Balanced, &lt;0.05
+## region_west       Binary       -0       -0 Balanced, &lt;0.05
+## parttime_yes      Binary        0       -0 Balanced, &lt;0.05
+## 
+## Balance tally for target mean differences
+##                     count
+## Balanced, &lt;0.05         8
+## Not Balanced, &gt;0.05     0
+## 
+## Variable with the greatest target mean difference
+##   Variable Diff.Adj     M.Threshold
+##  education       -0 Balanced, &lt;0.05
+## 
+## Effective sample sizes
+##               Total
+## Unadjusted 27797.  
+## Adjusted   25618.89
+
+plot_summs(model_lm_experience, model_refiexp, robust = &quot;HC1&quot;,
+  model.names = c(
+    &quot;Original dataset&quot;, 
+    &quot;Expanded dataset&quot;))           </code></pre>
+<p><img src="/post/2021-05-18-estmating-causal-effects-from-aggregated-data_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
