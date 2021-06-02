@@ -1,0 +1,688 @@
+---
+title: "Salaries and time series regression"
+author: "Mikael Lundqvist"
+date: '2021-06-02'
+slug: salaries-and-time-series-regression
+tags:
+- R Markdown
+- regression
+- plot
+categories: R
+---
+
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/plotly-binding/plotly.js"></script>
+<script src="/rmarkdown-libs/typedarray/typedarray.min.js"></script>
+<script src="/rmarkdown-libs/jquery/jquery.min.js"></script>
+<link href="/rmarkdown-libs/crosstalk/css/crosstalk.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/crosstalk/js/crosstalk.min.js"></script>
+<link href="/rmarkdown-libs/plotly-htmlwidgets-css/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/plotly-main/plotly-latest.min.js"></script>
+
+
+<p>In this post, I will examine Dynamic Linear Models and Time-Series Regression. I will return to data for Engineers from Statistics Sweden. Since the salaries for each year, each stratum (age group) is strongly correlated with the salary for the previous year it does not seem too distant to use a time series to represent the change of salaries throughout the period.</p>
+<p>I will let the age represent the season in the time series. This violates the properties of a regular time series and has to be considered for the rest of the analysis. First, let´s decompose the series into its trend and seasonal patterns.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library (tidyverse)
+## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+## v ggplot2 3.3.3     v purrr   0.3.4
+## v tibble  3.1.0     v dplyr   1.0.5
+## v tidyr   1.1.3     v stringr 1.4.0
+## v readr   1.4.0     v forcats 0.5.1
+## Warning: package &#39;ggplot2&#39; was built under R version 4.0.3
+## Warning: package &#39;tibble&#39; was built under R version 4.0.5
+## Warning: package &#39;tidyr&#39; was built under R version 4.0.5
+## Warning: package &#39;readr&#39; was built under R version 4.0.3
+## Warning: package &#39;dplyr&#39; was built under R version 4.0.5
+## Warning: package &#39;forcats&#39; was built under R version 4.0.3
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+library(imputeTS)
+## Warning: package &#39;imputeTS&#39; was built under R version 4.0.5
+## Registered S3 method overwritten by &#39;quantmod&#39;:
+##   method            from
+##   as.zoo.data.frame zoo
+library(TSstudio)
+## Warning: package &#39;TSstudio&#39; was built under R version 4.0.5
+library(forecast)
+## Warning: package &#39;forecast&#39; was built under R version 4.0.5
+library(dynlm)
+## Warning: package &#39;dynlm&#39; was built under R version 4.0.5
+## Loading required package: zoo
+## Warning: package &#39;zoo&#39; was built under R version 4.0.5
+## 
+## Attaching package: &#39;zoo&#39;
+## The following object is masked from &#39;package:imputeTS&#39;:
+## 
+##     na.locf
+## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric
+library(lmtest) 
+## Warning: package &#39;lmtest&#39; was built under R version 4.0.4
+library(sandwich)
+## Warning: package &#39;sandwich&#39; was built under R version 4.0.3
+library(ggeffects)
+## Warning: package &#39;ggeffects&#39; was built under R version 4.0.5
+
+readfile &lt;- function (file1){
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%
+    gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = salary) %&gt;%
+    mutate (year_n = parse_number (year))
+}
+
+# Thanks to Grant, Stack Overflow
+predNeweyWest &lt;- function (model){
+  pred_df &lt;- data.frame(fit = predict(model))
+
+  X_mat &lt;- model.matrix(model)
+
+  v_hac &lt;- NeweyWest(model, prewhite = FALSE, adjust = TRUE)
+
+  var_fit_hac &lt;- rowSums((X_mat %*% v_hac) * X_mat)
+  se_fit_hac &lt;- sqrt(var_fit_hac)
+
+  pred_df &lt;-
+    pred_df %&gt;%
+    mutate(se_fit_hac = se_fit_hac) %&gt;%
+    mutate(
+      lwr_hac = fit - qt(0.975, df = model$df.residual) * se_fit_hac,
+      upr_hac = fit + qt(0.975, df = model$df.residual) * se_fit_hac
+    )
+}
+
+plotmodel &lt;- function(data, pred_df, no_n = FALSE){ 
+  if(no_n){
+  bind_cols(
+    data,
+    pred_df
+    ) %&gt;%
+      ggplot(aes(x = year_dec, y = salary, ymin = lwr_hac, ymax = upr_hac)) + 
+      geom_point() + 
+      geom_ribbon(fill = &quot;#E41A1C&quot;, alpha = 0.3, col = NA) +
+      labs(
+        x = &quot;Year&quot;,
+        y = &quot;Salary (SEK/month)&quot;,
+        caption = &#39;Shaded region indicates HAC 95% CI.&#39;
+    )
+  }
+  else{
+  bind_cols(
+    data,
+    pred_df
+    ) %&gt;%
+      ggplot(aes(x = year_dec, y = salary, color = n, ymin = lwr_hac, ymax = upr_hac)) + 
+      geom_point() + 
+      geom_ribbon(fill = &quot;#E41A1C&quot;, alpha = 0.3, col = NA) +
+      labs(
+        x = &quot;Year&quot;,
+        y = &quot;Salary (SEK/month)&quot;,
+        caption = &#39;Shaded region indicates HAC 95% CI.&#39;
+    )    
+  }
+}
+
+assess_model &lt;- function(model, timeseries, data, no_n = FALSE, doexp = FALSE){
+  print(summary (model))
+
+  print(coeftest(model, vcov = NeweyWest, prewhite = F, adjust = T))
+
+  print(checkresiduals(model))
+  
+  if(doexp){
+    pred_df &lt;- exp(predNeweyWest(model))
+  } else {
+    pred_df &lt;- predNeweyWest(model)
+  }
+
+  pred_df$year_dec &lt;- timeseries
+
+  plotmodel(data, pred_df, no_n)
+}</code></pre>
+<p>The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000D2_20210506-201343.csv, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>The table: Average monthly pay (total pay), non-manual workers all sectors (SLP), SEK by occupational group (SSYK), age, sex and year. SSYK 2012 214, Year 2014 - 2019</p>
+<p>The average age within each age group is used as a numeric value for graphical presentation and the linear model.</p>
+<p>The number of Engineers in each stratum is downloaded separately in the file 000000CZ_20210506-201420.csv.</p>
+<pre class="r"><code>tb &lt;- readfile(&quot;000000D2_20210506-201343.csv&quot;) %&gt;%
+  rowwise() %&gt;%
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[1]) %&gt;%
+  rowwise() %&gt;%
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), &quot;-&quot;), strtoi))[2]) %&gt;%
+  mutate(age_n = (age_l + age_h) / 2)
+
+tbcount &lt;- readfile(&quot;000000CZ_20210506-201420.csv&quot;)
+tbcount$salary &lt;- replace(tbcount$salary, is.na(tbcount$salary), 0)
+
+tb$n &lt;- tbcount$salary</code></pre>
+<p>Let’s have a look at the age distribution for the different years for men and women.</p>
+<pre class="r"><code>tb %&gt;%
+  ggplot () +  
+    geom_point (mapping = aes(x = age_n,y = n, colour = year_n, shape = sex)) + 
+  labs(
+    x = &quot;Age&quot;,
+    y = &quot;Number of Engineers&quot;
+  )</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>Create a time series for each gender. Time series can not have missing values, Impute missing values in time series with arima model. Women don’t have any data for the age group 65-66 year, that group is filtered away.</p>
+<pre class="r"><code>tb_men &lt;- filter(tb, sex == &quot;men&quot;)
+
+tb_women &lt;- filter(tb, sex == &quot;women&quot;) %&gt;% filter(age_n != 65.5)
+
+summary(tb_men$salary)
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+##   27300   36550   47100   43340   49500   52800       1
+
+summary(tb_women$salary)
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+##   26600   35000   44700   41293   45900   52100       1
+
+tbts_men &lt;- ts(tb_men$salary, start = 2014, freq = 6) %&gt;% na_kalman(&quot;auto.arima&quot;)
+
+tbts_women &lt;- ts(tb_women$salary, start = 2014, freq = 5) %&gt;% na_kalman(&quot;auto.arima&quot;)
+
+tb_men$salary &lt;- as.numeric(tbts_men)
+
+tb_women$salary &lt;- as.numeric(tbts_women)</code></pre>
+<p>Let’s use the decompose function from the stats package to view the trend, seasonal and random component of the time series.</p>
+<pre class="r"><code>decompose(tbts_men) %&gt;% plot()</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>
+decompose(tbts_women) %&gt;% plot()</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-5-2.png" width="672" /></p>
+<p>Let´s have a look at the autocorrelation for the series. As expected the series for men shows a strong correlation with its sixth lag, i.e. the same age category the year before. The series for women shows a strong correlation with its fifth lag.</p>
+<pre class="r"><code>acf(tbts_men, 36)</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>
+acf(tbts_women, 30)</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-6-2.png" width="672" /></p>
+<p>The partial autocorrelation function gives the partial correlation of a stationary time series with its own lagged values, regressed the values of the time series at all shorter lags.</p>
+<pre class="r"><code>pacf(tbts_men, 36)</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code>
+pacf(tbts_women, 36)</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-7-2.png" width="672" /></p>
+<p>The following plot shows the correlation between the salary and its yearly lag for three years.</p>
+<pre class="r"><code>ts_lags(tbts_men, c(6, 12, 18))</code></pre>
+<div id="htmlwidget-1" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"data":[{"x":[28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600,30600,37600,47200,50900,52100,49300],"y":[29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600,30600,37600,47200,50900,52100,49300,31300,39300,47400,52100,52800,52800],"mode":"markers","type":"scatter","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600],"y":[27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600,30600,37600,47200,50900,52100,49300,31300,39300,47400,52100,52800,52800],"mode":"markers","type":"scatter","marker":{"color":"rgba(255,127,14,1)","line":{"color":"rgba(255,127,14,1)"}},"error_y":{"color":"rgba(255,127,14,1)"},"error_x":{"color":"rgba(255,127,14,1)"},"line":{"color":"rgba(255,127,14,1)"},"xaxis":"x2","yaxis":"y","frame":null},{"x":[28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200],"y":[30300,36900,45700,49700,50200,46600,30600,37600,47200,50900,52100,49300,31300,39300,47400,52100,52800,52800],"mode":"markers","type":"scatter","marker":{"color":"rgba(44,160,44,1)","line":{"color":"rgba(44,160,44,1)"}},"error_y":{"color":"rgba(44,160,44,1)"},"error_x":{"color":"rgba(44,160,44,1)"},"line":{"color":"rgba(44,160,44,1)"},"xaxis":"x3","yaxis":"y","frame":null}],"layout":{"xaxis":{"domain":[0,0.313333333333333],"automargin":true,"title":"","range":[27300,52800],"anchor":"y"},"xaxis2":{"domain":[0.353333333333333,0.646666666666667],"automargin":true,"title":"","range":[27300,52800],"anchor":"y"},"xaxis3":{"domain":[0.686666666666667,1],"automargin":true,"title":"","range":[27300,52800],"anchor":"y"},"yaxis":{"domain":[0,1],"automargin":true,"range":[27300,52800],"title":[],"anchor":"x"},"annotations":[{"text":"Lag 6","xref":"paper","yref":"paper","yanchor":"bottom","xanchor":"center","align":"center","x":0.156666666666667,"y":0.9,"showarrow":false},{"text":"Lag 12","xref":"paper","yref":"paper","yanchor":"bottom","xanchor":"center","align":"center","x":0.5,"y":0.9,"showarrow":false},{"text":"Lag 18","xref":"paper","yref":"paper","yanchor":"bottom","xanchor":"center","align":"center","x":0.843333333333333,"y":0.9,"showarrow":false}],"shapes":[],"images":[],"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"closest","showlegend":false,"title":"tbts_men - Series (Y axis) vs. Lags (X axis)"},"attrs":{"5cd46b83ac6":{"x":[null,null,null,null,null,null,28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600,30600,37600,47200,50900,52100,49300],"y":[28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600,30600,37600,47200,50900,52100,49300,31300,39300,47400,52100,52800,52800],"mode":"markers","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"},"5cd47170713c":{"x":[null,null,null,null,null,null,null,null,null,null,null,null,28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600],"y":[28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600,30600,37600,47200,50900,52100,49300,31300,39300,47400,52100,52800,52800],"mode":"markers","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"},"5cd413b26128":{"x":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200],"y":[28600,35600,43500,47400,48000,47400,29400,36200,44400,47100,49000,48124.6579579629,27300,36000,44800,48400,49800,51200,30300,36900,45700,49700,50200,46600,30600,37600,47200,50900,52100,49300,31300,39300,47400,52100,52800,52800],"mode":"markers","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"}},"source":"A","config":{"showSendToCloud":false},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"subplot":true,".hideLegend":true,"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+
+ts_lags(tbts_women, c(5, 10, 15))
+<div id="htmlwidget-2" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2">{"x":{"data":[{"x":[26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800,31000,35900,45100,48400,45600,30900,37100,45000,50000,49800],"y":[29200,34800,42900,44900,45900,29500,35000,43400,46300,46800,31000,35900,45100,48400,45600,30900,37100,45000,50000,49800,30900,37900,45700,50600,52100],"mode":"markers","type":"scatter","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800,31000,35900,45100,48400,45600],"y":[29500,35000,43400,46300,46800,31000,35900,45100,48400,45600,30900,37100,45000,50000,49800,30900,37900,45700,50600,52100],"mode":"markers","type":"scatter","marker":{"color":"rgba(255,127,14,1)","line":{"color":"rgba(255,127,14,1)"}},"error_y":{"color":"rgba(255,127,14,1)"},"error_x":{"color":"rgba(255,127,14,1)"},"line":{"color":"rgba(255,127,14,1)"},"xaxis":"x2","yaxis":"y","frame":null},{"x":[26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800],"y":[31000,35900,45100,48400,45600,30900,37100,45000,50000,49800,30900,37900,45700,50600,52100],"mode":"markers","type":"scatter","marker":{"color":"rgba(44,160,44,1)","line":{"color":"rgba(44,160,44,1)"}},"error_y":{"color":"rgba(44,160,44,1)"},"error_x":{"color":"rgba(44,160,44,1)"},"line":{"color":"rgba(44,160,44,1)"},"xaxis":"x3","yaxis":"y","frame":null}],"layout":{"xaxis":{"domain":[0,0.313333333333333],"automargin":true,"title":"","range":[26600,52100],"anchor":"y"},"xaxis2":{"domain":[0.353333333333333,0.646666666666667],"automargin":true,"title":"","range":[26600,52100],"anchor":"y"},"xaxis3":{"domain":[0.686666666666667,1],"automargin":true,"title":"","range":[26600,52100],"anchor":"y"},"yaxis":{"domain":[0,1],"automargin":true,"range":[26600,52100],"title":[],"anchor":"x"},"annotations":[{"text":"Lag 5","xref":"paper","yref":"paper","yanchor":"bottom","xanchor":"center","align":"center","x":0.156666666666667,"y":0.9,"showarrow":false},{"text":"Lag 10","xref":"paper","yref":"paper","yanchor":"bottom","xanchor":"center","align":"center","x":0.5,"y":0.9,"showarrow":false},{"text":"Lag 15","xref":"paper","yref":"paper","yanchor":"bottom","xanchor":"center","align":"center","x":0.843333333333333,"y":0.9,"showarrow":false}],"shapes":[],"images":[],"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"closest","showlegend":false,"title":"tbts_women - Series (Y axis) vs. Lags (X axis)"},"attrs":{"5cd45cce3ef1":{"x":[null,null,null,null,null,26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800,31000,35900,45100,48400,45600,30900,37100,45000,50000,49800],"y":[26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800,31000,35900,45100,48400,45600,30900,37100,45000,50000,49800,30900,37900,45700,50600,52100],"mode":"markers","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"},"5cd46e8f2bd7":{"x":[null,null,null,null,null,null,null,null,null,null,26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800,31000,35900,45100,48400,45600],"y":[26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800,31000,35900,45100,48400,45600,30900,37100,45000,50000,49800,30900,37900,45700,50600,52100],"mode":"markers","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"},"5cd474c659dd":{"x":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800],"y":[26600,35000,42600,44800,44700,29200,34800,42900,44900,45900,29500,35000,43400,46300,46800,31000,35900,45100,48400,45600,30900,37100,45000,50000,49800,30900,37900,45700,50600,52100],"mode":"markers","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"}},"source":"A","config":{"showSendToCloud":false},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"subplot":true,".hideLegend":true,"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>Now, let’s fit an arima model to the time series with the auto.arima from the forecast library. The summary shows that the auto.arima has identified a SAR(2) process with drift and additionally an element of random walk. The checkresiduals function plots the residuals from the arima model, the autocorrelation of the residuals and a histogram of the residual distribution. The Ljung-Box test suggests that only white noise remains in the residual. The ggseasonplot plots the salary distribution on age for the years 2014-2019, remember that we used age as a season in this approach.</p>
+<pre class="r"><code>arimamodel_men &lt;- auto.arima(tbts_men)
+
+summary(arimamodel_men)
+## Series: tbts_men 
+## ARIMA(0,0,0)(2,1,0)[6] with drift 
+## 
+## Coefficients:
+##         sar1     sar2     drift
+##       -0.761  -0.6098  128.8569
+## s.e.   0.158   0.1435   16.1691
+## 
+## sigma^2 estimated as 1163963:  log likelihood=-254.04
+## AIC=516.08   AICc=517.68   BIC=521.69
+## 
+## Training set error measures:
+##                     ME     RMSE      MAE        MPE    MAPE     MASE      ACF1
+## Training set -25.68999 934.3299 573.1137 -0.1985635 1.37638 0.434177 0.2314468
+
+checkresiduals(arimamodel_men)</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre><code>## 
+##  Ljung-Box test
+## 
+## data:  Residuals from ARIMA(0,0,0)(2,1,0)[6] with drift
+## Q* = 3.9755, df = 4, p-value = 0.4093
+## 
+## Model df: 3.   Total lags used: 7
+
+ggseasonplot(tbts_men)</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+<p>For women, the auto.arima is not able to pick up any SAR. The best fit is according to auto.arima is a constant drift.</p>
+<pre class="r"><code>arimamodel_women &lt;- auto.arima(tbts_women)
+
+summary(arimamodel_women)
+## Series: tbts_women 
+## ARIMA(0,0,0)(0,1,0)[5] with drift 
+## 
+## Coefficients:
+##          drift
+##       188.0000
+## s.e.   43.5542
+## 
+## sigma^2 estimated as 1235313:  log likelihood=-210.3
+## AIC=424.59   AICc=425.14   BIC=427.03
+## 
+## Training set error measures:
+##                    ME    RMSE     MAE         MPE     MAPE      MASE
+## Training set 6.362663 994.108 699.696 -0.07692376 1.730501 0.6551461
+##                     ACF1
+## Training set -0.07256362
+
+checkresiduals(arimamodel_women)</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre><code>## 
+##  Ljung-Box test
+## 
+## data:  Residuals from ARIMA(0,0,0)(0,1,0)[5] with drift
+## Q* = 5.4793, df = 5, p-value = 0.3602
+## 
+## Model df: 1.   Total lags used: 6
+
+ggseasonplot(tbts_women)</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
+<p>An AR(p) model assumes that a time series Yt can be modelled by a linear function of the first p of its lagged values. Let’s first start to model a seasonal SAR(1) model with the dynlm package. Each year the salaries increase by a fixed amount and a part that is relative to the salary size. I will use the NeweyWest function from the Sandwich package throughout this post to get heteroskedasticity- and autocorrelation-consistent error estimates.</p>
+<pre class="r"><code>dynmodel_men &lt;- dynlm(ts(salary) ~ L(ts(salary), 6), data = tb_men)
+
+assess_model(dynmodel_men, time(tbts_men)[7:36], tb_men[7:36,], no_n = TRUE) 
+## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 7, End = 36
+## 
+## Call:
+## dynlm(formula = ts(salary) ~ L(ts(salary), 6), data = tb_men)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5517.7  -371.7    48.9   418.0  2600.3 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      4.339e+02  1.575e+03   0.275    0.785    
+## L(ts(salary), 6) 1.009e+00  3.608e-02  27.980   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1522 on 28 degrees of freedom
+## Multiple R-squared:  0.9655, Adjusted R-squared:  0.9642 
+## F-statistic: 782.9 on 1 and 28 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                    Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      4.3389e+02 1.8030e+03  0.2406   0.8116    
+## L(ts(salary), 6) 1.0094e+00 4.3076e-02 23.4340   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 6
+## 
+## data:  Residuals
+## LM test = 9.8199, df = 6, p-value = 0.1324</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-11-2.png" width="672" /></p>
+<pre class="r"><code>
+dynmodel_women &lt;- dynlm(ts(salary) ~ L(ts(salary), 5), data = tb_women)
+
+assess_model(dynmodel_women, time(tbts_women)[6:30], tb_women[6:30,], no_n = TRUE)
+## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 6, End = 30
+## 
+## Call:
+## dynlm(formula = ts(salary) ~ L(ts(salary), 5), data = tb_women)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -2266.8  -683.0  -148.9   501.2  3157.1 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      1.323e+02  1.316e+03   0.101    0.921    
+## L(ts(salary), 5) 1.020e+00  3.206e-02  31.816   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1126 on 23 degrees of freedom
+## Multiple R-squared:  0.9778, Adjusted R-squared:  0.9768 
+## F-statistic:  1012 on 1 and 23 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                    Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      1.3234e+02 1.1458e+03  0.1155   0.9091    
+## L(ts(salary), 5) 1.0200e+00 2.9112e-02 35.0356   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-11-3.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 5
+## 
+## data:  Residuals
+## LM test = 4.8683, df = 5, p-value = 0.4322</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-11-4.png" width="672" /></p>
+<p>Now also add weights according to the number of engineers in the different strata. Note that the dynamic approach uses the information from the first year to predict the second. Weights from the first year have to be excluded. The fixed amount has decreased from 434 to 134 SEK and the relative part has increased from 0.94 % to 1.6 %. The fixed part is not statistically significant in either of these two models.</p>
+<pre class="r"><code>dynmodel_men &lt;- dynlm(ts(salary) ~ L(ts(salary), 6), data = tb_men, weights = n[7:36])
+
+assess_model(dynmodel_men, time(tbts_men)[7:36], tb_men[7:36,])
+## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 7, End = 36
+## 
+## Call:
+## dynlm(formula = ts(salary) ~ L(ts(salary), 6), data = tb_men, 
+##     weights = n[7:36])
+## 
+## Weighted Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -164527  -12301       0   48694  129992 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      1.343e+02  1.083e+03   0.124    0.902    
+## L(ts(salary), 6) 1.016e+00  2.398e-02  42.392   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 75460 on 21 degrees of freedom
+## Multiple R-squared:  0.9884, Adjusted R-squared:  0.9879 
+## F-statistic:  1797 on 1 and 21 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                   Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      134.30571  856.80707  0.1568   0.8769    
+## L(ts(salary), 6)   1.01643    0.01883 53.9780   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 6
+## 
+## data:  Residuals
+## LM test = 9.8199, df = 6, p-value = 0.1324</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
+<pre class="r"><code>
+dynmodel_women &lt;- dynlm(ts(salary) ~ L(ts(salary), 5), data = tb_women, weights = n[6:30])
+
+assess_model(dynmodel_women, time(tbts_women)[6:30], tb_women[6:30,])
+## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 6, End = 30
+## 
+## Call:
+## dynlm(formula = ts(salary) ~ L(ts(salary), 5), data = tb_women, 
+##     weights = n[6:30])
+## 
+## Weighted Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -106359  -30874       0   33627  144325 
+## 
+## Coefficients:
+##                    Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      -735.01210 1575.94230  -0.466    0.646    
+## L(ts(salary), 5)    1.03745    0.03693  28.089   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 60090 on 21 degrees of freedom
+## Multiple R-squared:  0.9741, Adjusted R-squared:  0.9728 
+## F-statistic:   789 on 1 and 21 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                     Estimate  Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      -735.012099  708.461714 -1.0375   0.3113    
+## L(ts(salary), 5)    1.037452    0.014893 69.6602   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-12-3.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 5
+## 
+## data:  Residuals
+## LM test = 4.8683, df = 5, p-value = 0.4322</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-12-4.png" width="672" /></p>
+<p>Let’s drop the non-significant intercept. The relative salary raise increases to 1,94 % per year for men and 2,03 % for women.</p>
+<pre class="r"><code>dynmodel_men &lt;- dynlm(ts(salary) ~ L(ts(salary), 6) - 1, data = tb_men, weights = n[7:36])
+
+assess_model(dynmodel_men, time(tbts_men)[7:36], tb_men[7:36,])
+## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 7, End = 36
+## 
+## Call:
+## dynlm(formula = ts(salary) ~ L(ts(salary), 6) - 1, data = tb_men, 
+##     weights = n[7:36])
+## 
+## Weighted Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -165299   -8902       0   47573  133181 
+## 
+## Coefficients:
+##                  Estimate Std. Error t value Pr(&gt;|t|)    
+## L(ts(salary), 6) 1.019380   0.002739   372.1   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 73750 on 22 degrees of freedom
+## Multiple R-squared:  0.9998, Adjusted R-squared:  0.9998 
+## F-statistic: 1.385e+05 on 1 and 22 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                   Estimate Std. Error t value  Pr(&gt;|t|)    
+## L(ts(salary), 6) 1.0193798  0.0020172  505.35 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 6
+## 
+## data:  Residuals
+## LM test = 9.9529, df = 6, p-value = 0.1266</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
+<pre class="r"><code>
+dynmodel_women &lt;- dynlm(ts(salary) ~ L(ts(salary),5) - 1, data = tb_women, weights = n[6:30])
+
+assess_model(dynmodel_women, time(tbts_women)[6:30], tb_women[6:30,])
+## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 6, End = 30
+## 
+## Call:
+## dynlm(formula = ts(salary) ~ L(ts(salary), 5) - 1, data = tb_women, 
+##     weights = n[6:30])
+## 
+## Weighted Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -103209  -32580       0   36088  146345 
+## 
+## Coefficients:
+##                  Estimate Std. Error t value Pr(&gt;|t|)    
+## L(ts(salary), 5) 1.020343   0.004217   241.9   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 59020 on 22 degrees of freedom
+## Multiple R-squared:  0.9996, Adjusted R-squared:  0.9996 
+## F-statistic: 5.853e+04 on 1 and 22 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                   Estimate Std. Error t value  Pr(&gt;|t|)    
+## L(ts(salary), 5) 1.0203429  0.0035569  286.86 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-13-3.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 5
+## 
+## data:  Residuals
+## LM test = 4.9459, df = 5, p-value = 0.4225</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-13-4.png" width="672" /></p>
+<p>Now, let’s compare with a linear model. The relative salary raise increases to 1,92 % per year for men and 2.06 % for women.</p>
+<pre class="r"><code>model_men &lt;- lm(log(salary) ~ year_n + age_n + I(age_n^2), data = tb_men, weights = n)
+
+assess_model(model_men, time(tbts_men), tb_men, doexp = TRUE)
+## 
+## Call:
+## lm(formula = log(salary) ~ year_n + age_n + I(age_n^2), data = tb_men, 
+##     weights = n)
+## 
+## Weighted Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3.5386 -0.1234  0.0000  0.7387  2.7634 
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -2.925e+01  3.086e+00  -9.479 2.08e-09 ***
+## year_n       1.917e-02  1.530e-03  12.534 9.23e-12 ***
+## age_n        5.160e-02  2.286e-03  22.569  &lt; 2e-16 ***
+## I(age_n^2)  -4.670e-04  2.581e-05 -18.094 4.24e-15 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.694 on 23 degrees of freedom
+## Multiple R-squared:  0.9898, Adjusted R-squared:  0.9885 
+## F-statistic: 746.4 on 3 and 23 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                Estimate  Std. Error t value  Pr(&gt;|t|)    
+## (Intercept) -2.9252e+01  1.8119e+00 -16.145 4.852e-14 ***
+## year_n       1.9171e-02  9.0239e-04  21.244 &lt; 2.2e-16 ***
+## age_n        5.1595e-02  1.6460e-03  31.347 &lt; 2.2e-16 ***
+## I(age_n^2)  -4.6705e-04  1.7897e-05 -26.097 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 7
+## 
+## data:  Residuals
+## LM test = 6.7232, df = 7, p-value = 0.4583
+## Don&#39;t know how to automatically pick scale for object of type ts. Defaulting to continuous.</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-14-2.png" width="672" /></p>
+<pre class="r"><code>
+model_women &lt;- lm(log(salary) ~ year_n + age_n + I(age_n^2), data = tb_women, weights = n)
+
+assess_model(model_women, time(tbts_women), tb_women, doexp = TRUE)
+## 
+## Call:
+## lm(formula = log(salary) ~ year_n + age_n + I(age_n^2), data = tb_women, 
+##     weights = n)
+## 
+## Weighted Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.31829 -0.34720  0.05136  0.89951  2.33846 
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -3.228e+01  4.347e+00  -7.427 1.50e-07 ***
+## year_n       2.063e-02  2.154e-03   9.580 1.71e-09 ***
+## age_n        5.521e-02  3.330e-03  16.577 2.77e-14 ***
+## I(age_n^2)  -5.202e-04  3.912e-05 -13.298 2.77e-12 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.288 on 23 degrees of freedom
+## Multiple R-squared:  0.9798, Adjusted R-squared:  0.9771 
+## F-statistic: 371.4 on 3 and 23 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                Estimate  Std. Error  t value  Pr(&gt;|t|)    
+## (Intercept) -3.2285e+01  3.9562e+00  -8.1605 3.045e-08 ***
+## year_n       2.0631e-02  1.9667e-03  10.4903 3.075e-10 ***
+## age_n        5.5206e-02  2.7439e-03  20.1196 4.246e-16 ***
+## I(age_n^2)  -5.2025e-04  3.3832e-05 -15.3777 1.357e-13 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-14-3.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 7
+## 
+## data:  Residuals
+## LM test = 11.678, df = 7, p-value = 0.1117
+## Don&#39;t know how to automatically pick scale for object of type ts. Defaulting to continuous.</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-14-4.png" width="672" /></p>
+<p>Now also add the SAR(2). The summary shows that the R-squared bumps up a few notches for men, although it does not show that the second year lag is significant. However, the sandwich package assures us that the SAR(2) process is significant at the 95 % level. For women, the second year lag is not significant in the summary nor the HAC error estimate.</p>
+<pre class="r"><code>dynmodel_men &lt;- dynlm(ts(salary) ~ L(ts(salary), 6) + L(ts(salary), 12) - 1, data = tb_men, weights = n[13:36])
+
+assess_model(dynmodel_men, time(tbts_men)[13:36], tb_men[13:36,]) 
+## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 13, End = 36
+## 
+## Call:
+## dynlm(formula = ts(salary) ~ L(ts(salary), 6) + L(ts(salary), 
+##     12) - 1, data = tb_men, weights = n[13:36])
+## 
+## Weighted Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -127942  -17989       0   42788  123721 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)   
+## L(ts(salary), 6)    0.7282     0.2371   3.071  0.00692 **
+## L(ts(salary), 12)   0.2985     0.2417   1.235  0.23356   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 69840 on 17 degrees of freedom
+## Multiple R-squared:  0.9999, Adjusted R-squared:  0.9999 
+## F-statistic: 6.4e+04 on 2 and 17 DF,  p-value: &lt; 2.2e-16
+## 
+## 
+## t test of coefficients:
+## 
+##                   Estimate Std. Error t value  Pr(&gt;|t|)    
+## L(ts(salary), 6)   0.72822    0.11497  6.3338 7.484e-06 ***
+## L(ts(salary), 12)  0.29855    0.11741  2.5427   0.02102 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre><code>## 
+##  Breusch-Godfrey test for serial correlation of order up to 5
+## 
+## data:  Residuals
+## LM test = 3.9255, df = 5, p-value = 0.5602</code></pre>
+<p><img src="/post/2021-06-02-salaries-and-time-series-regression_files/figure-html/unnamed-chunk-15-2.png" width="672" /></p>
+<pre class="r"><code>
+dynmodel_women &lt;- dynlm(ts(salary) ~ L(ts(salary), 5) + L(ts(salary), 10) - 1, data = tb_women, weights = n[11:30])
+
+summary (dynmodel_women)
+## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 11, End = 30
+## 
+## Call:
+## dynlm(formula = ts(salary) ~ L(ts(salary), 5) + L(ts(salary), 
+##     10) - 1, data = tb_women, weights = n[11:30])
+## 
+## Weighted Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -110096  -37862   -1787   33549  134747 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)    
+## L(ts(salary), 5)   0.96703    0.23193   4.169 0.000723 ***
+## L(ts(salary), 10)  0.05749    0.23683   0.243 0.811298    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 63340 on 16 degrees of freedom
+## Multiple R-squared:  0.9996, Adjusted R-squared:  0.9996 
+## F-statistic: 2.14e+04 on 2 and 16 DF,  p-value: &lt; 2.2e-16
+
+coeftest(dynmodel_women, vcov = NeweyWest, prewhite = F, adjust = T)
+## 
+## t test of coefficients:
+## 
+##                   Estimate Std. Error t value  Pr(&gt;|t|)    
+## L(ts(salary), 5)  0.967032   0.122156  7.9164 6.354e-07 ***
+## L(ts(salary), 10) 0.057485   0.125308  0.4588    0.6526    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>

@@ -1,0 +1,281 @@
+---
+title: "Salaries and time series regression"
+author: "Mikael Lundqvist"
+date: '2021-06-02'
+slug: salaries-and-time-series-regression
+tags:
+- R Markdown
+- regression
+- plot
+categories: R
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+```
+
+In this post, I will examine Dynamic Linear Models and Time-Series Regression. I will return to data for Engineers from Statistics Sweden. Since the salaries for each year, each stratum (age group) is strongly correlated with the salary for the previous year it does not seem too distant to use a time series to represent the change of salaries throughout the period.
+
+I will let the age represent the season in the time series. This violates the properties of a regular time series and has to be considered for the rest of the analysis. First, let´s decompose the series into its trend and seasonal patterns.
+
+First, define libraries and functions.
+
+```{r , echo = TRUE}
+library (tidyverse)
+library(imputeTS)
+library(TSstudio)
+library(forecast)
+library(dynlm)
+library(lmtest) 
+library(sandwich)
+library(ggeffects)
+
+readfile <- function (file1){
+  read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+    gather (starts_with("19"), starts_with("20"), key = "year", value = salary) %>%
+    mutate (year_n = parse_number (year))
+}
+
+# Thanks to Grant, Stack Overflow
+predNeweyWest <- function (model){
+  pred_df <- data.frame(fit = predict(model))
+
+  X_mat <- model.matrix(model)
+
+  v_hac <- NeweyWest(model, prewhite = FALSE, adjust = TRUE)
+
+  var_fit_hac <- rowSums((X_mat %*% v_hac) * X_mat)
+  se_fit_hac <- sqrt(var_fit_hac)
+
+  pred_df <-
+    pred_df %>%
+    mutate(se_fit_hac = se_fit_hac) %>%
+    mutate(
+      lwr_hac = fit - qt(0.975, df = model$df.residual) * se_fit_hac,
+      upr_hac = fit + qt(0.975, df = model$df.residual) * se_fit_hac
+    )
+}
+
+plotmodel <- function(data, pred_df, no_n = FALSE){ 
+  if(no_n){
+  bind_cols(
+    data,
+    pred_df
+    ) %>%
+      ggplot(aes(x = year_dec, y = salary, ymin = lwr_hac, ymax = upr_hac)) + 
+      geom_point() + 
+      geom_ribbon(fill = "#E41A1C", alpha = 0.3, col = NA) +
+      labs(
+        x = "Year",
+        y = "Salary (SEK/month)",
+        caption = 'Shaded region indicates HAC 95% CI.'
+    )
+  }
+  else{
+  bind_cols(
+    data,
+    pred_df
+    ) %>%
+      ggplot(aes(x = year_dec, y = salary, color = n, ymin = lwr_hac, ymax = upr_hac)) + 
+      geom_point() + 
+      geom_ribbon(fill = "#E41A1C", alpha = 0.3, col = NA) +
+      labs(
+        x = "Year",
+        y = "Salary (SEK/month)",
+        caption = 'Shaded region indicates HAC 95% CI.'
+    )    
+  }
+}
+
+assess_model <- function(model, timeseries, data, no_n = FALSE, doexp = FALSE){
+  print(summary (model))
+
+  print(coeftest(model, vcov = NeweyWest, prewhite = F, adjust = T))
+
+  print(checkresiduals(model))
+  
+  if(doexp){
+    pred_df <- exp(predNeweyWest(model))
+  } else {
+    pred_df <- predNeweyWest(model)
+  }
+
+  pred_df$year_dec <- timeseries
+
+  plotmodel(data, pred_df, no_n)
+}
+```
+
+The data table is downloaded from Statistics Sweden. It is saved as a comma-delimited file without heading, 000000D2_20210506-201343.csv, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The table: Average monthly pay (total pay), non-manual workers all sectors (SLP), SEK by occupational group (SSYK), age, sex and year. SSYK 2012 214, Year 2014 - 2019
+
+The average age within each age group is used as a numeric value for graphical presentation and the linear model.
+
+The number of Engineers in each stratum is downloaded separately in the file 000000CZ_20210506-201420.csv.
+
+```{r , echo = TRUE}
+tb <- readfile("000000D2_20210506-201343.csv") %>%
+  rowwise() %>%
+  mutate(age_l = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[1]) %>%
+  rowwise() %>%
+  mutate(age_h = unlist(lapply(strsplit(substr(age, 1, 5), "-"), strtoi))[2]) %>%
+  mutate(age_n = (age_l + age_h) / 2)
+
+tbcount <- readfile("000000CZ_20210506-201420.csv")
+tbcount$salary <- replace(tbcount$salary, is.na(tbcount$salary), 0)
+
+tb$n <- tbcount$salary
+```
+
+Let's have a look at the age distribution for the different years for men and women.
+
+```{r , echo = TRUE}
+tb %>%
+  ggplot () +  
+    geom_point (mapping = aes(x = age_n,y = n, colour = year_n, shape = sex)) + 
+  labs(
+    x = "Age",
+    y = "Number of Engineers"
+  )
+```
+
+Create a time series for each gender. Time series can not have missing values, Impute missing values in time series with arima model. Women don't have any data for the age group 65-66 year, that group is filtered away.
+
+```{r , echo = TRUE}
+tb_men <- filter(tb, sex == "men")
+
+tb_women <- filter(tb, sex == "women") %>% filter(age_n != 65.5)
+
+summary(tb_men$salary)
+
+summary(tb_women$salary)
+
+tbts_men <- ts(tb_men$salary, start = 2014, freq = 6) %>% na_kalman("auto.arima")
+
+tbts_women <- ts(tb_women$salary, start = 2014, freq = 5) %>% na_kalman("auto.arima")
+
+tb_men$salary <- as.numeric(tbts_men)
+
+tb_women$salary <- as.numeric(tbts_women)
+```
+
+Let's use the decompose function from the stats package to view the trend, seasonal and random component of the time series.
+
+```{r , echo = TRUE}
+decompose(tbts_men) %>% plot()
+
+decompose(tbts_women) %>% plot()
+```
+
+Let´s have a look at the autocorrelation for the series. As expected the series for men shows a strong correlation with its sixth lag, i.e. the same age category the year before. The series for women shows a strong correlation with its fifth lag.
+
+```{r , echo = TRUE}
+acf(tbts_men, 36)
+
+acf(tbts_women, 30)
+```
+
+The partial autocorrelation function gives the partial correlation of a stationary time series with its own lagged values, regressed the values of the time series at all shorter lags.
+
+```{r , echo = TRUE}
+pacf(tbts_men, 36)
+
+pacf(tbts_women, 36)
+```
+
+The following plot shows the correlation between the salary and its yearly lag for three years.
+
+```{r , echo = TRUE}
+ts_lags(tbts_men, c(6, 12, 18))
+
+ts_lags(tbts_women, c(5, 10, 15))
+```
+
+Now, let's fit an arima model to the time series with the auto.arima from the forecast library. The summary shows that the auto.arima has identified a SAR(2) process with drift and additionally an element of random walk. The checkresiduals function plots the residuals from the arima model, the autocorrelation of the residuals and a histogram of the residual distribution. The Ljung-Box test suggests that only white noise remains in the residual. The ggseasonplot plots the salary distribution on age for the years 2014-2019, remember that we used age as a season in this approach.
+
+```{r , echo = TRUE}
+arimamodel_men <- auto.arima(tbts_men)
+
+summary(arimamodel_men)
+
+checkresiduals(arimamodel_men)
+
+ggseasonplot(tbts_men)
+```
+
+For women, the auto.arima is not able to pick up any SAR. The best fit is according to auto.arima is a constant drift. 
+
+```{r , echo = TRUE}
+arimamodel_women <- auto.arima(tbts_women)
+
+summary(arimamodel_women)
+
+checkresiduals(arimamodel_women)
+
+ggseasonplot(tbts_women)
+```
+
+An AR(p) model assumes that a time series Yt can be modelled by a linear function of the first p of its lagged values. Let's first start to model a seasonal SAR(1) model with the dynlm package. Each year the salaries increase by a fixed amount and a part that is relative to the salary size. I will use the NeweyWest function from the Sandwich package throughout this post to get heteroskedasticity- and autocorrelation-consistent error estimates.
+
+```{r , echo = TRUE}
+dynmodel_men <- dynlm(ts(salary) ~ L(ts(salary), 6), data = tb_men)
+
+assess_model(dynmodel_men, time(tbts_men)[7:36], tb_men[7:36,], no_n = TRUE) 
+
+dynmodel_women <- dynlm(ts(salary) ~ L(ts(salary), 5), data = tb_women)
+
+assess_model(dynmodel_women, time(tbts_women)[6:30], tb_women[6:30,], no_n = TRUE)
+```
+
+Now also add weights according to the number of engineers in the different strata. Note that the dynamic approach uses the information from the first year to predict the second. Weights from the first year have to be excluded. The fixed amount has decreased from 434 to 134 SEK and the relative part has increased from 0.94 % to 1.6 %. The fixed part is not statistically significant in either of these two models.
+
+```{r , echo = TRUE}
+dynmodel_men <- dynlm(ts(salary) ~ L(ts(salary), 6), data = tb_men, weights = n[7:36])
+
+assess_model(dynmodel_men, time(tbts_men)[7:36], tb_men[7:36,])
+
+dynmodel_women <- dynlm(ts(salary) ~ L(ts(salary), 5), data = tb_women, weights = n[6:30])
+
+assess_model(dynmodel_women, time(tbts_women)[6:30], tb_women[6:30,])
+```
+
+Let's drop the non-significant intercept. The relative salary raise increases to 1,94 % per year for men and 2,03 % for women.
+
+```{r , echo = TRUE}
+dynmodel_men <- dynlm(ts(salary) ~ L(ts(salary), 6) - 1, data = tb_men, weights = n[7:36])
+
+assess_model(dynmodel_men, time(tbts_men)[7:36], tb_men[7:36,])
+
+dynmodel_women <- dynlm(ts(salary) ~ L(ts(salary),5) - 1, data = tb_women, weights = n[6:30])
+
+assess_model(dynmodel_women, time(tbts_women)[6:30], tb_women[6:30,])
+```
+
+Now, let's compare with a linear model. The relative salary raise increases to 1,92 % per year for men and 2.06 % for women. 
+
+```{r , echo = TRUE}
+model_men <- lm(log(salary) ~ year_n + age_n + I(age_n^2), data = tb_men, weights = n)
+
+assess_model(model_men, time(tbts_men), tb_men, doexp = TRUE)
+
+model_women <- lm(log(salary) ~ year_n + age_n + I(age_n^2), data = tb_women, weights = n)
+
+assess_model(model_women, time(tbts_women), tb_women, doexp = TRUE)
+```
+
+Now also add the SAR(2). The summary shows that the R-squared bumps up a few notches for men, although it does not show that the second year lag is significant. However, the sandwich package assures us that the SAR(2) process is significant at the 95 % level. For women, the second year lag is not significant in the summary nor the HAC error estimate.
+
+```{r , echo = TRUE}
+dynmodel_men <- dynlm(ts(salary) ~ L(ts(salary), 6) + L(ts(salary), 12) - 1, data = tb_men, weights = n[13:36])
+
+assess_model(dynmodel_men, time(tbts_men)[13:36], tb_men[13:36,]) 
+
+dynmodel_women <- dynlm(ts(salary) ~ L(ts(salary), 5) + L(ts(salary), 10) - 1, data = tb_women, weights = n[11:30])
+
+summary (dynmodel_women)
+
+coeftest(dynmodel_women, vcov = NeweyWest, prewhite = F, adjust = T)
+```
