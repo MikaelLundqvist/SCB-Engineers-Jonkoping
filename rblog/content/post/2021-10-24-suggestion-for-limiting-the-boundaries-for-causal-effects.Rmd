@@ -1,0 +1,575 @@
+---
+title: "Suggestion for limiting the boundaries for causal effects"
+author: "Mikael Lundqvist"
+date: '2021-10-24'
+slug: suggestion-for-limiting-the-boundaries-for-causal-effects
+tags:
+- plot
+- R Markdown
+- regression
+categories: R
+---
+
+Congratulations to Joshua Angrist and Guido Imbens for the Nobel Prize for their work with causality. This post will also be about causality, although not from the work of Angrist or Imbens. A year ago I read The Book of Why by Judea Pearl and Dana MacKenzie. The Book of Why states that you can make causal conclusions from observational data if you know the directed acyclical graph (DAG) of the processes that has created the data. The Book of Why also states that you can not create the DAG based on data alone, i.e. you can not have the data as an input to an algorithm and get the DAG and its causal implications as output. The Book of Why also explains that Judea Pearl has studied Bayesian networks before he began his work with DAGs and causality. I hypothesise that some DAGS are more probable than other DAGs based on the statistics of the data. I am examining if there are ways to get boundaries of the causal effects that variables can have on each other within a limited system. I will use structure learning algorithms for Bayesian networks. I will take no regard to unmeasured confounders. This work is ongoing and the results are as is. I will use data from Statistics Sweden, for more information about the data see my previous posts.
+
+Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.
+
+First, define libraries and functions.
+
+```{r , echo = TRUE}
+library(tidyverse)
+library(gtools)
+library(pcalg)
+library(imputeMissings)
+library(bnlearn)
+library(dagitty)
+library(AER)
+library(lavaan)
+library(semPlot)
+library(psych)
+
+readfile <- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = "latin1"), na = c("..", "NA")) %>%
+  gather (starts_with("19"), starts_with("20"), key = "year", value = groupsize) %>%
+  drop_na() %>%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women <- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts <- read.csv("nuts.csv") %>%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+
+nuts %>% 
+  distinct (NUTS2_en) %>%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = 'Nomenclature des Unités Territoriales Statistiques (NUTS)')
+
+# normalize data
+tonormest <- function(tablearg){
+  norm_recipe <- recipes::recipe( ~ ., data = tablearg) %>%
+     recipes::step_normalize(recipes::all_numeric())
+
+  prepare <- recipes::prep(norm_recipe, training = tablearg)
+
+  return (recipes::bake(prepare, new_data = tablearg))
+}
+
+# not in set
+`%nin%` = Negate(`%in%`)
+
+# create a set of arcs not allowed in model
+createblacklist <- function(coln, exogenous, endogenous = NULL){
+  rbind(
+    expand.grid(endogenous, coln[coln %nin% endogenous]),
+    expand.grid(coln[coln %nin% exogenous], exogenous))
+}
+
+# list of models in bnlearn to evaluate
+bnmodels <- list(
+  h2pc = function(x, blacklist = blacklist) bnlearn::h2pc(x, blacklist = blacklist),
+  hpc = function(x, blacklist = blacklist) bnlearn::hpc(x, blacklist = blacklist),
+  fast.iamb = function(x, blacklist = blacklist) bnlearn::fast.iamb(x, blacklist = blacklist),
+  inter.iamb = function(x, blacklist = blacklist) bnlearn::inter.iamb(x, blacklist = blacklist),
+  si.hiton.pc = function(x, blacklist = blacklist) bnlearn::si.hiton.pc(x, blacklist = blacklist),
+  iamb.fdr = function(x, blacklist = blacklist) bnlearn::iamb.fdr(x, blacklist = blacklist),
+  iamb = function(x, blacklist = blacklist) bnlearn::iamb(x, blacklist = blacklist),
+  gs = function(x, blacklist = blacklist) bnlearn::gs(x, blacklist = blacklist),
+  mmpc = function(x, blacklist = blacklist) bnlearn::mmpc(x, blacklist = blacklist),
+  pc = function(x, blacklist = blacklist) bnlearn::pc.stable(x, blacklist = blacklist),
+  hc = function(x, blacklist = blacklist) bnlearn::hc(x, blacklist = blacklist),
+  tabu = function(x, blacklist = blacklist) bnlearn::tabu(x, blacklist = blacklist),
+  mmhc = function(x, blacklist = blacklist) bnlearn::mmhc(x, blacklist = blacklist),
+  rsmax2 = function(x, blacklist = blacklist) bnlearn::rsmax2(x, blacklist = blacklist))
+
+# evaluate all models on a dataset given a blacklist
+evaluatemodel <- function(tablearg, blacklist){
+  evalslfunc <- function(f){
+    sltree <- f (data.frame(map(tablearg, inttonumeric)), blacklist = blacklist)
+    neltree <- as.graphNEL(sltree)
+    bg <- addBgKnowledge(neltree)
+    if (length(bg) == 0){return (Inf)}
+    g <- dagitty(pcalg2dagitty(t(as(bg, "matrix")), colnames(tablearg), type = "dag"))
+    r <- localTests(
+      g,
+      tablearg, "cis",
+      sample.cov = lavCor(tablearg),
+      sample.nobs = nrow( tablearg ),
+      max.conditioning.variables = 2,
+      R = 100)
+    if (dim(r)[1] == 0){return (0)}
+    return(mean(abs(r$estimate)))
+  }
+
+  return(data.frame(lapply(bnmodels, evalslfunc)))
+}
+
+# Change all variables of integer type to a numeric type
+inttonumeric <- function(x){
+  if(is.integer(x)){
+    return(as.numeric(x))
+  }
+  else{
+    return(x)
+  }
+}
+
+# create a structured model from a dataset and a structured learning algorithm
+createmodel <- function(tablearg, f, blacklist){
+   sltree <- f (data.frame(map(tablearg, inttonumeric)), blacklist = blacklist)
+   neltree <- as.graphNEL(sltree)
+   bg <- addBgKnowledge(neltree)
+   g <- dagitty(pcalg2dagitty(t(as(bg, "matrix")), colnames(tablearg), type = "dag"))
+
+   return(g)
+}
+
+# change the sign from dagitty syntax to lavaan syntax
+changesign <- function(s){
+  if(s == "->"){
+    return("~")
+  }
+  if (s == "--"){
+    return("~~")
+  }
+}
+
+
+# create a list of all combinations of variables, one variable from each factor from the factor analysis, and subsets thereof
+allcombn <- function(gridarg){
+  allcombn_worker <- function(gridarg){
+    sumcomb <- vector()
+    for(i in data.frame(t(gridarg))){
+      subcomb <- combn(i, length(gridarg) - 1)
+      for(j in data.frame(subcomb)){
+        sumcomb <- rbind(sumcomb, j)
+      }
+    }
+    return(unique(sumcomb))
+  }  
+  
+  sumcomb <- list()
+  sumcomb <- append(sumcomb, split(gridarg, seq(nrow(gridarg))))
+  subcomb <- allcombn_worker(gridarg)
+  if(length(data.frame(subcomb)) > 0){
+    sumcomb <- append(sumcomb, allcombn(data.frame(subcomb)))
+  }
+  return(sumcomb)
+}
+
+# convert a list of variables, use each list element as a blacklist, find the structured learning algorithm with the lowest deviance, use that algorithm and create a model
+# return:
+# model with the lowest deviance
+# the deviances for the different models
+# the name of the algorithm with the lowest deviance 
+combtodag <- function(mycomb, tablearg){
+  summary_table <- vector()
+  for(i in 1:length(mycomb)){
+    j <- unlist(mycomb[i])
+    blacklist <- createblacklist(colnames(tablearg), j)
+    evaluatedmodel <- evaluatemodel(tablearg, blacklist)
+    g <- createmodel(tablearg, match.fun(colnames(sort(evaluatedmodel)) [1]), blacklist)
+    v <- as.character(j)
+    length(v) <- 5
+    summary_table <- rbind(summary_table, c(as.character(g), t(evaluatedmodel), v,  colnames(sort(evaluatedmodel)) [1]))
+  }
+  return(summary_table)
+}
+
+# calculate the causal effect of the variable from to variable to using all models in listofmodels using all minimal adjustment sets that are given by the model
+calceffect <- function(listofmodels, from, to, tablearg){
+  summary_table <- vector()
+  expadjsets <- function(adjsets){
+    paste0(to, " ~ ", from, " + ", paste(unlist(adjsets), collapse = " + "))
+  }
+  calclmeffect <- function(eq){
+    (summary(lm(as.formula(eq), tablearg)) %>% broom::tidy())[2,]
+  }
+  for(i in 1:nrow(data.frame(listofmodels))){
+    g <- as.dagitty(listofmodels[i, 1])
+    exogenous <- listofmodels[i, 16:20]
+    adjsets <- adjustmentSets(g, from, to)
+    if(is.null(unlist(adjsets)) & (length(adjsets) == 1)){
+      eq <- paste(to, " ~ ",  from)
+    } else {
+      if(length(adjsets) > 0){
+        eq <- map(adjsets, expadjsets)
+      } else{
+         eq <- NULL
+      }
+    }
+    
+    if (!is.null(eq)){
+      mytest <- map(unlist(eq), calclmeffect)
+    } else{
+      mytest <- NULL
+    }
+
+    v <- as.character(exogenous)
+    length(v) <- 5
+    v1 <- t(data.frame(v))
+    colnames(v1) <- c("1" , "2", "3", "4", "5")
+    if(!is.null(mytest)){
+      summary_table <- rbind(summary_table, cbind(Reduce('rbind', mytest), t(data.frame(eq)), v1))
+    }
+  }
+  return(summary_table)
+}
+
+# create an SEM model for each dagitty model and return a table containing the estimated parameters of the fitted model and a variety of fit measures for each model
+dagitty2sem <- function(mycomb, tablearg){
+  summary_table <- vector()
+  summary_table2 <- vector()
+  for(i in 1:nrow(data.frame(mycomb))){
+    g <- as.dagitty(mycomb[i, 1])
+    exogenous <- mycomb[i, 16:20]
+    fit <- suppressWarnings(sem(paste(dagityy2lavaan(g, exogenous), collapse = ''), data = tablearg))
+    fit_m <- fitmeasures(fit)
+    v <- as.character(exogenous)
+    length(v) <- 5
+    sumfit <- parameterEstimates(fit)
+    summary_table2 <- rbind(summary_table2, cbind(sumfit, matrix(v, ncol = 5, nrow = nrow(sumfit), byrow = TRUE)))
+    summary_table <- rbind(summary_table, c(t(fit_m), v))
+  }
+
+  summary_table <- cbind(summary_table[,43:47], data.frame(map(data.frame(summary_table[,1:42]), as.numeric)))
+  colnames(summary_table) <- c(c("1" , "2", "3", "4", "5"), names(fit_m))
+
+  summary_table2 <- summary_table %>% 
+    left_join(summary_table2, by = c("1" , "2", "3", "4", "5"))
+
+  return(summary_table2)
+}
+
+# convert a model with dagitty syntax to lavaan syntax. Relations between exogenous variables will be replaced by correlations
+dagityy2lavaan <- function(model_arg, exogenous){
+  temp <- str_split(model_arg, "\n") %>%
+    unlist()
+  temp <- lapply("->|--", grep, x = temp, value = TRUE) %>%
+    unlist() %>%
+    data.frame() %>%
+    as_tibble()
+  
+  colnames(temp) <- "data"
+
+  temp <- temp %>% 
+    rowwise() %>% 
+    mutate(lhs = unlist(str_split(data, " "))[1]) %>% 
+    mutate(rhs = unlist(str_split(data, " "))[3]) %>% 
+    mutate(sign = unlist(str_split(data, " "))[2])
+
+  # one variable can be exogenous but not both
+  endorel <- 
+    temp %>% dplyr::filter(!(lhs %in% exogenous & rhs %in% exogenous))
+  exorel <- temp %>% 
+    dplyr::filter(lhs %in% exogenous & rhs %in% exogenous)
+
+  exorel$sign <- "--"
+
+  temp <- data.frame(rbind(endorel, exorel)) %>%
+    rowwise() %>% mutate(mydata3 = paste(rhs, changesign(sign), lhs, "\n"))
+
+  return(temp$mydata3)
+}
+
+filtergt0_3 <- function(loadings){
+  loadings <- data.frame(loadings)
+  rownames(loadings) <- rownames(factorloadings)
+  rownames(loadings)[which(abs(loadings) > 0.3)]
+}
+```
+
+The data tables are downloaded from Statistics Sweden. They are saved as a comma-delimited file without heading, http://www.statistikdatabasen.scb.se/pxweb/en/ssd/.
+
+The tables: 
+
+UF0506A1_20210926-160849.csv: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2020 NUTS 2 level 2008- 10 year intervals (16-74)
+
+000000CG_20210926-160057.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2020 Monthly salary All sectors.
+
+000000CD_20210926-160259.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2020 Number of employees All sectors.
+
+The data is aggregated, the size of each group is in the column groupsize.
+
+I have also included some calculated predictors from the original data.
+
+nremployees: The number of employees in each group defined by ssyk, edulevel, region and year
+
+perc_women: The percentage of women within each group defined by ssyk, edulevel, region and year
+
+perc_women_region: The percentage of women within each group defined by ssyk, year and region
+
+regioneduyears: The average number of education years per capita within each group defined by ssyk, year and region
+
+eduquotient: The quotient between regioneduyears for men and women
+
+salaryquotient: The quotient between salary for men and women within each group defined by ssyk, year and region
+
+perc_women_ssyk_region: The percentage of women within each group defined by ssyk, year and region
+
+```{r, echo = TRUE} 
+numedulevel <- read.csv("edulevel_1.csv") 
+
+numedulevel[, 2] <- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+tb <- readfile("000000CG_20210926-160057.csv") 
+tb <- readfile("000000CD_20210926-160259.csv") %>% 
+  left_join(tb, by = c("region", "year", "sex", "sector","occuptional  (SSYK 2012)")) 
+
+tb <- readfile("UF0506A1_20210926-160849.csv") %>%  
+  right_join(tb, by = c("region", "year", "sex")) %>%
+  right_join(numedulevel, by = c("level of education" = "level.of.education")) %>%
+  filter(!is.na(eduyears)) %>%  
+  mutate(edulevel = `level of education`) %>%
+  group_by(edulevel, region, year, sex, `occuptional  (SSYK 2012)`) %>%
+  mutate(groupsize_all_ages = sum(groupsize)) %>%  
+  group_by(edulevel, region, year, `occuptional  (SSYK 2012)`) %>% 
+  mutate (perc_women = perc_women (groupsize_all_ages[1:2])) %>% 
+  mutate (nremployees = sum(groupsize.x)) %>%
+  mutate (salary = (groupsize.y[2] * groupsize.x[2] + groupsize.y[1] * groupsize.x[1])/(groupsize.x[2] + groupsize.x[1])) %>%
+  group_by (sex, year, region, `occuptional  (SSYK 2012)`) %>%
+  mutate(regioneduyears_sex = sum(groupsize * eduyears) / sum(groupsize)) %>%
+  mutate(regiongroupsize = sum(groupsize)) %>% 
+  mutate(nremployees_sex = groupsize.x) %>%
+  group_by(region, year, `occuptional  (SSYK 2012)`) %>%
+  mutate (sum_pop = sum(groupsize)) %>%
+  mutate (regioneduyears = sum(groupsize * eduyears) / sum(groupsize)) %>%
+  mutate (perc_women_region = perc_women (regiongroupsize[1:2])) %>% 
+  mutate (eduquotient = regioneduyears_sex[2] / regioneduyears_sex[1]) %>% 
+  mutate (salary_sex = groupsize.y) %>%
+  mutate (salaryquotient = salary_sex[2] / salary_sex[1]) %>%   
+  mutate (perc_women_ssyk_region = perc_women(nremployees_sex[1:2])) %>%  
+  left_join(nuts %>% distinct (NUTS2_en, NUTS2_sh), by = c("region" = "NUTS2_en")) %>%
+  drop_na()
+
+summary(tb)
+
+tbtemp <- ungroup(tb) %>% dplyr::select(salary, nremployees, year_n, sum_pop, regioneduyears, perc_women_region, salaryquotient, eduquotient, perc_women_ssyk_region, `occuptional  (SSYK 2012)`)
+
+tb_unique <- unique(tbtemp)
+```
+
+Data is normalised before analysis. In this way, the scale of the variables will not affect the analysis. Data is imputed by replacing NA with the median.
+
+```{r, echo = TRUE} 
+  tb_unique_norm <- tb_unique
+  tb_unique_norm <- data.frame(data.matrix(tonormest(tb_unique)))
+  tb_unique_norm <- imputeMissings::impute(tb_unique_norm, object = NULL, method = "median/mode", flag = FALSE)
+```
+
+I will use the package bnlearn to approximate a DAG from the data. In bnlearn, there are several algorithms for this purpose. A way to use prior knowledge together with the algorithms for structured learning in the bnlearn package is to specify a blacklist or a whitelist. Arcs in the whitelist are always included in the network. Arcs in the blacklist are never included in the network. If we don't know a priori what arcs to include in the blacklist or whitelist then we can evaluate several models with different settings. To limit the number of models to evaluate I will do some assumptions. I will assume that the variation in the model can be expressed by using fewer variables, e.g. Principal Component Analysis, for this application I will use factor analysis. I will assume that the number of exogenous variables in the model is equal to or less than the number of factors suggested by factor analysis. I will use the `Psych` package’s `fa.parallel` function to determine the number of factors. The warning from the factor analysis is ignored. A better choice of rotation and factoring method could solve this, future improvements. The factors with loading greater than 0.3 are chosen for future processing. 
+
+```{r, echo = TRUE, fig.cap = 'Parallell Analysis Scree Plots'}  
+   fatest <- fa.parallel(tb_unique_norm, fm = "minres", fa = "fa")
+```
+
+```{r, echo = TRUE} 
+  factoranalysis <- fa(tb_unique_norm, nfactors = fatest$nfact, rotate = "oblimin", fm = "minres")
+  print(factoranalysis$loadings, cutoff = 0.3)
+  
+  factorloadings <- print(factoranalysis$loadings, cutoff = 0.3)
+  
+  mygrid <- expand.grid(map(data.frame(factorloadings[,1:5]), filtergt0_3)) 
+  
+  mygrid %>% 
+    knitr::kable(
+      booktabs = TRUE,
+      caption = 'Table of proposed exogenous variables to evaluate')
+```
+  
+I will start by creating all possible sets and subsets from the set of five exogenous variables that were selected by the factor analysis. For each set, I will create a model from a set of structured learning algorithms from the bnlearn package. Each algorithm is evaluated against how well it minimizes the deviations from the testable implications in the model and the dataset. The function localTests from the dagitty package is used to get a numeric value of the testable implications. The mean deviation from all testable implications by localTests is used. This could favour more complex models since there are fewer testable implications in complex than in simple models. The version of localTests in my test uses a combination of categorical and continuous data. A more advanced algorithm could have been used to select the model that minimizes the deviation. The models so far are created in dagitty syntax. 
+  
+From the dagitty syntax, I will create a Structural Equation Model in lavaan for each model created in the earlier step. Each SEM model is evaluated for a variety of fit measures to assess the global fit of the latent variable model. No latent variables are evaluated at this stage but you could perhaps imagine that there is a correspondence between the factor analysis and some unmeasured latent variables. The model parameters for each model is also stored for later analysis.
+
+The table of models and the table of evaluated models are joined to allow extra comparisons.
+
+Since the generation of dagitty models takes a while I have prepared that table in a file.
+  
+```{r, echo = TRUE} 
+  list_of_exogenous_variables <- allcombn(mygrid)
+  #table_of_dagitty_models <- combtodag(list_of_exogenous_variables, tb_unique_norm)
+  table_of_dagitty_models <- read.csv("table_of_dagitty_models.csv")
+  table_of_dagitty_models <- table_of_dagitty_models[,2:22] 
+  table_of_sem_models <- dagitty2sem(table_of_dagitty_models, tb_unique_norm)
+  
+  table_of_dagitty_models_df <- data.frame(table_of_dagitty_models)
+
+  colnames(table_of_dagitty_models_df) <- 
+    c("model", 
+      names(bnmodels), 
+      c("1" , "2", "3", "4", "5", 
+        "algorithm"))
+  
+  dagitty_and_sem_table <- table_of_dagitty_models_df %>% 
+    left_join(table_of_sem_models, by = c("1" , "2", "3", "4", "5"))
+```
+  
+```{r, echo = TRUE, fig.cap = 'The figure shows that there is a tradeoff between the pvalue and the Root Mean Square Error of the model'} 
+  ggplot(dagitty_and_sem_table) + 
+    geom_point(aes(x = pvalue.x, y = rmsea))
+```
+  
+```{r, echo = TRUE, fig.cap = 'The figure shows how the deviance measured by localTests and the model complexity measured in aic are related'} 
+  dagitty_and_sem_table %>% 
+    mutate(deviance = as.numeric(pmin(h2pc, hpc, fast.iamb, inter.iamb, si.hiton.pc, iamb.fdr, iamb, gs, mmpc, pc,  hc, tabu, mmhc, rsmax2))) %>% 
+    ggplot() + 
+    geom_point(aes(x = aic, y = deviance))
+```
+  
+From the table, we can examine how many of the models contained an arc, i.e. a relation from one variable to another. We find that the direction of the relation from quotient between the average number of education years for men and women to quotient between salary for men and women is found in 121 out of 143 tested models. The estimation of the relationship is 0.32 standard units. Only the models with a pvalue less than 0.05 are counted.
+
+If we use the ten (arbitrary number, could be optimized) arcs that occur are most frequent in the models that I have analysed and use those arcs to create a whitelist, i.e. arcs that must be present in the model, when estimating a new model with the hills climbing algorithm we get a model that can be used to approximate the causal effects that can be estimated from the data. The plot shows the model. In this model year and percentage of women in the ssyk are exogenous variables and the rest of the variables are endogenous.
+When looking at the model’s parameter values and sorting it by the highest effect we find that the effect of per cent women in the region on quotient between the average number of education years for men and women is the highest of all effects between continuous variables, 79 out of 143 models has this direction of this relation.
+
+```{r, echo = TRUE} 
+  temp <- combn(colnames(tb_unique_norm), 2)
+  list_of_var_combinations <- cbind(temp, rbind(temp[2,], temp[1,]))
+
+  summary_table <- vector()
+  for(i in data.frame(list_of_var_combinations)){
+    est <- dagitty_and_sem_table %>% 
+      filter(lhs == i[1], rhs == i[2], pvalue.x < 0.05) %>% 
+      dplyr::select(est)
+    summary_table <- rbind(
+      summary_table, 
+      c(i, 
+        (t(summary(est))), 
+        nrow(est), 
+        sd(t(est))))
+  }
+
+  summary_table <- unique(cbind(summary_table[,1:8], data.frame(map(data.frame(summary_table[,9:10]), as.numeric)))) %>%
+    arrange(-X1)
+  
+  summary_table[1:10,] %>%
+    select(`1`, `2`, X1) %>%
+    rename(lhs = `1`) %>%
+    rename(rhs = `2`) %>%
+    rename(nr_of_models = X1) %>%
+    knitr::kable(
+      booktabs = TRUE,
+      caption = 'The ten most common arcs of all 143 models')
+  
+  whitelist <- summary_table[1:10, 2:1]
+  
+  hctree <- hc(tb_unique_norm, whitelist = whitelist)
+  
+  neltree <- as.graphNEL(hctree)
+  bg <- addBgKnowledge(neltree)
+  if (length(bg) == 0){
+    return (Inf)
+  }
+  
+  g <- dagitty(pcalg2dagitty(t(as(bg, "matrix")), colnames(tb_unique_norm), type = "dag"))
+  
+  fit <- sem(paste(dagityy2lavaan(g, NULL), collapse = ''), data = tb_unique_norm)
+  
+  semPaths(fit, 'std', 'est', curveAdjacent = TRUE, style = "lisrel")
+  
+  r <- localTests(
+    g,
+    tb_unique_norm, "cis",
+    sample.cov = lavCor(tb_unique_norm),
+    sample.nobs = nrow( tb_unique_norm ),
+    max.conditioning.variables = 2,
+    R = 100)
+  
+  parameterEstimates(fit) %>% 
+    select(lhs, op, rhs, est, pvalue) %>%
+    arrange(-abs(est)) %>%
+    knitr::kable(
+      booktabs = TRUE,
+      caption = 'Parameters for the approximate model sorted in falling effect size')
+```  
+
+```{r, echo = TRUE, fig.cap = 'This figure shows the testable implications from localTests'} 
+  plotLocalTestResults( r )
+```
+
+```{r, echo = TRUE, fig.cap = 'The figure shows how the quotient between salary for men and women is affected by the quotient between the average number of education years for men and women'} 
+  ggplot(data = tb_unique_norm, mapping = aes(x = eduquotient, y = salaryquotient)) + 
+    geom_boxplot(mapping = aes(group = cut_width(eduquotient, 0.4)))
+```
+
+```{r, echo = TRUE, fig.cap = 'The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region'}
+  ggplot(tb_unique_norm) + 
+    geom_point(aes(x = perc_women_region, y = eduquotient))
+```
+  
+If you know the DAG it is possible to identify the sets of covariates that allow unbiased estimation of causal effects with the function adjustmentSets in the dagitty package. I will calculate the possible adjustment sets for all models created in earlier steps and compare them. Let's start by calculating the causal effect of the quotient between the average number of education years for men and women on the quotient between salary for men and women. 
+  
+```{r, echo = TRUE} 
+  causaleffect <- calceffect(table_of_dagitty_models, "eduquotient", "salaryquotient", tb_unique_norm)
+  
+  causaleffect_df <- data.frame(map(causaleffect, unlist))
+  
+  colnames(causaleffect_df) <- colnames(causaleffect)
+
+  dagitty_sem_and_causal_table <- dagitty_and_sem_table %>% 
+    left_join(causaleffect_df, by = c("1" , "2", "3", "4", "5"))
+```  
+  
+```{r, echo = TRUE, fig.cap = 'The figure shows the estimate for the causal effect of the quotient between the average number of education years for men and women on quotient between salary for men and women from all tested models and the pvalue and aic of the model'}   
+  dagitty_sem_and_causal_table %>% 
+    filter(lhs == "salaryquotient", rhs == "eduquotient") %>% 
+    ggplot() + 
+      geom_point(aes(x = estimate, y = pvalue.x, color = aic))
+```
+
+```{r, echo = TRUE, fig.cap = 'The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region for the different covariates'}
+  dagitty_sem_and_causal_table %>% 
+    mutate(modelnumber = as.integer(factor(`t(data.frame(eq))`))) %>%
+    filter(lhs == "salaryquotient", rhs == "eduquotient") %>% 
+    ggplot() + 
+      geom_point(aes(x = modelnumber, y = estimate, color = pvalue.x))
+```
+
+```{r, echo = TRUE} 
+  dagitty_sem_and_causal_table %>% 
+    filter(lhs == "salaryquotient", rhs == "eduquotient") %>% 
+    mutate(modelnumber = as.integer(factor(`t(data.frame(eq))`))) %>%
+    mutate(linear_equation_with_covariates = `t(data.frame(eq))`) %>%
+    group_by(modelnumber) %>%
+    mutate(frequency = n()) %>%  
+    arrange(modelnumber) %>%
+    select(linear_equation_with_covariates, modelnumber, estimate, frequency) %>%
+    unique() %>%
+    knitr::kable(
+      booktabs = TRUE,
+      caption = 'Table showing the covariates needed for different models to calculate the effect')
+```
+  
+```{r, echo = TRUE, fig.cap = 'The figure shows how quotient between salary for men and women is affected by quotient between the average number of education years for men and women and the covariate per cent women in the region'}
+  ggplot(tb_unique_norm) + 
+    geom_point(aes(x = eduquotient, y = salaryquotient, color = perc_women_region))
+```
+  
+As a second example, I will calculate the causal effect of per cent women in the region on quotient between the average number of education years for men and women.
+  
+```{r, echo = TRUE} 
+  causaleffect <- calceffect(table_of_dagitty_models, "perc_women_region", "eduquotient", tb_unique_norm)
+  
+  causaleffect_df <- data.frame(map(causaleffect, unlist))
+  
+  colnames(causaleffect_df) <- colnames(causaleffect)
+  
+  dagitty_sem_and_causal_table <- dagitty_and_sem_table %>% 
+    left_join(causaleffect_df, by = c("1" , "2", "3", "4", "5"))
+```
+
+```{r, echo = TRUE, fig.cap = 'The figure shows the estimate for the causal effect of per cent women in the region on quotient between the average number of education years for men and women'} 
+  dagitty_sem_and_causal_table %>% 
+    filter(lhs == "eduquotient", rhs == "perc_women_region") %>% 
+    ggplot() + 
+      geom_point(aes(x = estimate, y = pvalue.x, color = aic))
+```
+
+```{r, echo = TRUE, fig.cap = 'The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region for the different covariates'}
+  dagitty_sem_and_causal_table %>% 
+    mutate(modelnumber = as.integer(factor(`t(data.frame(eq))`))) %>%
+    filter(lhs == "eduquotient", rhs == "perc_women_region") %>% 
+    ggplot() + 
+      geom_point(aes(x = modelnumber, y = estimate, color = aic))
+```  

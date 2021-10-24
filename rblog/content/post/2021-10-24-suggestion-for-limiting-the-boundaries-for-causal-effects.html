@@ -1,0 +1,1484 @@
+---
+title: "Suggestion for limiting the boundaries for causal effects"
+author: "Mikael Lundqvist"
+date: '2021-10-24'
+slug: suggestion-for-limiting-the-boundaries-for-causal-effects
+tags:
+- plot
+- R Markdown
+- regression
+categories: R
+---
+
+
+
+<p>Congratulations to Joshua Angrist and Guido Imbens for the Nobel Prize for their work with causality. This post will also be about causality, although not from the work of Angrist or Imbens. A year ago I read The Book of Why by Judea Pearl and Dana MacKenzie. The Book of Why states that you can make causal conclusions from observational data if you know the directed acyclical graph (DAG) of the processes that has created the data. The Book of Why also states that you can not create the DAG based on data alone, i.e. you can not have the data as an input to an algorithm and get the DAG and its causal implications as output. The Book of Why also explains that Judea Pearl has studied Bayesian networks before he began his work with DAGs and causality. I hypothesise that some DAGS are more probable than other DAGs based on the statistics of the data. I am examining if there are ways to get boundaries of the causal effects that variables can have on each other within a limited system. I will use structure learning algorithms for Bayesian networks. I will take no regard to unmeasured confounders. This work is ongoing and the results are as is. I will use data from Statistics Sweden, for more information about the data see my previous posts.</p>
+<p>Statistics Sweden use NUTS (Nomenclature des Unités Territoriales Statistiques), which is the EU’s hierarchical regional division, to specify the regions.</p>
+<p>First, define libraries and functions.</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.5     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.0.2     v forcats 0.5.1</code></pre>
+<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## Warning: package &#39;tibble&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## Warning: package &#39;dplyr&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## Warning: package &#39;forcats&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(gtools)</code></pre>
+<pre><code>## Warning: package &#39;gtools&#39; was built under R version 4.0.5</code></pre>
+<pre class="r"><code>library(pcalg)</code></pre>
+<pre><code>## Warning: package &#39;pcalg&#39; was built under R version 4.0.5</code></pre>
+<pre class="r"><code>library(imputeMissings)</code></pre>
+<pre><code>## Warning: package &#39;imputeMissings&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## 
+## Attaching package: &#39;imputeMissings&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     compute</code></pre>
+<pre class="r"><code>library(bnlearn)</code></pre>
+<pre><code>## Warning: package &#39;bnlearn&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## 
+## Attaching package: &#39;bnlearn&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:imputeMissings&#39;:
+## 
+##     impute</code></pre>
+<pre><code>## The following objects are masked from &#39;package:pcalg&#39;:
+## 
+##     dsep, pdag2dag, shd, skeleton</code></pre>
+<pre class="r"><code>library(dagitty)</code></pre>
+<pre><code>## Warning: package &#39;dagitty&#39; was built under R version 4.0.4</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dagitty&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:bnlearn&#39;:
+## 
+##     ancestors, children, descendants, parents, spouses</code></pre>
+<pre><code>## The following object is masked from &#39;package:pcalg&#39;:
+## 
+##     randomDAG</code></pre>
+<pre class="r"><code>library(AER)</code></pre>
+<pre><code>## Warning: package &#39;AER&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## Loading required package: car</code></pre>
+<pre><code>## Warning: package &#39;car&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## Warning: package &#39;carData&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:gtools&#39;:
+## 
+##     logit</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre><code>## Loading required package: lmtest</code></pre>
+<pre><code>## Warning: package &#39;lmtest&#39; was built under R version 4.0.4</code></pre>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## Warning: package &#39;zoo&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<pre><code>## Loading required package: sandwich</code></pre>
+<pre><code>## Warning: package &#39;sandwich&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## Loading required package: survival</code></pre>
+<pre><code>## Warning: package &#39;survival&#39; was built under R version 4.0.5</code></pre>
+<pre class="r"><code>library(lavaan)</code></pre>
+<pre><code>## Warning: package &#39;lavaan&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## This is lavaan 0.6-9
+## lavaan is FREE software! Please report any bugs.</code></pre>
+<pre class="r"><code>library(semPlot)</code></pre>
+<pre><code>## Warning: package &#39;semPlot&#39; was built under R version 4.0.3</code></pre>
+<pre class="r"><code>library(psych)</code></pre>
+<pre><code>## Warning: package &#39;psych&#39; was built under R version 4.0.5</code></pre>
+<pre><code>## 
+## Attaching package: &#39;psych&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:lavaan&#39;:
+## 
+##     cor2cov</code></pre>
+<pre><code>## The following object is masked from &#39;package:car&#39;:
+## 
+##     logit</code></pre>
+<pre><code>## The following object is masked from &#39;package:gtools&#39;:
+## 
+##     logit</code></pre>
+<pre><code>## The following objects are masked from &#39;package:ggplot2&#39;:
+## 
+##     %+%, alpha</code></pre>
+<pre class="r"><code>readfile &lt;- function (file1){read_csv (file1, col_types = cols(), locale = readr::locale (encoding = &quot;latin1&quot;), na = c(&quot;..&quot;, &quot;NA&quot;)) %&gt;%
+  gather (starts_with(&quot;19&quot;), starts_with(&quot;20&quot;), key = &quot;year&quot;, value = groupsize) %&gt;%
+  drop_na() %&gt;%
+  mutate (year_n = parse_number (year))
+}
+
+perc_women &lt;- function(x){  
+  ifelse (length(x) == 2, x[2] / (x[1] + x[2]), NA)
+} 
+
+nuts &lt;- read.csv(&quot;nuts.csv&quot;) %&gt;%
+  mutate(NUTS2_sh = substr(NUTS2, 3, 4))
+
+nuts %&gt;% 
+  distinct (NUTS2_en) %&gt;%
+  knitr::kable(
+    booktabs = TRUE,
+    caption = &#39;Nomenclature des Unités Territoriales Statistiques (NUTS)&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-1">Table 1: </span>Nomenclature des Unités Territoriales Statistiques (NUTS)</caption>
+<thead>
+<tr class="header">
+<th align="left">NUTS2_en</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">SE11 Stockholm</td>
+</tr>
+<tr class="even">
+<td align="left">SE12 East-Central Sweden</td>
+</tr>
+<tr class="odd">
+<td align="left">SE21 Småland and islands</td>
+</tr>
+<tr class="even">
+<td align="left">SE22 South Sweden</td>
+</tr>
+<tr class="odd">
+<td align="left">SE23 West Sweden</td>
+</tr>
+<tr class="even">
+<td align="left">SE31 North-Central Sweden</td>
+</tr>
+<tr class="odd">
+<td align="left">SE32 Central Norrland</td>
+</tr>
+<tr class="even">
+<td align="left">SE33 Upper Norrland</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># normalize data
+tonormest &lt;- function(tablearg){
+  norm_recipe &lt;- recipes::recipe( ~ ., data = tablearg) %&gt;%
+     recipes::step_normalize(recipes::all_numeric())
+
+  prepare &lt;- recipes::prep(norm_recipe, training = tablearg)
+
+  return (recipes::bake(prepare, new_data = tablearg))
+}
+
+# not in set
+`%nin%` = Negate(`%in%`)
+
+# create a set of arcs not allowed in model
+createblacklist &lt;- function(coln, exogenous, endogenous = NULL){
+  rbind(
+    expand.grid(endogenous, coln[coln %nin% endogenous]),
+    expand.grid(coln[coln %nin% exogenous], exogenous))
+}
+
+# list of models in bnlearn to evaluate
+bnmodels &lt;- list(
+  h2pc = function(x, blacklist = blacklist) bnlearn::h2pc(x, blacklist = blacklist),
+  hpc = function(x, blacklist = blacklist) bnlearn::hpc(x, blacklist = blacklist),
+  fast.iamb = function(x, blacklist = blacklist) bnlearn::fast.iamb(x, blacklist = blacklist),
+  inter.iamb = function(x, blacklist = blacklist) bnlearn::inter.iamb(x, blacklist = blacklist),
+  si.hiton.pc = function(x, blacklist = blacklist) bnlearn::si.hiton.pc(x, blacklist = blacklist),
+  iamb.fdr = function(x, blacklist = blacklist) bnlearn::iamb.fdr(x, blacklist = blacklist),
+  iamb = function(x, blacklist = blacklist) bnlearn::iamb(x, blacklist = blacklist),
+  gs = function(x, blacklist = blacklist) bnlearn::gs(x, blacklist = blacklist),
+  mmpc = function(x, blacklist = blacklist) bnlearn::mmpc(x, blacklist = blacklist),
+  pc = function(x, blacklist = blacklist) bnlearn::pc.stable(x, blacklist = blacklist),
+  hc = function(x, blacklist = blacklist) bnlearn::hc(x, blacklist = blacklist),
+  tabu = function(x, blacklist = blacklist) bnlearn::tabu(x, blacklist = blacklist),
+  mmhc = function(x, blacklist = blacklist) bnlearn::mmhc(x, blacklist = blacklist),
+  rsmax2 = function(x, blacklist = blacklist) bnlearn::rsmax2(x, blacklist = blacklist))
+
+# evaluate all models on a dataset given a blacklist
+evaluatemodel &lt;- function(tablearg, blacklist){
+  evalslfunc &lt;- function(f){
+    sltree &lt;- f (data.frame(map(tablearg, inttonumeric)), blacklist = blacklist)
+    neltree &lt;- as.graphNEL(sltree)
+    bg &lt;- addBgKnowledge(neltree)
+    if (length(bg) == 0){return (Inf)}
+    g &lt;- dagitty(pcalg2dagitty(t(as(bg, &quot;matrix&quot;)), colnames(tablearg), type = &quot;dag&quot;))
+    r &lt;- localTests(
+      g,
+      tablearg, &quot;cis&quot;,
+      sample.cov = lavCor(tablearg),
+      sample.nobs = nrow( tablearg ),
+      max.conditioning.variables = 2,
+      R = 100)
+    if (dim(r)[1] == 0){return (0)}
+    return(mean(abs(r$estimate)))
+  }
+
+  return(data.frame(lapply(bnmodels, evalslfunc)))
+}
+
+# Change all variables of integer type to a numeric type
+inttonumeric &lt;- function(x){
+  if(is.integer(x)){
+    return(as.numeric(x))
+  }
+  else{
+    return(x)
+  }
+}
+
+# create a structured model from a dataset and a structured learning algorithm
+createmodel &lt;- function(tablearg, f, blacklist){
+   sltree &lt;- f (data.frame(map(tablearg, inttonumeric)), blacklist = blacklist)
+   neltree &lt;- as.graphNEL(sltree)
+   bg &lt;- addBgKnowledge(neltree)
+   g &lt;- dagitty(pcalg2dagitty(t(as(bg, &quot;matrix&quot;)), colnames(tablearg), type = &quot;dag&quot;))
+
+   return(g)
+}
+
+# change the sign from dagitty syntax to lavaan syntax
+changesign &lt;- function(s){
+  if(s == &quot;-&gt;&quot;){
+    return(&quot;~&quot;)
+  }
+  if (s == &quot;--&quot;){
+    return(&quot;~~&quot;)
+  }
+}
+
+
+# create a list of all combinations of variables, one variable from each factor from the factor analysis, and subsets thereof
+allcombn &lt;- function(gridarg){
+  allcombn_worker &lt;- function(gridarg){
+    sumcomb &lt;- vector()
+    for(i in data.frame(t(gridarg))){
+      subcomb &lt;- combn(i, length(gridarg) - 1)
+      for(j in data.frame(subcomb)){
+        sumcomb &lt;- rbind(sumcomb, j)
+      }
+    }
+    return(unique(sumcomb))
+  }  
+  
+  sumcomb &lt;- list()
+  sumcomb &lt;- append(sumcomb, split(gridarg, seq(nrow(gridarg))))
+  subcomb &lt;- allcombn_worker(gridarg)
+  if(length(data.frame(subcomb)) &gt; 0){
+    sumcomb &lt;- append(sumcomb, allcombn(data.frame(subcomb)))
+  }
+  return(sumcomb)
+}
+
+# convert a list of variables, use each list element as a blacklist, find the structured learning algorithm with the lowest deviance, use that algorithm and create a model
+# return:
+# model with the lowest deviance
+# the deviances for the different models
+# the name of the algorithm with the lowest deviance 
+combtodag &lt;- function(mycomb, tablearg){
+  summary_table &lt;- vector()
+  for(i in 1:length(mycomb)){
+    j &lt;- unlist(mycomb[i])
+    blacklist &lt;- createblacklist(colnames(tablearg), j)
+    evaluatedmodel &lt;- evaluatemodel(tablearg, blacklist)
+    g &lt;- createmodel(tablearg, match.fun(colnames(sort(evaluatedmodel)) [1]), blacklist)
+    v &lt;- as.character(j)
+    length(v) &lt;- 5
+    summary_table &lt;- rbind(summary_table, c(as.character(g), t(evaluatedmodel), v,  colnames(sort(evaluatedmodel)) [1]))
+  }
+  return(summary_table)
+}
+
+# calculate the causal effect of the variable from to variable to using all models in listofmodels using all minimal adjustment sets that are given by the model
+calceffect &lt;- function(listofmodels, from, to, tablearg){
+  summary_table &lt;- vector()
+  expadjsets &lt;- function(adjsets){
+    paste0(to, &quot; ~ &quot;, from, &quot; + &quot;, paste(unlist(adjsets), collapse = &quot; + &quot;))
+  }
+  calclmeffect &lt;- function(eq){
+    (summary(lm(as.formula(eq), tablearg)) %&gt;% broom::tidy())[2,]
+  }
+  for(i in 1:nrow(data.frame(listofmodels))){
+    g &lt;- as.dagitty(listofmodels[i, 1])
+    exogenous &lt;- listofmodels[i, 16:20]
+    adjsets &lt;- adjustmentSets(g, from, to)
+    if(is.null(unlist(adjsets)) &amp; (length(adjsets) == 1)){
+      eq &lt;- paste(to, &quot; ~ &quot;,  from)
+    } else {
+      if(length(adjsets) &gt; 0){
+        eq &lt;- map(adjsets, expadjsets)
+      } else{
+         eq &lt;- NULL
+      }
+    }
+    
+    if (!is.null(eq)){
+      mytest &lt;- map(unlist(eq), calclmeffect)
+    } else{
+      mytest &lt;- NULL
+    }
+
+    v &lt;- as.character(exogenous)
+    length(v) &lt;- 5
+    v1 &lt;- t(data.frame(v))
+    colnames(v1) &lt;- c(&quot;1&quot; , &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;)
+    if(!is.null(mytest)){
+      summary_table &lt;- rbind(summary_table, cbind(Reduce(&#39;rbind&#39;, mytest), t(data.frame(eq)), v1))
+    }
+  }
+  return(summary_table)
+}
+
+# create an SEM model for each dagitty model and return a table containing the estimated parameters of the fitted model and a variety of fit measures for each model
+dagitty2sem &lt;- function(mycomb, tablearg){
+  summary_table &lt;- vector()
+  summary_table2 &lt;- vector()
+  for(i in 1:nrow(data.frame(mycomb))){
+    g &lt;- as.dagitty(mycomb[i, 1])
+    exogenous &lt;- mycomb[i, 16:20]
+    fit &lt;- suppressWarnings(sem(paste(dagityy2lavaan(g, exogenous), collapse = &#39;&#39;), data = tablearg))
+    fit_m &lt;- fitmeasures(fit)
+    v &lt;- as.character(exogenous)
+    length(v) &lt;- 5
+    sumfit &lt;- parameterEstimates(fit)
+    summary_table2 &lt;- rbind(summary_table2, cbind(sumfit, matrix(v, ncol = 5, nrow = nrow(sumfit), byrow = TRUE)))
+    summary_table &lt;- rbind(summary_table, c(t(fit_m), v))
+  }
+
+  summary_table &lt;- cbind(summary_table[,43:47], data.frame(map(data.frame(summary_table[,1:42]), as.numeric)))
+  colnames(summary_table) &lt;- c(c(&quot;1&quot; , &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;), names(fit_m))
+
+  summary_table2 &lt;- summary_table %&gt;% 
+    left_join(summary_table2, by = c(&quot;1&quot; , &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;))
+
+  return(summary_table2)
+}
+
+# convert a model with dagitty syntax to lavaan syntax. Relations between exogenous variables will be replaced by correlations
+dagityy2lavaan &lt;- function(model_arg, exogenous){
+  temp &lt;- str_split(model_arg, &quot;\n&quot;) %&gt;%
+    unlist()
+  temp &lt;- lapply(&quot;-&gt;|--&quot;, grep, x = temp, value = TRUE) %&gt;%
+    unlist() %&gt;%
+    data.frame() %&gt;%
+    as_tibble()
+  
+  colnames(temp) &lt;- &quot;data&quot;
+
+  temp &lt;- temp %&gt;% 
+    rowwise() %&gt;% 
+    mutate(lhs = unlist(str_split(data, &quot; &quot;))[1]) %&gt;% 
+    mutate(rhs = unlist(str_split(data, &quot; &quot;))[3]) %&gt;% 
+    mutate(sign = unlist(str_split(data, &quot; &quot;))[2])
+
+  # one variable can be exogenous but not both
+  endorel &lt;- 
+    temp %&gt;% dplyr::filter(!(lhs %in% exogenous &amp; rhs %in% exogenous))
+  exorel &lt;- temp %&gt;% 
+    dplyr::filter(lhs %in% exogenous &amp; rhs %in% exogenous)
+
+  exorel$sign &lt;- &quot;--&quot;
+
+  temp &lt;- data.frame(rbind(endorel, exorel)) %&gt;%
+    rowwise() %&gt;% mutate(mydata3 = paste(rhs, changesign(sign), lhs, &quot;\n&quot;))
+
+  return(temp$mydata3)
+}
+
+filtergt0_3 &lt;- function(loadings){
+  loadings &lt;- data.frame(loadings)
+  rownames(loadings) &lt;- rownames(factorloadings)
+  rownames(loadings)[which(abs(loadings) &gt; 0.3)]
+}</code></pre>
+<p>The data tables are downloaded from Statistics Sweden. They are saved as a comma-delimited file without heading, <a href="http://www.statistikdatabasen.scb.se/pxweb/en/ssd/" class="uri">http://www.statistikdatabasen.scb.se/pxweb/en/ssd/</a>.</p>
+<p>The tables:</p>
+<p>UF0506A1_20210926-160849.csv: Population 16-74 years of age by region, highest level of education, age and sex. Year 1985 - 2020 NUTS 2 level 2008- 10 year intervals (16-74)</p>
+<p>000000CG_20210926-160057.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2020 Monthly salary All sectors.</p>
+<p>000000CD_20210926-160259.csv: Average basic salary, monthly salary and women´s salary as a percentage of men´s salary by region, sector, occupational group (SSYK 2012) and sex. Year 2014 - 2020 Number of employees All sectors.</p>
+<p>The data is aggregated, the size of each group is in the column groupsize.</p>
+<p>I have also included some calculated predictors from the original data.</p>
+<p>nremployees: The number of employees in each group defined by ssyk, edulevel, region and year</p>
+<p>perc_women: The percentage of women within each group defined by ssyk, edulevel, region and year</p>
+<p>perc_women_region: The percentage of women within each group defined by ssyk, year and region</p>
+<p>regioneduyears: The average number of education years per capita within each group defined by ssyk, year and region</p>
+<p>eduquotient: The quotient between regioneduyears for men and women</p>
+<p>salaryquotient: The quotient between salary for men and women within each group defined by ssyk, year and region</p>
+<p>perc_women_ssyk_region: The percentage of women within each group defined by ssyk, year and region</p>
+<pre class="r"><code>numedulevel &lt;- read.csv(&quot;edulevel_1.csv&quot;) 
+
+numedulevel[, 2] &lt;- data.frame(c(8, 9, 10, 12, 13, 15, 22, NA))
+
+tb &lt;- readfile(&quot;000000CG_20210926-160057.csv&quot;) 
+tb &lt;- readfile(&quot;000000CD_20210926-160259.csv&quot;) %&gt;% 
+  left_join(tb, by = c(&quot;region&quot;, &quot;year&quot;, &quot;sex&quot;, &quot;sector&quot;,&quot;occuptional  (SSYK 2012)&quot;)) 
+
+tb &lt;- readfile(&quot;UF0506A1_20210926-160849.csv&quot;) %&gt;%  
+  right_join(tb, by = c(&quot;region&quot;, &quot;year&quot;, &quot;sex&quot;)) %&gt;%
+  right_join(numedulevel, by = c(&quot;level of education&quot; = &quot;level.of.education&quot;)) %&gt;%
+  filter(!is.na(eduyears)) %&gt;%  
+  mutate(edulevel = `level of education`) %&gt;%
+  group_by(edulevel, region, year, sex, `occuptional  (SSYK 2012)`) %&gt;%
+  mutate(groupsize_all_ages = sum(groupsize)) %&gt;%  
+  group_by(edulevel, region, year, `occuptional  (SSYK 2012)`) %&gt;% 
+  mutate (perc_women = perc_women (groupsize_all_ages[1:2])) %&gt;% 
+  mutate (nremployees = sum(groupsize.x)) %&gt;%
+  mutate (salary = (groupsize.y[2] * groupsize.x[2] + groupsize.y[1] * groupsize.x[1])/(groupsize.x[2] + groupsize.x[1])) %&gt;%
+  group_by (sex, year, region, `occuptional  (SSYK 2012)`) %&gt;%
+  mutate(regioneduyears_sex = sum(groupsize * eduyears) / sum(groupsize)) %&gt;%
+  mutate(regiongroupsize = sum(groupsize)) %&gt;% 
+  mutate(nremployees_sex = groupsize.x) %&gt;%
+  group_by(region, year, `occuptional  (SSYK 2012)`) %&gt;%
+  mutate (sum_pop = sum(groupsize)) %&gt;%
+  mutate (regioneduyears = sum(groupsize * eduyears) / sum(groupsize)) %&gt;%
+  mutate (perc_women_region = perc_women (regiongroupsize[1:2])) %&gt;% 
+  mutate (eduquotient = regioneduyears_sex[2] / regioneduyears_sex[1]) %&gt;% 
+  mutate (salary_sex = groupsize.y) %&gt;%
+  mutate (salaryquotient = salary_sex[2] / salary_sex[1]) %&gt;%   
+  mutate (perc_women_ssyk_region = perc_women(nremployees_sex[1:2])) %&gt;%  
+  left_join(nuts %&gt;% distinct (NUTS2_en, NUTS2_sh), by = c(&quot;region&quot; = &quot;NUTS2_en&quot;)) %&gt;%
+  drop_na()
+
+summary(tb)</code></pre>
+<pre><code>##     region              age            level of education     sex           
+##  Length:316974      Length:316974      Length:316974      Length:316974     
+##  Class :character   Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+##                                                                             
+##                                                                             
+##                                                                             
+##      year             groupsize         year_n        sector         
+##  Length:316974      Min.   :    0   Min.   :2014   Length:316974     
+##  Class :character   1st Qu.: 2561   1st Qu.:2015   Class :character  
+##  Mode  :character   Median : 7456   Median :2017   Mode  :character  
+##                     Mean   :11676   Mean   :2017                     
+##                     3rd Qu.:16443   3rd Qu.:2019                     
+##                     Max.   :81358   Max.   :2020                     
+##  occuptional  (SSYK 2012)  groupsize.x       year_n.x     groupsize.y    
+##  Length:316974            Min.   :  100   Min.   :2014   Min.   : 20200  
+##  Class :character         1st Qu.:  400   1st Qu.:2015   1st Qu.: 29100  
+##  Mode  :character         Median : 1100   Median :2017   Median : 34300  
+##                           Mean   : 2893   Mean   :2017   Mean   : 37470  
+##                           3rd Qu.: 3000   3rd Qu.:2019   3rd Qu.: 42600  
+##                           Max.   :53700   Max.   :2020   Max.   :139500  
+##     year_n.y       eduyears       edulevel         groupsize_all_ages
+##  Min.   :2014   Min.   : 8.00   Length:316974      Min.   :   405    
+##  1st Qu.:2015   1st Qu.: 9.00   Class :character   1st Qu.: 24027    
+##  Median :2017   Median :12.00   Mode  :character   Median : 56038    
+##  Mean   :2017   Mean   :12.71                      Mean   : 70055    
+##  3rd Qu.:2019   3rd Qu.:15.00                      3rd Qu.:111943    
+##  Max.   :2020   Max.   :22.00                      Max.   :288426    
+##    perc_women      nremployees         salary       regioneduyears_sex
+##  Min.   :0.3575   Min.   :   600   Min.   : 20200   Min.   :11.18     
+##  1st Qu.:0.4439   1st Qu.:  4800   1st Qu.: 29214   1st Qu.:11.65     
+##  Median :0.4816   Median : 13080   Median : 34488   Median :11.83     
+##  Mean   :0.4831   Mean   : 32797   Mean   : 37494   Mean   :11.86     
+##  3rd Qu.:0.5000   3rd Qu.: 37800   3rd Qu.: 42738   3rd Qu.:12.13     
+##  Max.   :0.6484   Max.   :426600   Max.   :123796   Max.   :12.64     
+##  regiongroupsize  nremployees_sex    sum_pop        regioneduyears 
+##  Min.   :127118   Min.   :  100   Min.   : 127118   Min.   :11.18  
+##  1st Qu.:291940   1st Qu.:  400   1st Qu.: 518853   1st Qu.:11.63  
+##  Median :528643   Median : 1100   Median : 722010   Median :11.85  
+##  Mean   :490383   Mean   : 2893   Mean   : 878571   Mean   :11.86  
+##  3rd Qu.:708813   3rd Qu.: 3000   3rd Qu.:1395157   3rd Qu.:12.01  
+##  Max.   :842459   Max.   :53700   Max.   :1682100   Max.   :12.64  
+##  perc_women_region  eduquotient      salary_sex     salaryquotient  
+##  Min.   :0.4831    Min.   :1.000   Min.   : 20200   Min.   :0.6423  
+##  1st Qu.:0.4893    1st Qu.:1.020   1st Qu.: 29100   1st Qu.:0.9333  
+##  Median :0.4949    Median :1.030   Median : 34300   Median :0.9804  
+##  Mean   :0.4945    Mean   :1.026   Mean   : 37470   Mean   :0.9637  
+##  3rd Qu.:0.5000    3rd Qu.:1.039   3rd Qu.: 42600   3rd Qu.:1.0000  
+##  Max.   :0.5014    Max.   :1.049   Max.   :139500   Max.   :1.3090  
+##  perc_women_ssyk_region   NUTS2_sh        
+##  Min.   :0.009346       Length:316974     
+##  1st Qu.:0.384615       Class :character  
+##  Median :0.500000       Mode  :character  
+##  Mean   :0.518956                         
+##  3rd Qu.:0.674419                         
+##  Max.   :0.945274</code></pre>
+<pre class="r"><code>tbtemp &lt;- ungroup(tb) %&gt;% dplyr::select(salary, nremployees, year_n, sum_pop, regioneduyears, perc_women_region, salaryquotient, eduquotient, perc_women_ssyk_region, `occuptional  (SSYK 2012)`)
+
+tb_unique &lt;- unique(tbtemp)</code></pre>
+<p>Data is normalised before analysis. In this way, the scale of the variables will not affect the analysis. Data is imputed by replacing NA with the median.</p>
+<pre class="r"><code>  tb_unique_norm &lt;- tb_unique
+  tb_unique_norm &lt;- data.frame(data.matrix(tonormest(tb_unique)))
+  tb_unique_norm &lt;- imputeMissings::impute(tb_unique_norm, object = NULL, method = &quot;median/mode&quot;, flag = FALSE)</code></pre>
+<p>I will use the package bnlearn to approximate a DAG from the data. In bnlearn, there are several algorithms for this purpose. A way to use prior knowledge together with the algorithms for structured learning in the bnlearn package is to specify a blacklist or a whitelist. Arcs in the whitelist are always included in the network. Arcs in the blacklist are never included in the network. If we don’t know a priori what arcs to include in the blacklist or whitelist then we can evaluate several models with different settings. To limit the number of models to evaluate I will do some assumptions. I will assume that the variation in the model can be expressed by using fewer variables, e.g. Principal Component Analysis, for this application I will use factor analysis. I will assume that the number of exogenous variables in the model is equal to or less than the number of factors suggested by factor analysis. I will use the <code>Psych</code> package’s <code>fa.parallel</code> function to determine the number of factors. The warning from the factor analysis is ignored. A better choice of rotation and factoring method could solve this, future improvements. The factors with loading greater than 0.3 are chosen for future processing.</p>
+<pre class="r"><code>   fatest &lt;- fa.parallel(tb_unique_norm, fm = &quot;minres&quot;, fa = &quot;fa&quot;)</code></pre>
+<pre><code>## Warning in fa.stats(r = r, f = f, phi = phi, n.obs = n.obs, np.obs = np.obs, :
+## The estimated weights for the factor scores are probably incorrect. Try a
+## different factor score estimation method.</code></pre>
+<pre><code>## Warning in fac(r = r, nfactors = nfactors, n.obs = n.obs, rotate = rotate, : An
+## ultra-Heywood case was detected. Examine the results carefully</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-4"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-4-1.png" alt="Parallell Analysis Scree Plots" width="672" />
+<p class="caption">
+Figure 1: Parallell Analysis Scree Plots
+</p>
+</div>
+<pre><code>## Parallel analysis suggests that the number of factors =  5  and the number of components =  NA</code></pre>
+<pre class="r"><code>  factoranalysis &lt;- fa(tb_unique_norm, nfactors = fatest$nfact, rotate = &quot;oblimin&quot;, fm = &quot;minres&quot;)</code></pre>
+<pre><code>## Loading required namespace: GPArotation</code></pre>
+<pre><code>## Warning in fa.stats(r = r, f = f, phi = phi, n.obs = n.obs, np.obs = np.obs, :
+## The estimated weights for the factor scores are probably incorrect. Try a
+## different factor score estimation method.</code></pre>
+<pre><code>## Warning in fac(r = r, nfactors = nfactors, n.obs = n.obs, rotate = rotate, : An
+## ultra-Heywood case was detected. Examine the results carefully</code></pre>
+<pre class="r"><code>  print(factoranalysis$loadings, cutoff = 0.3)</code></pre>
+<pre><code>## 
+## Loadings:
+##                          MR1    MR2    MR3    MR4    MR5   
+## salary                                 -0.979              
+## nremployees                      0.466                     
+## year_n                                         0.998       
+## sum_pop                          0.996                     
+## regioneduyears                   0.570                     
+## perc_women_region         0.906                            
+## salaryquotient                                             
+## eduquotient              -0.969                            
+## perc_women_ssyk_region                                0.998
+## occuptional...SSYK.2012.                0.779              
+## 
+##                  MR1   MR2   MR3   MR4   MR5
+## SS loadings    1.949 1.702 1.676 1.077 1.059
+## Proportion Var 0.195 0.170 0.168 0.108 0.106
+## Cumulative Var 0.195 0.365 0.533 0.640 0.746</code></pre>
+<pre class="r"><code>  factorloadings &lt;- print(factoranalysis$loadings, cutoff = 0.3)</code></pre>
+<pre><code>## 
+## Loadings:
+##                          MR1    MR2    MR3    MR4    MR5   
+## salary                                 -0.979              
+## nremployees                      0.466                     
+## year_n                                         0.998       
+## sum_pop                          0.996                     
+## regioneduyears                   0.570                     
+## perc_women_region         0.906                            
+## salaryquotient                                             
+## eduquotient              -0.969                            
+## perc_women_ssyk_region                                0.998
+## occuptional...SSYK.2012.                0.779              
+## 
+##                  MR1   MR2   MR3   MR4   MR5
+## SS loadings    1.949 1.702 1.676 1.077 1.059
+## Proportion Var 0.195 0.170 0.168 0.108 0.106
+## Cumulative Var 0.195 0.365 0.533 0.640 0.746</code></pre>
+<pre class="r"><code>  mygrid &lt;- expand.grid(map(data.frame(factorloadings[,1:5]), filtergt0_3)) 
+  
+  mygrid %&gt;% 
+    knitr::kable(
+      booktabs = TRUE,
+      caption = &#39;Table of proposed exogenous variables to evaluate&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-5">Table 2: </span>Table of proposed exogenous variables to evaluate</caption>
+<colgroup>
+<col width="20%" />
+<col width="17%" />
+<col width="28%" />
+<col width="7%" />
+<col width="26%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">MR1</th>
+<th align="left">MR2</th>
+<th align="left">MR3</th>
+<th align="left">MR4</th>
+<th align="left">MR5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">nremployees</td>
+<td align="left">salary</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">nremployees</td>
+<td align="left">salary</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">sum_pop</td>
+<td align="left">salary</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">sum_pop</td>
+<td align="left">salary</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">regioneduyears</td>
+<td align="left">salary</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">regioneduyears</td>
+<td align="left">salary</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">nremployees</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">nremployees</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">sum_pop</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">sum_pop</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">regioneduyears</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">regioneduyears</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">year_n</td>
+<td align="left">perc_women_ssyk_region</td>
+</tr>
+</tbody>
+</table>
+<p>I will start by creating all possible sets and subsets from the set of five exogenous variables that were selected by the factor analysis. For each set, I will create a model from a set of structured learning algorithms from the bnlearn package. Each algorithm is evaluated against how well it minimizes the deviations from the testable implications in the model and the dataset. The function localTests from the dagitty package is used to get a numeric value of the testable implications. The mean deviation from all testable implications by localTests is used. This could favour more complex models since there are fewer testable implications in complex than in simple models. The version of localTests in my test uses a combination of categorical and continuous data. A more advanced algorithm could have been used to select the model that minimizes the deviation. The models so far are created in dagitty syntax.</p>
+<p>From the dagitty syntax, I will create a Structural Equation Model in lavaan for each model created in the earlier step. Each SEM model is evaluated for a variety of fit measures to assess the global fit of the latent variable model. No latent variables are evaluated at this stage but you could perhaps imagine that there is a correspondence between the factor analysis and some unmeasured latent variables. The model parameters for each model is also stored for later analysis.</p>
+<p>The table of models and the table of evaluated models are joined to allow extra comparisons.</p>
+<p>Since the generation of dagitty models takes a while I have prepared that table in a file.</p>
+<pre class="r"><code>  list_of_exogenous_variables &lt;- allcombn(mygrid)
+  #table_of_dagitty_models &lt;- combtodag(list_of_exogenous_variables, tb_unique_norm)
+  table_of_dagitty_models &lt;- read.csv(&quot;table_of_dagitty_models.csv&quot;)
+  table_of_dagitty_models &lt;- table_of_dagitty_models[,2:22] 
+  table_of_sem_models &lt;- dagitty2sem(table_of_dagitty_models, tb_unique_norm)
+  
+  table_of_dagitty_models_df &lt;- data.frame(table_of_dagitty_models)
+
+  colnames(table_of_dagitty_models_df) &lt;- 
+    c(&quot;model&quot;, 
+      names(bnmodels), 
+      c(&quot;1&quot; , &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;, 
+        &quot;algorithm&quot;))
+  
+  dagitty_and_sem_table &lt;- table_of_dagitty_models_df %&gt;% 
+    left_join(table_of_sem_models, by = c(&quot;1&quot; , &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;))</code></pre>
+<pre class="r"><code>  ggplot(dagitty_and_sem_table) + 
+    geom_point(aes(x = pvalue.x, y = rmsea))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-7"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-7-1.png" alt="The figure shows that there is a tradeoff between the pvalue and the Root Mean Square Error of the model" width="672" />
+<p class="caption">
+Figure 2: The figure shows that there is a tradeoff between the pvalue and the Root Mean Square Error of the model
+</p>
+</div>
+<pre class="r"><code>  dagitty_and_sem_table %&gt;% 
+    mutate(deviance = as.numeric(pmin(h2pc, hpc, fast.iamb, inter.iamb, si.hiton.pc, iamb.fdr, iamb, gs, mmpc, pc,  hc, tabu, mmhc, rsmax2))) %&gt;% 
+    ggplot() + 
+    geom_point(aes(x = aic, y = deviance))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-8"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-8-1.png" alt="The figure shows how the deviance measured by localTests and the model complexity measured in aic are related" width="672" />
+<p class="caption">
+Figure 3: The figure shows how the deviance measured by localTests and the model complexity measured in aic are related
+</p>
+</div>
+<p>From the table, we can examine how many of the models contained an arc, i.e. a relation from one variable to another. We find that the direction of the relation from quotient between the average number of education years for men and women to quotient between salary for men and women is found in 121 out of 143 tested models. The estimation of the relationship is 0.32 standard units. Only the models with a pvalue less than 0.05 are counted.</p>
+<p>If we use the ten (arbitrary number, could be optimized) arcs that occur are most frequent in the models that I have analysed and use those arcs to create a whitelist, i.e. arcs that must be present in the model, when estimating a new model with the hills climbing algorithm we get a model that can be used to approximate the causal effects that can be estimated from the data. The plot shows the model. In this model year and percentage of women in the ssyk are exogenous variables and the rest of the variables are endogenous.
+When looking at the model’s parameter values and sorting it by the highest effect we find that the effect of per cent women in the region on quotient between the average number of education years for men and women is the highest of all effects between continuous variables, 79 out of 143 models has this direction of this relation.</p>
+<pre class="r"><code>  temp &lt;- combn(colnames(tb_unique_norm), 2)
+  list_of_var_combinations &lt;- cbind(temp, rbind(temp[2,], temp[1,]))
+
+  summary_table &lt;- vector()
+  for(i in data.frame(list_of_var_combinations)){
+    est &lt;- dagitty_and_sem_table %&gt;% 
+      filter(lhs == i[1], rhs == i[2], pvalue.x &lt; 0.05) %&gt;% 
+      dplyr::select(est)
+    summary_table &lt;- rbind(
+      summary_table, 
+      c(i, 
+        (t(summary(est))), 
+        nrow(est), 
+        sd(t(est))))
+  }
+
+  summary_table &lt;- unique(cbind(summary_table[,1:8], data.frame(map(data.frame(summary_table[,9:10]), as.numeric)))) %&gt;%
+    arrange(-X1)
+  
+  summary_table[1:10,] %&gt;%
+    select(`1`, `2`, X1) %&gt;%
+    rename(lhs = `1`) %&gt;%
+    rename(rhs = `2`) %&gt;%
+    rename(nr_of_models = X1) %&gt;%
+    knitr::kable(
+      booktabs = TRUE,
+      caption = &#39;The ten most common arcs of all 143 models&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-9">Table 3: </span>The ten most common arcs of all 143 models</caption>
+<thead>
+<tr class="header">
+<th align="left">lhs</th>
+<th align="left">rhs</th>
+<th align="right">nr_of_models</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">salaryquotient</td>
+<td align="left">eduquotient</td>
+<td align="right">121</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">111</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient</td>
+<td align="left">salary</td>
+<td align="right">110</td>
+</tr>
+<tr class="even">
+<td align="left">regioneduyears</td>
+<td align="left">year_n</td>
+<td align="right">110</td>
+</tr>
+<tr class="odd">
+<td align="left">nremployees</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">104</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient</td>
+<td align="left">year_n</td>
+<td align="right">104</td>
+</tr>
+<tr class="odd">
+<td align="left">salary</td>
+<td align="left">year_n</td>
+<td align="right">98</td>
+</tr>
+<tr class="even">
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">98</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient</td>
+<td align="left">sum_pop</td>
+<td align="right">97</td>
+</tr>
+<tr class="even">
+<td align="left">regioneduyears</td>
+<td align="left">sum_pop</td>
+<td align="right">95</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>  whitelist &lt;- summary_table[1:10, 2:1]
+  
+  hctree &lt;- hc(tb_unique_norm, whitelist = whitelist)
+  
+  neltree &lt;- as.graphNEL(hctree)
+  bg &lt;- addBgKnowledge(neltree)
+  if (length(bg) == 0){
+    return (Inf)
+  }
+  
+  g &lt;- dagitty(pcalg2dagitty(t(as(bg, &quot;matrix&quot;)), colnames(tb_unique_norm), type = &quot;dag&quot;))
+  
+  fit &lt;- sem(paste(dagityy2lavaan(g, NULL), collapse = &#39;&#39;), data = tb_unique_norm)</code></pre>
+<pre><code>## Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan
+## WARNING: some observed variances are (at least) a factor 1000 times larger than
+## others; use varTable(fit) to investigate</code></pre>
+<pre class="r"><code>  semPaths(fit, &#39;std&#39;, &#39;est&#39;, curveAdjacent = TRUE, style = &quot;lisrel&quot;)</code></pre>
+<p><img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code>  r &lt;- localTests(
+    g,
+    tb_unique_norm, &quot;cis&quot;,
+    sample.cov = lavCor(tb_unique_norm),
+    sample.nobs = nrow( tb_unique_norm ),
+    max.conditioning.variables = 2,
+    R = 100)</code></pre>
+<pre><code>## Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan
+## WARNING: some observed variances are (at least) a factor 1000 times larger than
+## others; use varTable(fit) to investigate</code></pre>
+<pre class="r"><code>  parameterEstimates(fit) %&gt;% 
+    select(lhs, op, rhs, est, pvalue) %&gt;%
+    arrange(-abs(est)) %&gt;%
+    knitr::kable(
+      booktabs = TRUE,
+      caption = &#39;Parameters for the approximate model sorted in falling effect size&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-9">Table 3: </span>Parameters for the approximate model sorted in falling effect size</caption>
+<thead>
+<tr class="header">
+<th align="left">lhs</th>
+<th align="left">op</th>
+<th align="left">rhs</th>
+<th align="right">est</th>
+<th align="right">pvalue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">~~</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="right">515.4245404</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">~</td>
+<td align="left">salary</td>
+<td align="right">-28.6174604</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">~</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">-7.9191011</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">~</td>
+<td align="left">year_n</td>
+<td align="right">5.1547157</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">~</td>
+<td align="left">perc_women_region</td>
+<td align="right">2.9988570</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="left">~</td>
+<td align="left">sum_pop</td>
+<td align="right">1.7031739</td>
+<td align="right">0.0000006</td>
+</tr>
+<tr class="odd">
+<td align="left">year_n</td>
+<td align="left">~~</td>
+<td align="left">year_n</td>
+<td align="right">0.9997846</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">perc_women_ssyk_region</td>
+<td align="left">~~</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">0.9997846</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">sum_pop</td>
+<td align="left">~~</td>
+<td align="left">sum_pop</td>
+<td align="right">0.9770425</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">perc_women_region</td>
+<td align="left">~~</td>
+<td align="left">perc_women_region</td>
+<td align="right">0.9603644</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">salary</td>
+<td align="left">~~</td>
+<td align="left">salary</td>
+<td align="right">0.9556355</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">~</td>
+<td align="left">perc_women_region</td>
+<td align="right">-0.9015448</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">regioneduyears</td>
+<td align="left">~</td>
+<td align="left">sum_pop</td>
+<td align="right">0.8082339</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient</td>
+<td align="left">~~</td>
+<td align="left">salaryquotient</td>
+<td align="right">0.7302152</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">nremployees</td>
+<td align="left">~~</td>
+<td align="left">nremployees</td>
+<td align="right">0.7295975</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">regioneduyears</td>
+<td align="left">~</td>
+<td align="left">eduquotient</td>
+<td align="right">-0.6494568</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">regioneduyears</td>
+<td align="left">~~</td>
+<td align="left">regioneduyears</td>
+<td align="right">0.4814185</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">~</td>
+<td align="left">sum_pop</td>
+<td align="right">0.4493408</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient</td>
+<td align="left">~</td>
+<td align="left">salary</td>
+<td align="right">-0.3776151</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">nremployees</td>
+<td align="left">~</td>
+<td align="left">sum_pop</td>
+<td align="right">0.3740575</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient</td>
+<td align="left">~</td>
+<td align="left">eduquotient</td>
+<td align="right">-0.3242296</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">regioneduyears</td>
+<td align="left">~</td>
+<td align="left">year_n</td>
+<td align="right">0.3050356</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">regioneduyears</td>
+<td align="left">~</td>
+<td align="left">perc_women_region</td>
+<td align="right">-0.2773857</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">nremployees</td>
+<td align="left">~</td>
+<td align="left">eduquotient</td>
+<td align="right">0.2212280</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">salary</td>
+<td align="left">~</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">-0.1546639</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient</td>
+<td align="left">~</td>
+<td align="left">sum_pop</td>
+<td align="right">-0.1535919</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">~</td>
+<td align="left">sum_pop</td>
+<td align="right">0.1529078</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">sum_pop</td>
+<td align="left">~</td>
+<td align="left">salary</td>
+<td align="right">0.1508210</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient</td>
+<td align="left">~</td>
+<td align="left">year_n</td>
+<td align="right">0.1479586</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">nremployees</td>
+<td align="left">~</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">0.1465144</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">salary</td>
+<td align="left">~</td>
+<td align="left">year_n</td>
+<td align="right">0.1421677</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">nremployees</td>
+<td align="left">~</td>
+<td align="left">perc_women_region</td>
+<td align="right">0.1329411</td>
+<td align="right">0.0002882</td>
+</tr>
+<tr class="odd">
+<td align="left">eduquotient</td>
+<td align="left">~~</td>
+<td align="left">eduquotient</td>
+<td align="right">0.1082249</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">regioneduyears</td>
+<td align="left">~</td>
+<td align="left">salary</td>
+<td align="right">-0.0952185</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">nremployees</td>
+<td align="left">~</td>
+<td align="left">salary</td>
+<td align="right">-0.0951437</td>
+<td align="right">0.0000015</td>
+</tr>
+<tr class="even">
+<td align="left">perc_women_region</td>
+<td align="left">~</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">-0.0790279</td>
+<td align="right">0.0000001</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">~</td>
+<td align="left">year_n</td>
+<td align="right">-0.0767289</td>
+<td align="right">0.0000001</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient</td>
+<td align="left">~</td>
+<td align="left">perc_women_ssyk_region</td>
+<td align="right">0.0693828</td>
+<td align="right">0.0000003</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_region</td>
+<td align="left">~</td>
+<td align="left">salary</td>
+<td align="right">0.0474522</td>
+<td align="right">0.0014239</td>
+</tr>
+<tr class="even">
+<td align="left">eduquotient</td>
+<td align="left">~</td>
+<td align="left">year_n</td>
+<td align="right">0.0283044</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">regioneduyears</td>
+<td align="left">~~</td>
+<td align="left">salaryquotient</td>
+<td align="right">-0.0201865</td>
+<td align="right">0.0204311</td>
+</tr>
+<tr class="even">
+<td align="left">nremployees</td>
+<td align="left">~~</td>
+<td align="left">salaryquotient</td>
+<td align="right">-0.0040980</td>
+<td align="right">0.7020812</td>
+</tr>
+<tr class="odd">
+<td align="left">nremployees</td>
+<td align="left">~</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="right">0.0037042</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient</td>
+<td align="left">~</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="right">-0.0032636</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">regioneduyears</td>
+<td align="left">~</td>
+<td align="left">occuptional…SSYK.2012.</td>
+<td align="right">-0.0029127</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">nremployees</td>
+<td align="left">~~</td>
+<td align="left">regioneduyears</td>
+<td align="right">-0.0017782</td>
+<td align="right">0.8380207</td>
+</tr>
+<tr class="odd">
+<td align="left">perc_women_ssyk_region</td>
+<td align="left">~~</td>
+<td align="left">year_n</td>
+<td align="right">-0.0005915</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>  plotLocalTestResults( r )</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-10"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-10-1.png" alt="This figure shows the testable implications from localTests" width="672" />
+<p class="caption">
+Figure 4: This figure shows the testable implications from localTests
+</p>
+</div>
+<pre class="r"><code>  ggplot(data = tb_unique_norm, mapping = aes(x = eduquotient, y = salaryquotient)) + 
+    geom_boxplot(mapping = aes(group = cut_width(eduquotient, 0.4)))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-11"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-11-1.png" alt="The figure shows how the quotient between salary for men and women is affected by the quotient between the average number of education years for men and women" width="672" />
+<p class="caption">
+Figure 5: The figure shows how the quotient between salary for men and women is affected by the quotient between the average number of education years for men and women
+</p>
+</div>
+<pre class="r"><code>  ggplot(tb_unique_norm) + 
+    geom_point(aes(x = perc_women_region, y = eduquotient))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-12"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-12-1.png" alt="The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region" width="672" />
+<p class="caption">
+Figure 6: The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region
+</p>
+</div>
+<p>If you know the DAG it is possible to identify the sets of covariates that allow unbiased estimation of causal effects with the function adjustmentSets in the dagitty package. I will calculate the possible adjustment sets for all models created in earlier steps and compare them. Let’s start by calculating the causal effect of the quotient between the average number of education years for men and women on the quotient between salary for men and women.</p>
+<pre class="r"><code>  causaleffect &lt;- calceffect(table_of_dagitty_models, &quot;eduquotient&quot;, &quot;salaryquotient&quot;, tb_unique_norm)
+  
+  causaleffect_df &lt;- data.frame(map(causaleffect, unlist))
+  
+  colnames(causaleffect_df) &lt;- colnames(causaleffect)
+
+  dagitty_sem_and_causal_table &lt;- dagitty_and_sem_table %&gt;% 
+    left_join(causaleffect_df, by = c(&quot;1&quot; , &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;))</code></pre>
+<pre class="r"><code>  dagitty_sem_and_causal_table %&gt;% 
+    filter(lhs == &quot;salaryquotient&quot;, rhs == &quot;eduquotient&quot;) %&gt;% 
+    ggplot() + 
+      geom_point(aes(x = estimate, y = pvalue.x, color = aic))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-14"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-14-1.png" alt="The figure shows the estimate for the causal effect of the quotient between the average number of education years for men and women on quotient between salary for men and women from all tested models and the pvalue and aic of the model" width="672" />
+<p class="caption">
+Figure 7: The figure shows the estimate for the causal effect of the quotient between the average number of education years for men and women on quotient between salary for men and women from all tested models and the pvalue and aic of the model
+</p>
+</div>
+<pre class="r"><code>  dagitty_sem_and_causal_table %&gt;% 
+    mutate(modelnumber = as.integer(factor(`t(data.frame(eq))`))) %&gt;%
+    filter(lhs == &quot;salaryquotient&quot;, rhs == &quot;eduquotient&quot;) %&gt;% 
+    ggplot() + 
+      geom_point(aes(x = modelnumber, y = estimate, color = pvalue.x))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-15"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-15-1.png" alt="The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region for the different covariates" width="672" />
+<p class="caption">
+Figure 8: The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region for the different covariates
+</p>
+</div>
+<pre class="r"><code>  dagitty_sem_and_causal_table %&gt;% 
+    filter(lhs == &quot;salaryquotient&quot;, rhs == &quot;eduquotient&quot;) %&gt;% 
+    mutate(modelnumber = as.integer(factor(`t(data.frame(eq))`))) %&gt;%
+    mutate(linear_equation_with_covariates = `t(data.frame(eq))`) %&gt;%
+    group_by(modelnumber) %&gt;%
+    mutate(frequency = n()) %&gt;%  
+    arrange(modelnumber) %&gt;%
+    select(linear_equation_with_covariates, modelnumber, estimate, frequency) %&gt;%
+    unique() %&gt;%
+    knitr::kable(
+      booktabs = TRUE,
+      caption = &#39;Table showing the covariates needed for different models to calculate the effect&#39;)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-16">Table 4: </span>Table showing the covariates needed for different models to calculate the effect</caption>
+<colgroup>
+<col width="76%" />
+<col width="8%" />
+<col width="7%" />
+<col width="7%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">linear_equation_with_covariates</th>
+<th align="right">modelnumber</th>
+<th align="right">estimate</th>
+<th align="right">frequency</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient</td>
+<td align="right">1</td>
+<td align="right">-0.3475676</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + nremployees</td>
+<td align="right">2</td>
+<td align="right">-0.3438332</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + nremployees + occuptional…SSYK.2012.</td>
+<td align="right">3</td>
+<td align="right">-0.3242904</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + nremployees + occuptional…SSYK.2012. + perc_women_region + sum_pop + year_n</td>
+<td align="right">4</td>
+<td align="right">-0.4027556</td>
+<td align="right">31</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + nremployees + occuptional…SSYK.2012. + salary + sum_pop + year_n</td>
+<td align="right">5</td>
+<td align="right">-0.3230239</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + nremployees + perc_women_region + salary + sum_pop</td>
+<td align="right">6</td>
+<td align="right">-0.3621844</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + nremployees + perc_women_region + sum_pop + year_n</td>
+<td align="right">7</td>
+<td align="right">-0.4259852</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + nremployees + perc_women_ssyk_region + salary</td>
+<td align="right">8</td>
+<td align="right">-0.3335892</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + occuptional…SSYK.2012.</td>
+<td align="right">9</td>
+<td align="right">-0.3355981</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + occuptional…SSYK.2012. + perc_women_region + regioneduyears</td>
+<td align="right">10</td>
+<td align="right">-0.5848968</td>
+<td align="right">7</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + occuptional…SSYK.2012. + perc_women_ssyk_region + salary + sum_pop + year_n</td>
+<td align="right">11</td>
+<td align="right">-0.3242342</td>
+<td align="right">31</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + occuptional…SSYK.2012. + perc_women_ssyk_region + year_n</td>
+<td align="right">12</td>
+<td align="right">-0.3548155</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + occuptional…SSYK.2012. + regioneduyears</td>
+<td align="right">13</td>
+<td align="right">-0.3497428</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + occuptional…SSYK.2012. + regioneduyears + year_n</td>
+<td align="right">14</td>
+<td align="right">-0.3676810</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + occuptional…SSYK.2012. + year_n</td>
+<td align="right">15</td>
+<td align="right">-0.3443816</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + perc_women_region + perc_women_ssyk_region + sum_pop + year_n</td>
+<td align="right">16</td>
+<td align="right">-0.4063135</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + perc_women_region + regioneduyears + sum_pop + year_n</td>
+<td align="right">17</td>
+<td align="right">-0.4235753</td>
+<td align="right">17</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + perc_women_region + salary + sum_pop + year_n</td>
+<td align="right">18</td>
+<td align="right">-0.3932932</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + perc_women_region + sum_pop</td>
+<td align="right">19</td>
+<td align="right">-0.3868834</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + perc_women_region + sum_pop + year_n</td>
+<td align="right">20</td>
+<td align="right">-0.4106547</td>
+<td align="right">11</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + perc_women_ssyk_region + salary + sum_pop</td>
+<td align="right">21</td>
+<td align="right">-0.2998376</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + perc_women_ssyk_region + salary + sum_pop + year_n</td>
+<td align="right">22</td>
+<td align="right">-0.3135959</td>
+<td align="right">23</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + perc_women_ssyk_region + sum_pop</td>
+<td align="right">23</td>
+<td align="right">-0.2934366</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + perc_women_ssyk_region + year_n</td>
+<td align="right">24</td>
+<td align="right">-0.3671626</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + regioneduyears</td>
+<td align="right">25</td>
+<td align="right">-0.3622676</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + salary + sum_pop</td>
+<td align="right">26</td>
+<td align="right">-0.2923565</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + salary + sum_pop + year_n</td>
+<td align="right">27</td>
+<td align="right">-0.3064032</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">salaryquotient ~ eduquotient + sum_pop</td>
+<td align="right">28</td>
+<td align="right">-0.2821068</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">salaryquotient ~ eduquotient + year_n</td>
+<td align="right">29</td>
+<td align="right">-0.3567006</td>
+<td align="right">5</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>  ggplot(tb_unique_norm) + 
+    geom_point(aes(x = eduquotient, y = salaryquotient, color = perc_women_region))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-17"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-17-1.png" alt="The figure shows how quotient between salary for men and women is affected by quotient between the average number of education years for men and women and the covariate per cent women in the region" width="672" />
+<p class="caption">
+Figure 9: The figure shows how quotient between salary for men and women is affected by quotient between the average number of education years for men and women and the covariate per cent women in the region
+</p>
+</div>
+<p>As a second example, I will calculate the causal effect of per cent women in the region on quotient between the average number of education years for men and women.</p>
+<pre class="r"><code>  causaleffect &lt;- calceffect(table_of_dagitty_models, &quot;perc_women_region&quot;, &quot;eduquotient&quot;, tb_unique_norm)
+  
+  causaleffect_df &lt;- data.frame(map(causaleffect, unlist))
+  
+  colnames(causaleffect_df) &lt;- colnames(causaleffect)
+  
+  dagitty_sem_and_causal_table &lt;- dagitty_and_sem_table %&gt;% 
+    left_join(causaleffect_df, by = c(&quot;1&quot; , &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;))</code></pre>
+<pre class="r"><code>  dagitty_sem_and_causal_table %&gt;% 
+    filter(lhs == &quot;eduquotient&quot;, rhs == &quot;perc_women_region&quot;) %&gt;% 
+    ggplot() + 
+      geom_point(aes(x = estimate, y = pvalue.x, color = aic))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-19"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-19-1.png" alt="The figure shows the estimate for the causal effect of per cent women in the region on quotient between the average number of education years for men and women" width="672" />
+<p class="caption">
+Figure 10: The figure shows the estimate for the causal effect of per cent women in the region on quotient between the average number of education years for men and women
+</p>
+</div>
+<pre class="r"><code>  dagitty_sem_and_causal_table %&gt;% 
+    mutate(modelnumber = as.integer(factor(`t(data.frame(eq))`))) %&gt;%
+    filter(lhs == &quot;eduquotient&quot;, rhs == &quot;perc_women_region&quot;) %&gt;% 
+    ggplot() + 
+      geom_point(aes(x = modelnumber, y = estimate, color = aic))</code></pre>
+<div class="figure"><span style="display:block;" id="fig:unnamed-chunk-20"></span>
+<img src="/post/2021-10-24-suggestion-for-limiting-the-boundaries-for-causal-effects_files/figure-html/unnamed-chunk-20-1.png" alt="The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region for the different covariates" width="672" />
+<p class="caption">
+Figure 11: The figure shows how the quotient between the average number of education years for men and women is affected by the per cent women in the region for the different covariates
+</p>
+</div>
